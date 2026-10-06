@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encuesta de Satisfacción — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  .enc-preg { padding:18px 0; border-bottom:1px solid var(--border) }
+  .enc-preg:last-of-type { border-bottom:none }
+  .enc-n {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:26px; height:26px; background:var(--spoke); color:#fff;
+    border-radius:50%; font-size:.78rem; font-weight:700; margin-right:9px; flex:0 0 26px
+  }
+  .enc-txt { color:var(--dark); font-size:.95rem; line-height:1.6; font-weight:500; margin-bottom:13px }
+  .enc-ops { display:flex; flex-direction:column; gap:7px }
+  #formatos .enc-ops { flex-direction:row; flex-wrap:wrap }
+  #formatos .enc-op { flex:1 1 130px }
+  .enc-otro { margin-top:8px; padding:9px 11px; border:1.5px solid var(--border); border-radius:10px; font:inherit; width:100%; box-sizing:border-box }
+  .enc-op {
+    display:flex; gap:10px; align-items:center; width:100%; text-align:left;
+    padding:11px 14px; border:1.5px solid var(--border); border-radius:8px;
+    background:var(--white); cursor:pointer; transition:all .15s; color:var(--dark); font-size:.9rem
+  }
+  .enc-op:hover { border-color:var(--spoke); background:#F0FDF9 }
+  .enc-op.sel { border-color:var(--spoke); background:#ECFDF5; font-weight:600 }
+  .enc-op-r {
+    flex:0 0 17px; width:17px; height:17px; border:2px solid var(--border);
+    border-radius:50%; transition:all .15s
+  }
+  .enc-op.sel .enc-op-r { border-color:var(--spoke); border-width:5px }
+  .enc-falta { color:var(--warn); font-size:.8rem; font-weight:600; margin-top:7px }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <!-- ── FORMULARIO ── -->
+  <section id="vForm">
+    <div class="plat-head">
+      <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 14.5a2 2 0 0 1-2 2H8l-5 4.5V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <h1>Encuesta de Satisfacción</h1>
+      <p>La encuesta oficial del CONOCER sobre cómo se condujo tu proceso de evaluación.</p>
+    </div>
+
+    <div class="card card--acento">
+      <h2>Contesta con franqueza</h2>
+      <p style="color:var(--mid);font-size:.92rem;line-height:1.7;margin:0">
+        Esta encuesta no evalúa tu desempeño: evalúa <strong>al Centro Evaluador</strong>.
+        Sirve para verificar que el proceso cumplió las reglas — que fue gratuito donde debe
+        serlo, que se te trató con respeto y que nadie te condicionó a comprar un curso.
+        Tus respuestas no afectan tu resultado de certificación.
+      </p>
+    </div>
+
+    <div class="card">
+      <div id="preguntas"></div>
+      <div class="barra" style="margin-top:18px">
+        <div class="barra-fill" id="barra" style="width:0%"></div>
+      </div>
+      <div class="barra-txt" style="margin-top:8px">
+        <span id="contador">0 de 0 contestadas</span>
+      </div>
+    </div>
+
+    <div class="card" id="cardFormatos">
+      <h2>Formatos del CONOCER sobre la atención que recibiste</h2>
+      <p class="pn-nota" style="margin-top:0">
+        Van en tu portafolio junto con la encuesta: el <strong>Formato de Atención a Usuarios</strong> (cómo te atendieron cuando pediste
+        informes) y la <strong>Cédula de Evaluación del Servicio</strong> (cómo fue todo tu proceso). Tus datos generales salen de tu registro.
+      </p>
+      <div id="formatos"></div>
+    </div>
+
+    <div class="card" id="cardFirma">
+      <h2>Tu firma</h2>
+      <p class="pn-nota" style="margin-top:0">
+        La encuesta del CONOCER va firmada por el candidato. Firmas una sola vez: si ya
+        firmaste el acuerdo de confidencialidad, aquí aparece la misma firma.
+      </p>
+      <div id="firmaEnc"></div>
+      <p class="ev-pendiente" id="faltaFirma" hidden></p>
+    </div>
+
+    <div class="acciones">
+      <button class="btn-plat btn-plat--primario" id="btnEnviar">Registrar mis respuestas</button>
+    </div>
+  </section>
+
+  <!-- ── ENVIADA ── -->
+  <section id="vGracias" hidden>
+    <div class="plat-head">
+      <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m4.5 12.5 5 5 10-11"/></svg></div>
+      <h1>Encuesta registrada</h1>
+    </div>
+
+    <div class="card">
+      <p style="color:var(--mid);font-size:.93rem;line-height:1.7">
+        Gracias. Tus respuestas quedaron guardadas en este dispositivo junto con el resto de tu
+        portafolio. Entrégalas a tu Centro Evaluador en el paso de Entrega.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Lo que respondiste</h2>
+      <div id="resumen"></div>
+      <div id="resumenFirma"></div>
+    </div>
+
+    <div class="acciones">
+      <button class="btn-plat btn-plat--secundario" id="btnEditar">Cambiar mis respuestas</button>
+      <button class="btn-plat btn-plat--primario" id="btnOficial">Ver en formato oficial</button>
+      <button class="btn-plat btn-plat--secundario" id="btnImprimir"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.5 9V3.5h11V9"/><path d="M6.5 17.5H5A2 2 0 0 1 3 15.5v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1.5"/><path d="M6.5 14h11v6.5h-11z"/></svg> Imprimir / PDF</button>
+      <a class="btn-plat btn-plat--primario" href="index.html">Volver al tablero →</a>
+    </div>
+  </section>
+
+</main>
+
+<script type="module">
+import './js/shell.js';
+import { Store } from './js/store.js';
+import { pintarBarraFlujo, completar, registrarDocumento } from './js/flow.js';
+import { ENCUESTA, FORMATO_ATENCION as FA, CEDULA_SERVICIO as CS } from './js/data-portafolio.js';
+import { montarFirma, firmaGuardada, sellar } from './js/firma.js';
+import { icono as ico } from './js/iconos.js';
+import { documentoEncuesta } from './js/doc-registro.js';
+import { abrirDocumento } from './js/doc-plan-oficial.js';
+
+const MODULO = 'encuesta';
+const $ = id => document.getElementById(id);
+
+const vistas = { form:$('vForm'), gracias:$('vGracias') };
+const mostrar = n => {
+  Object.entries(vistas).forEach(([k, el]) => el.hidden = (k !== n));
+  window.scrollTo({ top:0, behavior:'smooth' });
+};
+
+let datos = Store.get(MODULO, {});
+const respuestas = datos.respuestas || {};
+const total = ENCUESTA.preguntas.length;
+/* Formato de Atención a Usuarios y Cédula de Evaluación del Servicio */
+const atencion = { medio: '', otro: '', r: {}, ...(datos.atencion || {}) };
+const servicio = { medio: '', otro: '', r: {}, comentarios: '', ...(datos.servicio || {}) };
+const faltanFormatos = () => {
+  const f = [];
+  if (!atencion.medio || (atencion.medio === 'Otro' && !atencion.otro.trim())) f.push('fa-medio');
+  FA.preguntas.forEach((_, i) => { if (FA.escala[atencion.r[i]] === undefined) f.push('fa-' + i); });
+  if (!servicio.medio || (servicio.medio === 'Otro' && !servicio.otro.trim())) f.push('cs-medio');
+  CS.aspectos.forEach((_, i) => { if (CS.escala[servicio.r[i]] === undefined) f.push('cs-' + i); });
+  return f;
+};
+
+/* Solo cuentan las respuestas a preguntas que existen y con un valor de la
+   escala. Contar Object.keys(respuestas) daba "8 de 7 contestadas" si el
+   cuestionario se acortaba o si un respaldo traía una clave de más. */
+const contestada = i => Number.isInteger(respuestas[i]) && ENCUESTA.escala[respuestas[i]] !== undefined;
+
+/* Lo que el candidato firma: sus respuestas, textuales. Un "firmó la
+   encuesta" sin el contenido no dice qué fue lo que firmó. */
+const textoFirmado = () =>
+  'Encuesta de Satisfacción del CONOCER — mis respuestas:\n' +
+  ENCUESTA.preguntas.map((p, i) => `${i + 1}. ${p} — ${ENCUESTA.escala[respuestas[i]] ?? 'sin respuesta'}`).join('\n') +
+  `\n\n${FA.titulo} Medio de contacto: ${atencion.medio === 'Otro' ? atencion.otro : atencion.medio}\n` +
+  FA.preguntas.map((p, i) => `${i + 1}. ${p} — ${FA.escala[atencion.r[i]] ?? 'sin respuesta'}`).join('\n') +
+  `\n\n${CS.titulo}. Medio por el cual contactó: ${servicio.medio === 'Otro' ? servicio.otro : servicio.medio}\n` +
+  CS.aspectos.map((p, i) => `${p} — ${CS.escala[servicio.r[i]] ?? 'sin respuesta'}`).join('\n') +
+  (servicio.comentarios.trim() ? `\nComentarios y/o sugerencias: ${servicio.comentarios.trim()}` : '');
+
+/* Cualquier cambio en lo firmado reabre la encuesta (ver respuestas). */
+function tocar(extra) {
+  if (Store.get(MODULO).completado) {
+    Store.merge(MODULO, { ...extra, completado:false, sello:null });
+    registrarDocumento(MODULO, 'encuesta', false);
+  } else Store.merge(MODULO, extra);
+}
+const escala = (pref, i, ops, valor) => `<div class="enc-ops" role="group" aria-labelledby="${pref}${i}">
+  ${ops.map((op, k) => `<button type="button" class="enc-op ${valor === k ? 'sel' : ''}" data-f="${pref}" data-i="${i}" data-k="${k}"
+    aria-pressed="${valor === k}" ${Store.soloLectura ? 'disabled' : ''}><span class="enc-op-r" aria-hidden="true"></span><span>${op}</span></button>`).join('')}</div>`;
+const medios = (pref, lista, obj) => `<div class="enc-preg" data-falta="${pref}-medio"><div class="enc-txt" id="${pref}M">${pref === 'fa' ? 'Medio de contacto' : 'Medio por el cual contactó a la organización o persona que le realizó la evaluación'}</div>
+  <div class="enc-ops" role="radiogroup" aria-labelledby="${pref}M">${lista.map(m => `<button type="button" class="enc-op ${obj.medio === m ? 'sel' : ''}" data-medio="${pref}" data-v="${m}" aria-pressed="${obj.medio === m}" ${Store.soloLectura ? 'disabled' : ''}><span class="enc-op-r" aria-hidden="true"></span><span>${m}</span></button>`).join('')}</div>
+  <input class="enc-otro" data-otro="${pref}" placeholder="Escriba el medio" aria-label="Otro medio" value="${String(obj.otro).replace(/"/g, '&quot;')}" ${obj.medio === 'Otro' ? '' : 'hidden'} ${Store.soloLectura ? 'disabled' : ''}></div>`;
+function pintarFormatos() {
+  $('formatos').innerHTML = `
+    <h3 style="margin:6px 0 4px">${FA.titulo}</h3>
+    ${medios('fa', FA.medios, atencion)}
+    <p class="pn-nota">Tache la opción que defina la forma en que recibió la atención.</p>
+    ${FA.preguntas.map((p, i) => `<div class="enc-preg" data-falta="fa-${i}"><div class="enc-txt" id="fa${i}"><span class="enc-n" aria-hidden="true">${i + 1}</span>${p}</div>${escala('fa', i, FA.escala, atencion.r[i])}</div>`).join('')}
+    <h3 style="margin:22px 0 4px">${CS.titulo}</h3>
+    ${medios('cs', CS.medios, servicio)}
+    <p class="pn-nota">Marque la opción que usted considere adecuada de acuerdo a su opinión. Si alguno de los aspectos a evaluar no aplica marque NA.</p>
+    ${CS.aspectos.map((p, i) => `<div class="enc-preg" data-falta="cs-${i}"><div class="enc-txt" id="cs${i}"><span class="enc-n" aria-hidden="true">${i + 1}</span>${p}</div>${escala('cs', i, CS.escala, servicio.r[i])}</div>`).join('')}
+    <label class="enc-txt" for="csCom" style="display:block;margin-top:14px">Comentarios y/o sugerencias (opcional)</label>
+    <textarea id="csCom" rows="3" class="enc-otro" style="width:100%" ${Store.soloLectura ? 'disabled' : ''}>${servicio.comentarios.replace(/</g, '&lt;')}</textarea>`;
+}
+$('formatos').addEventListener('click', e => {
+  if (Store.soloLectura) return;
+  const m = e.target.closest('[data-medio]');
+  if (m) {
+    const obj = m.dataset.medio === 'fa' ? atencion : servicio;
+    obj.medio = m.dataset.v;
+    m.parentElement.querySelectorAll('.enc-op').forEach(b => { const sel = b === m; b.classList.toggle('sel', sel); b.setAttribute('aria-pressed', sel); });
+    m.closest('.enc-preg').querySelector('[data-otro]').hidden = obj.medio !== 'Otro';
+    m.closest('.enc-preg').querySelector('.enc-falta')?.remove();
+    tocar({ atencion, servicio }); return;
+  }
+  const b = e.target.closest('.enc-op[data-f]'); if (!b) return;
+  const obj = b.dataset.f === 'fa' ? atencion : servicio;
+  obj.r[b.dataset.i] = Number(b.dataset.k);
+  b.parentElement.querySelectorAll('.enc-op').forEach(x => { const sel = x === b; x.classList.toggle('sel', sel); x.setAttribute('aria-pressed', sel); });
+  b.closest('.enc-preg').querySelector('.enc-falta')?.remove();
+  tocar({ atencion, servicio });
+});
+$('formatos').addEventListener('input', e => {
+  if (e.target.dataset.otro) { (e.target.dataset.otro === 'fa' ? atencion : servicio).otro = e.target.value; tocar({ atencion, servicio }); }
+  if (e.target.id === 'csCom') { servicio.comentarios = e.target.value; tocar({ atencion, servicio }); }
+});
+
+function pintar() {
+  $('preguntas').innerHTML = ENCUESTA.preguntas.map((p, i) => `
+    <div class="enc-preg" data-i="${i}">
+      <div class="enc-txt" id="encP${i}"><span class="enc-n" aria-hidden="true">${i + 1}</span>${p}</div>
+      <div class="enc-ops" role="group" aria-labelledby="encP${i}">
+        ${ENCUESTA.escala.map((op, k) => `
+          <button type="button" class="enc-op ${respuestas[i] === k ? 'sel' : ''}" data-i="${i}" data-k="${k}"
+                  aria-pressed="${respuestas[i] === k}" ${Store.soloLectura ? 'disabled' : ''}>
+            <span class="enc-op-r" aria-hidden="true"></span><span>${op}</span>
+          </button>`).join('')}
+      </div>
+    </div>`).join('');
+
+  actualizar();
+}
+
+function actualizar() {
+  const n = ENCUESTA.preguntas.filter((_, i) => contestada(i)).length;
+  $('barra').style.width = Math.round((n / total) * 100) + '%';
+  $('contador').textContent = `${n} de ${total} contestadas`;
+}
+
+function pintarFirma() {
+  $('faltaFirma').hidden = true;
+  if (Store.soloLectura) {
+    $('firmaEnc').innerHTML = '<p class="pn-nota">Vista de solo lectura.</p>';
+    return;
+  }
+  montarFirma($('firmaEnc'), {
+    nombreSugerido: Store.get('candidato', {}).nombre || '',
+    onCambio: () => { $('faltaFirma').hidden = !!firmaGuardada(); },
+  });
+}
+
+$('preguntas').addEventListener('click', e => {
+  const btn = e.target.closest('.enc-op');
+  if (!btn || Store.soloLectura) return;
+  const i = Number(btn.dataset.i), k = Number(btn.dataset.k);
+  if (respuestas[i] === k) return;
+  respuestas[i] = k;
+
+  /* Cambiar una respuesta de una encuesta ya firmada invalida la firma: lo
+     firmado ya no es lo que dice. Se reabre y hay que registrarla otra vez,
+     en vez de dejar un sello que no corresponde al contenido. */
+  if (Store.get(MODULO).completado) {
+    Store.merge(MODULO, { respuestas, completado:false, sello:null });
+    registrarDocumento(MODULO, 'encuesta', false);
+  } else {
+    Store.merge(MODULO, { respuestas });
+  }
+
+  btn.closest('.enc-ops').querySelectorAll('.enc-op').forEach(b => {
+    const sel = Number(b.dataset.k) === k;
+    b.classList.toggle('sel', sel);
+    b.setAttribute('aria-pressed', sel);
+  });
+  btn.closest('.enc-preg').querySelector('.enc-falta')?.remove();
+  actualizar();
+});
+
+$('btnEnviar').onclick = () => {
+  if (Store.soloLectura) return;
+  const faltan = ENCUESTA.preguntas.map((_, i) => i).filter(i => !contestada(i));
+  const faltanF = faltanFormatos();
+  faltanF.forEach(k => {
+    const bloque = $('formatos').querySelector(`[data-falta="${k}"]`);
+    if (bloque && !bloque.querySelector('.enc-falta'))
+      bloque.insertAdjacentHTML('beforeend', `<div class="enc-falta" role="alert">${/medio/.test(k) ? 'Elige el medio.' : 'Falta contestar este aspecto.'}</div>`);
+  });
+
+  if (faltan.length) {
+    faltan.forEach(i => {
+      const bloque = $('preguntas').querySelector(`.enc-preg[data-i="${i}"]`);
+      if (!bloque.querySelector('.enc-falta')) {
+        bloque.insertAdjacentHTML('beforeend',
+          '<div class="enc-falta" role="alert">Falta contestar esta pregunta.</div>');
+      }
+    });
+    $('preguntas').querySelector(`.enc-preg[data-i="${faltan[0]}"]`)
+                  .scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+
+  /* Antes la encuesta guardaba `completado` pero nunca registraba el
+     documento 'encuesta', que es lo que flow.js exige para cerrar el paso.
+     Un candidato que la contestaba completa se quedaba con el paso abierto
+     y Evidencias bloqueada detrás — sin ningún mensaje que dijera por qué.
+     Las pruebas no lo veían porque sembraban el documento a mano. */
+  if (faltanF.length) {
+    $('formatos').querySelector(`[data-falta="${faltanF[0]}"]`).scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+
+  const sello = sellar(textoFirmado());
+  if (!sello) {
+    $('faltaFirma').innerHTML = `${ico('alerta', 15)} Falta tu firma para registrar la encuesta.`;
+    $('faltaFirma').hidden = false;
+    $('cardFirma').scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+
+  const fecha = new Date().toISOString();
+  completar(MODULO, { respuestas, atencion, servicio, fecha, sello });
+  registrarDocumento(MODULO, 'encuesta', { fecha, enLinea:true });
+  pintarBarraFlujo($('pasos'), MODULO);
+  pintarResumen();
+  mostrar('gracias');
+};
+
+function pintarResumen() {
+  $('resumen').innerHTML = ENCUESTA.preguntas.map((p, i) => `
+    <div style="padding:11px 0;border-bottom:1px solid var(--border)">
+      <div style="color:var(--mid);font-size:.87rem;line-height:1.5">${i + 1}. ${p}</div>
+      <div style="color:var(--spoke-deep);font-weight:700;font-size:.88rem;margin-top:4px">
+        ${ENCUESTA.escala[respuestas[i]] ?? '—'}
+      </div>
+    </div>`).join('');
+
+  const fila = (t, v) => `<div style="padding:8px 0;border-bottom:1px solid var(--border)"><div style="color:var(--mid);font-size:.85rem">${t}</div>
+      <div style="color:var(--spoke-deep);font-weight:700;font-size:.86rem;margin-top:3px">${v ?? '—'}</div></div>`;
+  $('resumen').insertAdjacentHTML('beforeend', `<h3 style="margin:18px 0 4px">${FA.titulo}</h3>`
+    + fila('Medio de contacto', atencion.medio === 'Otro' ? atencion.otro : atencion.medio)
+    + FA.preguntas.map((p, i) => fila(`${i + 1}. ${p}`, FA.escala[atencion.r[i]])).join('')
+    + `<h3 style="margin:18px 0 4px">Cédula de Evaluación del Servicio</h3>`
+    + fila('Medio por el cual contactó', servicio.medio === 'Otro' ? servicio.otro : servicio.medio)
+    + CS.aspectos.map(p => fila(p, CS.escala[servicio.r[CS.aspectos.indexOf(p)]])).join('')
+    + (servicio.comentarios.trim() ? fila('Comentarios y/o sugerencias', servicio.comentarios.replace(/</g, '&lt;')) : ''));
+
+  const s = Store.get(MODULO).sello;
+  $('resumenFirma').innerHTML = s?.fecha ? `
+    <p class="ev-sellada" style="margin-top:14px">${ico('cheque', 15)}
+      Firmada el ${new Date(s.fecha).toLocaleDateString('es-MX', { day:'numeric', month:'long', year:'numeric' })}</p>` : '';
+}
+
+$('btnEditar').onclick   = () => { pintar(); pintarFormatos(); pintarFirma(); mostrar('form'); };
+$('btnImprimir').onclick = () => window.print();
+/* Las tres hojas que contestaste, como van en tu portafolio */
+$('btnOficial').onclick = () => abrirDocumento(documentoEncuesta({ enc: Store.get(MODULO, {}), cand: Store.get('candidato', {}), firma: firmaGuardada() }));
+
+/* ── Arranque ─────────────────────────────────────────────────────────── */
+pintarBarraFlujo($('pasos'), MODULO);
+pintar();
+pintarFormatos();
+pintarFirma();
+if (Store.soloLectura) $('btnEnviar').disabled = true;
+if (datos.completado) { pintarResumen(); mostrar('gracias'); }
+else mostrar('form');
+</script>
+</body>
+</html>

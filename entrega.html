@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entrega — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  .chk-row {
+    display:flex; gap:12px; align-items:center; padding:12px 0;
+    border-bottom:1px solid var(--border)
+  }
+  .chk-row:last-child { border-bottom:none }
+  .chk-ico { flex:0 0 26px; font-size:1.1rem; text-align:center }
+  .chk-t { flex:1; color:var(--dark); font-size:.9rem }
+  .chk-t small { display:block; color:var(--muted); font-size:.78rem; margin-top:2px }
+  .chk-est { font-weight:700; font-size:.8rem; white-space:nowrap }
+  .est-ok    { color:var(--spoke-deep) }
+  .est-falta { color:var(--warn) }
+  .est-espera{ color:#1D4ED8 }
+  .est-pago  { color:#B45309 }
+
+  .espera {
+    text-align:center; padding:30px 24px; border-radius:12px;
+    background:linear-gradient(135deg,#0d2a6e,#0a1f52); color:#fff; margin-bottom:20px
+  }
+  .espera-ico { font-size:2.6rem; line-height:1 }
+  .espera h2 { color:#fff; margin:14px 0 8px }
+  .espera p { color:rgba(255,255,255,.88); font-size:.93rem; margin:0 auto; line-height:1.7; max-width:46ch }
+
+  .sello {
+    text-align:center; padding:30px 24px; border-radius:12px;
+    background:linear-gradient(135deg,#059669,#047857); color:#fff; margin-bottom:20px
+  }
+  .sello-ico { font-size:2.8rem; line-height:1 }
+  .sello h2 { color:#fff; margin:14px 0 8px }
+  .sello p { color:rgba(255,255,255,.92); font-size:.93rem; margin:0 auto; line-height:1.7; max-width:46ch }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <div class="plat-head">
+    <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15.5a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5z"/><path d="M8.4 14.3 7 22l5-2.8L17 22l-1.4-7.7"/></svg></div>
+    <h1>Entrega</h1>
+    <p>El cierre de tu proceso. Este paso lo marca tu Centro Evaluador.</p>
+  </div>
+
+  <div id="estadoWrap"></div>
+
+  <div class="card">
+    <h2>Tu expediente</h2>
+    <p style="color:var(--muted);font-size:.86rem;margin-bottom:6px">
+      Se llena solo conforme avanzas. Esto es lo que tu evaluador ve de tu proceso.
+    </p>
+    <div id="checklist"></div>
+  </div>
+
+  <div class="card">
+    <h2>Llévate tu respaldo</h2>
+    <p style="color:var(--mid);font-size:.89rem;line-height:1.7;margin-bottom:14px">
+      Todo tu avance vive en <strong>este navegador</strong>. Descarga el respaldo y mándaselo a
+      tu Centro Evaluador: es el archivo que cargan en su panel para ver tu expediente
+      completo. Guárdalo también como comprobante.
+    </p>
+    <div class="acciones" style="justify-content:flex-start;margin-top:0">
+      <button class="btn-plat btn-plat--primario"  id="btnRespaldo"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3.5"/><path d="M7.5 11 12 15.5 16.5 11"/><path d="M12 3v12.5"/></svg> Descargar mi respaldo</button>
+      <button class="btn-plat btn-plat--secundario" id="btnImprimir"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.5 9V3.5h11V9"/><path d="M6.5 17.5H5A2 2 0 0 1 3 15.5v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1.5"/><path d="M6.5 14h11v6.5h-11z"/></svg> Imprimir esta lista</button>
+    </div>
+  </div>
+
+  <div class="acciones">
+    <a class="btn-plat btn-plat--secundario" href="index.html">Volver al tablero</a>
+  </div>
+
+</main>
+
+<script type="module">
+import './js/shell.js';
+import { icono, iconoDe } from './js/iconos.js';
+import { Store }  from './js/store.js';
+import { avanceDeReforzamiento } from './js/brechas.js';
+import { deFechaLocal } from './js/fechas.js';
+import { pintarBarraFlujo, estadoDelFlujo, avanceGlobal,
+         faseAutorizada, ESTADO } from './js/flow.js';
+import { CONFIG } from './js/config.js';
+import { candidato } from './js/panel.js';
+
+const MODULO = 'entrega';
+const $ = id => document.getElementById(id);
+
+const ETIQUETA = {
+  [ESTADO.COMPLETADO]: ['✓ Listo',       'est-ok'],
+  [ESTADO.EN_CURSO]:   ['En curso',      'est-falta'],
+  [ESTADO.DISPONIBLE]: ['Pendiente',     'est-falta'],
+  [ESTADO.BLOQUEADO]:  ['Bloqueado',     'est-falta'],
+  [ESTADO.ESPERANDO]:  ['Con el Centro', 'est-espera'],
+  [ESTADO.SIN_PAGO]:   ['Por habilitar', 'est-pago'],
+  [ESTADO.PENDIENTE]:  ['No disponible', 'est-falta'],
+};
+
+function detalle(m) {
+  const d = Store.get(m.id);
+  if (m.id === 'autodiagnostico' && d.porcentaje != null) return `${d.porcentaje}% de cobertura`;
+  /* El examen guarda `score`, no `porcentaje`: esta línea salía vacía. */
+  if (m.id === 'examen' && (d.score ?? d.porcentaje) != null)
+    return `calificación ${d.score ?? d.porcentaje}%${d.aprobado ? '' : ' · sin aprobar'}`;
+  if (m.id === 'practica'  && d.completados != null) return `${d.completados} de ${d.requeridos || 20} temas completados`;
+  if (m.id === 'practica'  && d.porcentaje != null) return `${d.porcentaje}% en los autocalificables`;
+  if (m.id === 'reforzamiento' && d.temas != null) {
+    const av = avanceDeReforzamiento();
+    return `${av.repasados} de ${av.temas} temas repasados`;
+  }
+  if (m.id === 'plan' && d.fFecha) {
+    const f = deFechaLocal(d.fFecha);
+    return `evaluación el ${isNaN(f) ? d.fFecha
+      : f.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  }
+  if (m.docs?.length) {
+    const puestos = m.docs.filter(k => {
+      const v = (d.documentos || {})[k];
+      return Array.isArray(v) ? v.length > 0 : !!v;
+    }).length;
+    return `${puestos} de ${m.docs.length} documentos`;
+  }
+  return '';
+}
+
+function pintar() {
+  const flujo = estadoDelFlujo();
+  const otros = flujo.filter(m => m.id !== MODULO && m.listo);
+  const faltan = otros.filter(m => m.estado !== ESTADO.COMPLETADO);
+  const entregado = faseAutorizada('entrega');
+
+  $('checklist').innerHTML = otros.map(m => {
+    const [txt, cls] = ETIQUETA[m.estado] || ['—', 'est-falta'];
+    const det = detalle(m);
+    return `<div class="chk-row">
+      <span class="chk-ico">${icono(iconoDe(m.id), 17)}</span>
+      <span class="chk-t">${m.nombre}${det ? `<small>${det}</small>` : ''}</span>
+      <span class="chk-est ${cls}">${txt}</span>
+    </div>`;
+  }).join('');
+
+  /* Este paso NO lo cierra el candidato. Antes esta pantalla dejaba que se
+     marcara solo, lo que equivalía a auto-certificarse. Ahora solo refleja
+     lo que el Centro Evaluador haya autorizado. */
+  $('estadoWrap').innerHTML = entregado
+    ? `<div class="sello">
+         <div class="sello-ico"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15.5a6.25 6.25 0 1 0 0-12.5 6.25 6.25 0 0 0 0 12.5z"/><path d="M8.4 14.3 7 22l5-2.8L17 22l-1.4-7.7"/></svg></div>
+         <h2>Proceso concluido</h2>
+         <p>Tu Centro Evaluador registró la entrega de tu resultado.
+            Guarda tu respaldo como comprobante de todo lo que trabajaste.</p>
+       </div>
+       <div class="card">
+         <h2>Qué sigue con tu certificado</h2>
+         <ul style="color:var(--mid);font-size:.92rem;line-height:1.8;margin:0 0 12px 18px;padding:0">
+           <li><strong>Trámite ante la SEP-CONOCER:</strong> tu Centro envía tu portafolio y el certificado se emite en un plazo de hasta 90 días naturales después de la entrega de resultados.</li>
+           <li><strong>Te avisamos por WhatsApp</strong> en cuanto llegue; también lo verás en <a href="cedula.html">Mi Cédula</a>, en la línea de tiempo del trámite.</li>
+           <li><strong>Entrega:</strong> tu Centro te dice cómo lo recibes (en persona o a domicilio).</li>
+         </ul>
+         <a class="btn-plat btn-plat--primario" target="_blank" rel="noopener"
+            href="https://wa.me/${CONFIG.marca.whatsapp}?text=${encodeURIComponent('Hola, soy ' + (candidato().nombre || '') + '. Ya pagué la Entrega de mi certificado EC1375. ¿Cómo va el trámite?')}">Preguntar el estatus por WhatsApp</a>
+       </div>`
+    : faltan.length
+    ? `<div class="card">
+         <h2>Todavía te faltan pasos</h2>
+         <p style="color:var(--mid);font-size:.92rem;line-height:1.7">
+           Te queda${faltan.length === 1 ? '' : 'n'} <strong>${faltan.length}</strong>
+           módulo${faltan.length === 1 ? '' : 's'} por cerrar:
+           ${faltan.map(m => m.nombre).join(', ')}.
+           Tu avance general va en <strong>${avanceGlobal()}%</strong>.
+         </p>
+       </div>`
+    : `<div class="espera">
+         <div class="espera-ico">⏳</div>
+         <h2>Esperando a tu evaluador</h2>
+         <p>Terminaste todo lo que te toca. La entrega del resultado la registra el
+            Centro Evaluador — no es algo que puedas marcar tú. Te contactarán en cuanto
+            esté listo.</p>
+       </div>`;
+
+  pintarBarraFlujo($('pasos'), MODULO);
+}
+
+$('btnRespaldo').onclick = () => Store.descargarRespaldo();
+$('btnImprimir').onclick = () => window.print();
+
+pintar();
+</script>
+</body>
+</html>

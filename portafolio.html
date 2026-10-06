@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Portafolio de Evidencias — Certificación EC1375 · POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style id="cssAvance"></style>
+<style>
+  .pf-donde { display:grid; grid-template-columns: 44px 1fr; gap:12px; align-items:start }
+  .pf-donde .ico { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; background:var(--spoke-pale, #ecfdf5); color:var(--spoke-deep, #047857); font-size:1.3rem }
+  .pf-donde p { margin:4px 0 0; color:var(--mid); font-size:.9rem; line-height:1.55 }
+  .pf-medidor { height:8px; background:var(--border); border-radius:5px; overflow:hidden; margin-top:8px; max-width:420px }
+  .pf-medidor span { display:block; height:100%; background:#0d2a6e }
+  .pf-acciones { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px }
+  .pf-hist { list-style:none; margin:0; padding:0 }
+  .pf-hist li { display:grid; grid-template-columns: 120px 1fr; gap:10px; padding:7px 0; border-bottom:1px dashed var(--border); font-size:.88rem }
+  .pf-hist time { color:var(--muted); font-variant-numeric: tabular-nums }
+  .pf-hist small { color:var(--muted) }
+  .pf-nota { font-size:.84rem; color:var(--muted); margin:8px 0 0 }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+  <div class="plat-head" data-tuto-ancla>
+    <h1>Mi Portafolio de Evidencias</h1>
+    <p>Se arma solo, con lo que vas llenando en cada paso. Aquí ves qué ya quedó guardado, de dónde salió y qué falta. Al final tu Centro Evaluador lo consolida y lo envía al CONOCER.</p>
+  </div>
+
+  <section class="card" id="cardDonde"><p>Revisando dónde está guardado…</p></section>
+
+  <section class="card">
+    <h2>Tu portafolio, sección por sección</h2>
+    <p class="pf-nota" style="margin-top:0">En el orden del FORMATO PORTAFOLIO-1375-2026. ○ te toca · ⏳ lo pone tu Centro · ✓ ya está guardado.</p>
+    <div id="avance"><p>Cargando…</p></div>
+    <div class="pf-acciones">
+      <button class="btn-plat btn-plat--primario" id="btnVer">Ver mi portafolio como va</button>
+      <button class="btn-plat btn-plat--secundario" id="btnRespaldo">Descargar mi respaldo</button>
+    </div>
+    <p class="pf-nota">«Ver mi portafolio» lo arma con lo que llevas, con todas sus hojas; lo que falta sale como hoja pendiente. El IEC y la Verificación Interna no se muestran aquí: son del Centro.</p>
+  </section>
+
+  <section class="card">
+    <h2>Lo último que se guardó</h2>
+    <ul class="pf-hist" id="historial"><li>Cargando…</li></ul>
+  </section>
+</main>
+
+<script type="module">
+/* v47 · Fernando: «que se pueda ver cómo se va almacenando la información
+   hasta crear el portafolio de evidencias final… si de momento no tiene una
+   nube, que se guarde en la memoria de la computadora que la esté usando».
+   Esta página no guarda nada nuevo: lee lo que cada paso ya guardó (en este
+   navegador, o en la nube si está encendida) y lo enseña ordenado como el
+   portafolio. */
+import './js/shell.js';
+import { Store } from './js/store.js';
+import { CONFIG } from './js/config.js';
+import { pintarBarraFlujo } from './js/flow.js';
+import { leerRespaldo } from './js/expediente.js';
+import { estadoPortafolio, htmlAvance, CSS_AVANCE } from './js/portafolio-avance.js';
+import { esc } from './js/seguro.js';
+
+const $ = id => document.getElementById(id);
+$('cssAvance').textContent = CSS_AVANCE;
+pintarBarraFlujo($('pasos'), null);
+
+const mb = n => (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB';
+
+async function expedienteMio() {
+  const r = leerRespaldo(JSON.stringify(Store.exportar()), 'mi-avance.json');
+  return r.ok ? r.expediente : { estado: {}, candidato: Store.get('candidato', {}) };
+}
+async function evaluacionMia() {
+  try { return (await (await import('./js/resultado.js')).miEvaluacion()) || {}; } catch { return {}; }
+}
+
+/* ── Dónde vive lo guardado ── */
+async function pintarDonde() {
+  const local = Store.esLocal;
+  let uso = 0, cuota = 0, protegido = false;
+  try { const e = await navigator.storage?.estimate?.(); uso = e?.usage || 0; cuota = e?.quota || 0; } catch {}
+  try { protegido = !!(await navigator.storage?.persisted?.()); } catch {}
+  const pct = cuota ? Math.min(100, Math.max(1, Math.round(uso / cuota * 100))) : 0;
+  $('cardDonde').innerHTML = `<div class="pf-donde"><span class="ico" aria-hidden="true">${local ? '💻' : '☁️'}</span><div>
+    <h2 style="margin:0">${local ? 'Guardado en este equipo' : 'Guardado en la nube de tu Centro'}</h2>
+    <p>${local
+      ? `Todo lo que llenas y subes se queda en <b>este navegador</b>, en <b>${esc(location.host || 'este equipo')}</b>: tus respuestas, tus firmas y tus archivos (fotos y PDF). No necesitas internet para seguir avanzando. Si cambias de computadora o de navegador, descarga tu respaldo aquí abajo y restáuralo en el otro.`
+      : 'Lo que llenas se guarda en este equipo y se sube a la nube de tu Centro Evaluador: puedes seguir desde cualquier computadora con tu correo y contraseña.'}</p>
+    ${cuota ? `<div class="pf-medidor" title="${mb(uso)} de ${mb(cuota)}"><span style="width:${pct}%"></span></div>
+      <p style="font-size:.8rem">Ocupa ${mb(uso)} de los ${mb(cuota)} que este navegador le da a la plataforma.${protegido ? ' ✓ El navegador no lo borrará por falta de espacio.' : ''}</p>` : ''}
+  </div></div>`;
+}
+
+/* ── Historial: lo último que se guardó, con su fecha ── */
+function historial(x) {
+  const ev = [];
+  const nombreDe = id => [...CONFIG.flujo, ...(CONFIG.consulta || [])].find(m => m.id === id)?.nombre || (id === 'candidato' ? 'Ficha de Registro' : id);
+  const NOM = { curp: 'CURP', ine: 'INE', zoom: 'Captura de tu sesión', fotoDiploma: 'Foto para el diploma', certificados: 'Certificado', fotoRegistro: 'Foto de tu Ficha', encuesta: 'Encuesta contestada', acusePlanEvaluacion: 'Acuse del Plan firmado' };
+  const fuentes = [['candidato', x.candidato?.documentos || {}], ...Object.entries(x.estado || {}).map(([m, v]) => [m, v?.datos?.documentos || {}])];
+  for (const [m, docs] of fuentes) for (const [k, v] of Object.entries(docs)) {
+    (Array.isArray(v) ? v : [v]).forEach(a => {
+      if (!a || typeof a !== 'object' || !a.fecha) return;
+      const que = NOM[k] || (k.startsWith('firmado_') ? 'Formato firmado' : k.startsWith('cert_') ? 'Certificado' : CONFIG.documentos?.[k]?.nombre || k);
+      ev.push({ f: a.fecha, t: `${que}${a.nombre && !a.generado && !a.enLinea ? ` · ${a.nombre}` : ''}${a.paginas ? ` (PDF ${a.paginas} pág.)` : ''}`, de: nombreDe(m) });
+    });
+  }
+  const t = x.estado?.autodiagnostico?.datos?.triptico; if (t?.fecha) ev.push({ f: t.fecha, t: 'Firmaste el acuse del Tríptico', de: 'Autodiagnóstico' });
+  const e = x.estado?.encuesta?.datos?.sello; if (e?.fecha) ev.push({ f: e.fecha, t: 'Firmaste tu Encuesta', de: 'Encuesta de Satisfacción' });
+  const s = x.estado?.documentos?.datos?.sesionGenerada; if (s?.fecha) ev.push({ f: s.fecha, t: 'Generaste los formatos de tu sesión (DOC 1–4)', de: 'Documentos de Sesión' });
+  ev.sort((a, b) => String(b.f).localeCompare(String(a.f)));
+  const fmt = f => { const d = new Date(f); return isNaN(d) ? f : d.toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); };
+  $('historial').innerHTML = ev.length ? ev.slice(0, 20).map(i => `<li><time>${esc(fmt(i.f))}</time><span>${esc(i.t)}<br><small>${esc(i.de)}</small></span></li>`).join('')
+    : '<li><span>Todavía no hay nada guardado. Empieza por tu Autodiagnóstico.</span></li>';
+}
+
+let x = null, ev = {};
+async function pintar() {
+  [x, ev] = await Promise.all([expedienteMio(), evaluacionMia()]);
+  $('avance').innerHTML = htmlAvance(estadoPortafolio(x, ev));
+  historial(x);
+}
+
+$('btnVer').onclick = async () => {
+  const w = window.open('', '_blank');
+  if (w) w.document.write('<p style="font:16px system-ui;padding:24px">Armando tu portafolio con lo que llevas…</p>');
+  const btn = $('btnVer'), antes = btn.textContent;
+  const [{ htmlPortafolio }, { imagenesDe }] = await Promise.all([import('./js/doc-portafolio.js'), import('./js/portafolio-imagenes.js')]);
+  const html = htmlPortafolio({ expediente: x, evaluacion: ev || {}, lote: '', vistaCandidato: true,
+    imagenes: await imagenesDe(x, t => { btn.textContent = t; }) });
+  btn.textContent = antes;
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  if (w) w.location.href = url; else location.href = url;
+};
+$('btnRespaldo').onclick = () => Store.descargarRespaldo();
+
+pintarDonde();
+pintar();
+</script>
+</body>
+</html>

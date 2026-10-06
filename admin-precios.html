@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Precios y pagos — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<link rel="stylesheet" href="admin-styles.css">
+<style>
+  input.monto { font:inherit; font-size:.82rem; padding:5px 7px; width:84px;
+                border:1px solid var(--border); border-radius:5px; text-align:right }
+  .nom { font-weight:600; color:var(--dark) }
+  .sub { color:var(--muted); font-size:.76rem; display:block; margin-top:2px }
+
+  .fase-chip { display:inline-block; font:inherit; font-size:.76rem; font-weight:600;
+               padding:5px 9px; margin:2px; border-radius:6px; cursor:pointer;
+               border:1px solid var(--border); background:var(--white); color:var(--muted) }
+  .fase-chip.on  { background:#ECFDF5; border-color:#059669; color:#065F46 }
+  .fase-chip.mp  { background:#EFF6FF; border-color:#1D4ED8; color:#1E3A8A }
+  .fase-chip.armado { background:#FEF2F2; border-color:#DC2626; color:#991B1B }
+  :root[data-tema="oscuro"] .fase-chip.armado { background:#2A0E0E; border-color:#F87171; color:#FECACA }
+  .cobro-distinto { display:block; font-size:.7rem; color:var(--muted); margin-top:3px; white-space:nowrap }
+
+  .filtros { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px }
+  .buscador { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px }
+  .buscador input, .buscador select { font:inherit; font-size:.88rem; padding:7px 10px; border:1px solid var(--border); border-radius:7px }
+  .buscador input { flex:1 1 220px }
+  .cobrado-f { display:block; margin-top:4px; font-size:.72rem; color:var(--muted) }
+  .cobrado-f input { width:88px; text-align:right; font:inherit; font-size:.8rem; padding:3px 6px; border:1px solid var(--border); border-radius:6px }
+  .cobrado-f.menor input { border-color:#D97706; background:#FFFBEB }
+  .cobrado-f.menor b { color:#B45309 }
+  .filtro { padding:7px 14px; border-radius:7px; border:1px solid var(--border);
+            background:var(--white); cursor:pointer; font-size:.84rem; font-weight:600; color:var(--mid) }
+  .filtro.activo { background:#0d2a6e; border-color:#0d2a6e; color:#fff }
+
+  .alta-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+               gap:10px; align-items:end }
+  .alta-grid label { font-size:.8rem; font-weight:600; color:var(--mid); display:block }
+  .alta-grid input, .alta-grid select {
+    width:100%; font:inherit; font-size:.86rem; padding:7px 9px;
+    border:1px solid var(--border); border-radius:6px; margin-top:4px }
+
+  .sel-estado, .sel-lote { font:inherit; font-size:.8rem; padding:4px 6px;
+    border:1px solid var(--border); border-radius:5px; background:var(--white) }
+  .inp-motivo { font:inherit; font-size:.8rem; padding:5px 7px; width:130px;
+    border:1px solid var(--border); border-radius:5px }
+
+  .nota-sumas { color:var(--muted); font-size:.83rem; line-height:1.7; margin:10px 0 18px }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="ad-top">
+  <div class="ad-top-in">
+    <div>
+      <h1 class="ad-titulo">Precios y pagos</h1>
+      <div class="ad-sub">Lo acordado con cada candidato y qué fases ya pagó</div>
+    </div>
+  </div>
+</header>
+
+<main class="ad-wrap">
+
+  <div class="kpis" id="kpis"></div>
+
+  <p class="nota-sumas">
+    <strong>Cobrado</strong> incluye los pagos de quienes ya desistieron o cambiaron de lote:
+    ese dinero ya entró. <strong>Proyectado</strong> solo cuenta a los activos, porque es lo que
+    todavía se espera recibir. Las cuentas marcadas como <strong>internas</strong> no entran en
+    ninguna de las dos sumas.
+  </p>
+
+  <!-- Datos de pago que ven los candidatos (como la caja de pago de Paideia) -->
+  <details class="card" id="cardPagos">
+    <summary style="cursor:pointer;font-weight:800;font-size:1.05rem">Datos de pago para los candidatos <span id="dpEstado" style="font-weight:600;font-size:.8rem;color:var(--muted)"></span></summary>
+    <p style="color:var(--muted);font-size:.86rem;line-height:1.6">Aparecen en cada paso de una fase que el candidato todavía no ha pagado, con «Copiar CLABE» y «Enviar comprobante por WhatsApp».
+      El link de Mercado Pago se crea gratis en la app de Mercado Pago (Cobrar → Link de pago), uno por fase. Cuando llegue el comprobante, libera la fase abajo.</p>
+    <div class="dp-grid">
+      <label>Banco<input id="dpBanco" placeholder="Ej. BBVA"></label>
+      <label>Titular de la cuenta<input id="dpTitular"></label>
+      <label>Número de cuenta<input id="dpCuenta" inputmode="numeric"></label>
+      <label>CLABE (18 dígitos)<input id="dpClabe" inputmode="numeric" maxlength="22"></label>
+    </div>
+    <div class="dp-grid" id="dpFases"></div>
+    <label style="display:block;margin-top:10px;font-size:.8rem;font-weight:600;color:var(--muted)">Nota para el candidato (opcional)<input id="dpNota" maxlength="300" placeholder="Ej. Si pagas en efectivo en el Centro, pide tu recibo." style="display:block;width:100%;margin-top:4px;font:inherit;font-size:.9rem;padding:8px 10px;border:1px solid var(--border);border-radius:8px"></label>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px"><button class="btn-a btn-a--pri" id="dpGuardar">Guardar datos de pago</button><span id="dpMsg" style="font-size:.86rem"></span></div>
+    <h3 style="margin:18px 0 6px;font-size:.92rem">Así lo ve el candidato (fase Entrega)</h3><div id="dpVista" style="max-width:560px"></div>
+  </details>
+
+  <div class="card">
+    <h2>Agregar candidato</h2>
+    <p style="color:var(--mid);font-size:.88rem;line-height:1.7;margin-bottom:14px">
+      Para quien ya pagó pero todavía no ha entrado a la plataforma. Aparece en el panel desde
+      hoy y su expediente se llena solo en cuanto suba su primer respaldo.
+    </p>
+    <div class="alta-grid">
+      <div style="grid-column:span 2"><label>Correo
+        <input type="email" id="aCorreo" placeholder="nombre@correo.com"></label></div>
+      <div style="grid-column:span 2"><label>Nombre
+        <input type="text" id="aNombre" placeholder="Como viene en su INE"></label></div>
+      <div><label>Registro <input type="number" id="a_registro" min="0" step="100" placeholder="0"></label></div>
+      <div><label>Alineación <input type="number" id="a_alineacion" min="0" step="100" placeholder="0"></label></div>
+      <div><label>Evaluación <input type="number" id="a_evaluacion" min="0" step="100" placeholder="0"></label></div>
+      <div><label>Entrega <input type="number" id="a_entrega" min="0" step="100" placeholder="0"></label></div>
+      <div><label>Estado
+        <select id="aEstado"></select></label></div>
+      <div><label>Lote
+        <input type="number" id="aLote" min="1" step="1" value="1"></label></div>
+      <div><button class="btn-a btn-a--pri" id="btnAlta" style="width:100%">Agregar</button></div>
+    </div>
+    <p id="altaMsg" style="font-size:.85rem;margin-top:12px" hidden></p>
+  </div>
+
+  <div class="card">
+    <h2>Por candidato <span id="conteo" style="color:var(--muted);font-weight:400;font-size:.9rem"></span></h2>
+    <p style="color:var(--mid);font-size:.88rem;line-height:1.7;margin-bottom:6px">
+      Escribe el monto de cada fase y haz clic en la fase para liberarla. Liberarla es lo que
+      cuenta como cobrado — y es también lo que <strong>le habilita esa fase al candidato</strong>
+      en su plataforma. Vuelve a hacer clic para revocarla.
+    </p>
+    <p style="color:var(--muted);font-size:.84rem;margin-bottom:14px">
+      Los montos se guardan solos conforme escribes. El total es la suma de las cuatro fases.
+      En una fase liberada, <strong>«cobrado»</strong> es lo que de verdad entró: déjalo vacío si fue el
+      precio completo, o captura el anticipo, el pago parcial o <strong>$0 si fue beca</strong>. Lo que falte
+      queda como saldo por cobrar.
+    </p>
+
+    <div class="buscador">
+      <input type="search" id="bQ" placeholder="Buscar por nombre o correo…" aria-label="Buscar candidato">
+      <select id="bLote" aria-label="Filtrar por lote"></select>
+      <select id="bPend" aria-label="Pendientes">
+        <option value="">Todos los pendientes</option>
+        <option value="sin_precio">Sin precio capturado</option>
+        <option value="sin_fase">Sin ninguna fase liberada</option>
+        <option value="saldo">Con saldo (cobrado menor que el precio)</option>
+      </select>
+    </div>
+    <div class="filtros" id="filtros"></div>
+
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr>
+          <th>Candidato</th>
+          <th class="num">Registro</th>
+          <th class="num">Alineación</th>
+          <th class="num">Evaluación</th>
+          <th class="num">Entrega</th>
+          <th class="num">Total</th>
+          <th>Fases liberadas</th>
+          <th>Estado</th>
+          <th class="num">Lote</th>
+          <th>Motivo</th>
+          <th class="num">Cobrado</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p id="vacio" class="vacio">
+      Agrega un candidato arriba, o carga expedientes en
+      <a href="admin-candidatos.html">Candidatos</a>.
+    </p>
+  </div>
+
+</main>
+
+<script type="module">
+import './js/admin-shell.js';
+import { esc } from './js/seguro.js';
+import { CONFIG } from './js/config.js';
+import { cargar, candidatos, contables, kpis, pesos, altaManual,
+         fijarDatosComerciales, alternarFase, sellarMontosPendientes, pagoDe, ESTADOS_CANDIDATO,
+         fijarCobrado, cobradoCapturado, lotes,
+         FASES, FASE_LABEL } from './js/admin-data.js';
+
+const $ = id => document.getElementById(id);
+let filtro = 'todos';
+
+/* Revocar una fase borra el registro del pago — y si vino de Mercado Pago,
+   borra la constancia de un cobro real. Con un solo clic bastaba rozar el
+   chip. Ahora el primer clic lo arma ("¿Revocar?") y el segundo lo hace;
+   si no llega el segundo en unos segundos, se desarma solo. */
+let armado = null, desarme = null;
+
+const FILTROS = [{ id: 'todos', label: 'Todos' },
+                 ...ESTADOS_CANDIDATO.map(e => ({ id: e.id, label: e.label }))];
+
+$('aEstado').innerHTML = ESTADOS_CANDIDATO
+  .map(e => `<option value="${e.id}">${e.label}</option>`).join('');
+
+function pintar() {
+  const datos = cargar();
+  const todos = candidatos(datos);
+  const k = kpis(datos);
+
+  const cuenta = id => todos.filter(c => c.estadoComercial === id).length;
+  $('filtros').innerHTML = FILTROS.map(f => {
+    const n = f.id === 'todos' ? todos.length : cuenta(f.id);
+    return `<button class="filtro ${f.id === filtro ? 'activo' : ''}" data-f="${f.id}">
+      ${f.label} (${n})</button>`;
+  }).join('');
+
+  const lotesDisp = lotes(datos);
+  const loteSel = $('bLote').value;
+  $('bLote').innerHTML = `<option value="">Todos los lotes</option>` + lotesDisp.map(l => `<option value="${l}" ${String(l) === loteSel ? 'selected' : ''}>Lote ${l}</option>`).join('');
+  const q = $('bQ').value.trim().toLowerCase(), pend = $('bPend').value;
+  const pasa = c => {
+    if (filtro !== 'todos' && c.estadoComercial !== filtro) return false;
+    if (loteSel && String(c.lote) !== loteSel) return false;
+    if (q && !(`${c.nombre} ${c.email}`.toLowerCase().includes(q))) return false;
+    if (pend === 'sin_precio' && c.totalAcordado > 0) return false;
+    if (pend === 'sin_fase' && FASES.some(f => c.fases[f])) return false;
+    if (pend === 'saldo' && !FASES.some(f => c.fases[f] && c.saldoPorFase[f] > 0)) return false;
+    return true;
+  };
+  const lista = todos.filter(pasa);
+  $('vacio').hidden = todos.length > 0;
+  $('conteo').textContent = `${lista.length} de ${todos.length}`;
+
+  $('kpis').innerHTML = `
+    <div class="kpi"><b>${k.inscritos}</b><span>activos</span></div>
+    <div class="kpi"><b>${cuenta('desistio')}</b><span>desistieron</span></div>
+    <div class="kpi"><b>${cuenta('cambio_lote')}</b><span>cambio de lote</span></div>
+    <div class="kpi"><b>${cuenta('administrador')}</b><span>cuentas internas</span></div>
+    <div class="kpi kpi--dinero"><b>${pesos(k.ingresosTotales)}</b><span>cobrado</span></div>
+    <div class="kpi kpi--dinero"><b>${pesos(k.proyectado)}</b><span>proyectado</span></div>`;
+
+  $('tbody').innerHTML = lista.map(c => {
+    const pr = datos.precio[c.email] || {};
+    const total = FASES.reduce((s, f) => s + (pr['monto_' + f] || 0), 0);
+    const pagoFase = f => pagoDe(datos, c.email, f);
+
+    return `<tr>
+      <td>
+        <span class="nom">${esc(c.nombre)}</span>
+        <span class="sub">${esc(c.email)}</span>
+      </td>
+      ${FASES.map(f => {
+        /* Si ya se cobró a otro precio, se dice. Cambiar el precio no cambia
+           lo cobrado (ver montoCobrado en admin-data.js), y sin esta línea
+           parecería que sí. */
+        const cob = c.cobradoPorFase?.[f] || 0, pre = pr['monto_' + f] || 0, pg = pagoFase(f);
+        const menor = pg && cob < pre;
+        const nota = pg
+          ? `<label class="cobrado-f ${menor ? 'menor' : ''}">cobrado <input type="text" inputmode="numeric" data-cobrado="${esc(c.email)}" data-fase="${f}"
+               value="${cobradoCapturado(pg) ? esc(String(pg.cobrado)) : ''}" placeholder="${esc(String(cob))}" aria-label="Cobrado en ${FASE_LABEL[f]} — ${esc(c.nombre)}">${menor ? ` <b>saldo ${pesos(pre - cob)}</b>` : ''}</label>` : '';
+        return `
+        <td class="num">
+          <input class="monto" type="number" min="0" step="100"
+                 value="${pr['monto_' + f] ?? ''}"
+                 data-monto="${esc(c.email)}" data-fase="${f}" placeholder="0"
+                 aria-label="${FASE_LABEL[f]} — ${esc(c.nombre)}">${nota}
+        </td>`; }).join('')}
+      <td class="num"><strong data-total="${esc(c.email)}">${pesos(total)}</strong></td>
+      <td>${FASES.map(f => {
+        const p = pagoFase(f);
+        const esArmado = armado === `${c.email}|${f}`;
+        const cls = (!p ? '' : p.origen === 'mercadopago' ? 'on mp' : 'on') + (esArmado ? ' armado' : '');
+        /* Con palabras: 💳 y ✋ no dicen "tarjeta" y "a mano" a nadie que no
+           los haya visto antes, y en Windows salían de dos tamaños distintos. */
+        const marca = !p ? '' : p.origen === 'mercadopago' ? ' · MP' : ' · manual';
+        return `<button class="fase-chip ${cls}" data-fase-tgl="${f}" data-email="${esc(c.email)}"
+                  aria-pressed="${!!p}"
+                  title="${p ? 'Clic dos veces para revocar' : 'Clic para liberar esta fase'}">${
+                  esArmado ? `¿Revocar ${FASE_LABEL[f]}?` : FASE_LABEL[f] + marca}</button>`;
+      }).join('')}</td>
+      <td>
+        <select class="sel-estado" data-estado="${esc(c.email)}" aria-label="Estado de ${esc(c.nombre)}">
+          ${c.sinAlta ? '<option value="" selected disabled>Sin dar de alta</option>' : ''}
+          ${ESTADOS_CANDIDATO.map(e =>
+            `<option value="${e.id}" ${e.id === c.estadoComercial ? 'selected' : ''}>${e.label}</option>`).join('')}
+        </select>
+      </td>
+      <td class="num">
+        <input class="sel-lote" type="number" min="1" step="1" style="width:56px;text-align:right"
+               value="${esc(c.lote)}" data-lote="${esc(c.email)}" aria-label="Lote de ${esc(c.nombre)}">
+      </td>
+      <td><input class="inp-motivo" type="text" value="${esc(pr.motivo || '')}"
+                 data-motivo="${esc(c.email)}" placeholder="—" aria-label="Nota sobre ${esc(c.nombre)}"></td>
+      <td class="num"><strong>${pesos(c.cobrado)}</strong></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── Datos de pago ────────────────────────────────────────────────────── */
+(async () => {
+  const pg = await import('./js/pagos.js');
+  const st = document.createElement('style');
+  st.textContent = '.dp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:10px}.dp-grid label{font-size:.8rem;font-weight:600;color:var(--muted)}.dp-grid input{display:block;width:100%;margin-top:4px;font:inherit;font-size:.9rem;padding:8px 10px;border:1px solid var(--border);border-radius:8px}';
+  document.head.appendChild(st);
+  const LBL = Object.fromEntries(CONFIG.fases.map(f => [f.id, f.label]));
+  $('dpFases').innerHTML = pg.FASES_PAGO.map(f => `<label>Monto base · ${LBL[f]}<input data-dp-monto="${f}" inputmode="numeric" placeholder="Si no hay precio acordado"></label>
+    <label>Link de Mercado Pago · ${LBL[f]}<input data-dp-link="${f}" placeholder="https://mpago.la/…"></label>`).join('');
+  const leer = () => ({ banco: $('dpBanco').value, titular: $('dpTitular').value, cuenta: $('dpCuenta').value, clabe: $('dpClabe').value, nota: $('dpNota').value,
+    links: Object.fromEntries([...document.querySelectorAll('[data-dp-link]')].map(i => [i.dataset.dpLink, i.value])),
+    montos: Object.fromEntries([...document.querySelectorAll('[data-dp-monto]')].map(i => [i.dataset.dpMonto, i.value])) });
+  const vista = cfg => pg.montarPago($('dpVista'), 'entrega', cfg, { monto: Number(cfg?.montos?.entrega) || null, nombre: 'Nombre del candidato' });
+  const cfg = await pg.datosPago();
+  if (cfg) {
+    $('dpBanco').value = cfg.banco || ''; $('dpTitular').value = cfg.titular || ''; $('dpCuenta').value = cfg.cuenta || ''; $('dpClabe').value = cfg.clabe || ''; $('dpNota').value = cfg.nota || '';
+    document.querySelectorAll('[data-dp-link]').forEach(i => { i.value = cfg.links?.[i.dataset.dpLink] || ''; });
+    document.querySelectorAll('[data-dp-monto]').forEach(i => { i.value = cfg.montos?.[i.dataset.dpMonto] || ''; });
+  }
+  $('dpEstado').textContent = cfg && (cfg.clabe || Object.keys(cfg.links || {}).length) ? '· configurados' : '· sin capturar';
+  vista(cfg);
+  $('dpGuardar').onclick = async () => {
+    try { const v = await pg.guardarDatosPago(leer()); $('dpMsg').style.color = 'var(--spoke-deep)'; $('dpMsg').textContent = 'Guardados. Ya los ven los candidatos en las fases por pagar.';
+      $('dpEstado').textContent = '· configurados'; vista(v); }
+    catch (e) { $('dpMsg').style.color = 'var(--warn)'; $('dpMsg').textContent = e.message; }
+  };
+})();
+
+/* ── Alta manual ──────────────────────────────────────────────────────── */
+$('btnAlta').onclick = () => {
+  const correo = $('aCorreo').value.trim();
+  const msg = $('altaMsg');
+  msg.hidden = false;
+  if (!correo || !correo.includes('@')) {
+    msg.style.color = 'var(--warn)';
+    msg.textContent = 'Hace falta un correo válido: es lo que identifica al candidato.';
+    $('aCorreo').focus(); return;
+  }
+  const montos = Object.fromEntries(FASES.map(f => [f, $('a_' + f).value]));
+  altaManual({ correo, nombre: $('aNombre').value, lote: $('aLote').value,
+               estado: $('aEstado').value, montos });
+  msg.style.color = 'var(--spoke-deep)';
+  msg.textContent = `${correo} quedó registrado. Sus fases siguen sin liberar: márcalas abajo cuando entre el pago.`;
+  ['aCorreo', 'aNombre', ...FASES.map(f => 'a_' + f)].forEach(id => { $(id).value = ''; });
+  pintar();
+};
+
+/* ── Tabla ────────────────────────────────────────────────────────────── */
+$('tbody').addEventListener('input', e => {
+  const monto = e.target.closest('[data-monto]');
+  if (monto) {
+    const email = monto.dataset.monto;
+    fijarDatosComerciales(email, { ['monto_' + monto.dataset.fase]: Number(monto.value) || 0 });
+    /* Se actualiza la celda a mano en vez de repintar la tabla: repintarla
+       en cada tecla le quitaría el foco al campo que se está escribiendo. */
+    const pr = cargar().precio[email] || {};
+    const celda = document.querySelector(`[data-total="${CSS.escape(email)}"]`);
+    if (celda) celda.textContent = pesos(FASES.reduce((s, f) => s + (pr['monto_' + f] || 0), 0));
+  }
+
+  const motivo = e.target.closest('[data-motivo]');
+  if (motivo) fijarDatosComerciales(motivo.dataset.motivo, { motivo: motivo.value });
+});
+
+$('tbody').addEventListener('change', e => {
+  const est = e.target.closest('[data-estado]');
+  if (est) { fijarDatosComerciales(est.dataset.estado, { estado: est.value }); pintar(); }
+
+  /* Terminó de capturar un precio: si esa fase ya estaba pagada en $0, ese
+     es el monto del pago. */
+  const monto = e.target.closest('[data-monto]');
+  if (monto) {
+    const email = monto.dataset.monto;
+    /* Solo se repinta si de verdad había un pago en $0: repintar en cada
+       change le quitaría el foco a quien va pasando de precio en precio
+       con Tab. */
+    const huboCero = cargar().pagos.some(p => p.email === email && !(Number(p.monto) > 0));
+    if (huboCero) { sellarMontosPendientes(email); pintar(); }
+  }
+
+  const lote = e.target.closest('[data-lote]');
+  if (lote) { fijarDatosComerciales(lote.dataset.lote, { lote: Number(lote.value) || 1 }); pintar(); }
+
+  const cob = e.target.closest('[data-cobrado]');
+  if (cob) { fijarCobrado(cob.dataset.cobrado, cob.dataset.fase, cob.value.trim()); setTimeout(pintar); }   /* repintar fuera del evento: al quitar la casilla con foco, su blur volvía a disparar change a media escritura del DOM */
+});
+['bQ', 'bLote', 'bPend'].forEach(id => $(id).addEventListener(id === 'bQ' ? 'input' : 'change', () => pintar()));
+
+$('tbody').addEventListener('click', e => {
+  const t = e.target.closest('[data-fase-tgl]');
+  if (!t) return;
+  const llave = `${t.dataset.email}|${t.dataset.faseTgl}`;
+  const pagada = t.classList.contains('on');
+  clearTimeout(desarme);
+  if (pagada && armado !== llave) {
+    armado = llave;
+    desarme = setTimeout(() => { armado = null; pintar(); }, 4000);
+    pintar();
+    return;
+  }
+  armado = null;
+  alternarFase(t.dataset.email, t.dataset.faseTgl);
+  pintar();
+});
+
+$('filtros').addEventListener('click', e => {
+  const f = e.target.closest('[data-f]');
+  if (f) { filtro = f.dataset.f; pintar(); }
+});
+
+/* Llegar desde una alerta: ?alta=correo prepara el alta de quien se
+   registró sin lote ni precio; ?q= busca a un candidato (como Paideia). */
+{
+  const ps = new URLSearchParams(location.search);
+  const alta = ps.get('alta'), q = ps.get('q');
+  if (q) $('bQ').value = q;
+  if (alta) {
+    const c = candidatos(cargar()).find(x => x.email === alta.toLowerCase());
+    $('aCorreo').value = alta; if (c && c.nombre !== c.email) $('aNombre').value = c.nombre;
+    setTimeout(() => { $('aCorreo').scrollIntoView({ block: 'center' }); $('a_alineacion')?.focus(); }, 50);
+  }
+}
+pintar();
+</script>
+</body>
+</html>

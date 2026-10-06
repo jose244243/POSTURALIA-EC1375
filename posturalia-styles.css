@@ -1,0 +1,411 @@
+/* ============================================================================
+   POSTURALIA — Sistema de Diseño
+   posturalia-styles.css
+
+   Base de marca, variables CSS, componentes reutilizables.
+   Heredado por POSTURALIA-PLATAFORMA/ y usado en toda la plataforma.
+   ============================================================================ */
+
+:root {
+  /* ── COLORES ─────────────────────────────────────────────────────────────── */
+  --primary:     #059669;  /* Verde POSTURALIA */
+  --primary-dark: #047857; /* Verde oscuro para texto pequeño */
+  --bg:          #F1F5F9; /* Gris muy claro */
+  --white:       #FFFFFF; /* Blanco */
+  --dark:        #0F172A; /* Negro profundo para texto */
+  --mid:         #475569; /* Gris para texto secundario */
+  --muted:       #64748B; /* Gris más claro */
+  --border:      #E2E8F0; /* Gris para bordes */
+  --shadow-sm:   0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md:   0 4px 6px rgba(0,0,0,0.1);
+
+  /* Alias para PLATAFORMA que usa --spoke */
+  --spoke:       var(--primary);
+  --spoke-deep:  var(--primary-dark);
+
+  /* Estados y alertas */
+  --warn:        #DC2626; /* Rojo para advertencias */
+  --success:     #059669; /* Verde */
+  --info:        #0284C7; /* Azul */
+
+  /* ── TIPOGRAFÍA ──────────────────────────────────────────────────────────── */
+  --font-main:   -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --fs-sm:       0.875rem;  /* 14px */
+  --fs-base:     1rem;      /* 16px */
+  --fs-lg:       1.125rem;  /* 18px */
+  --fs-xl:       1.25rem;   /* 20px */
+  --fs-2xl:      1.5rem;    /* 24px */
+  --fs-3xl:      1.875rem;  /* 30px */
+
+  /* ── SPACING ─────────────────────────────────────────────────────────────── */
+  --space-xs:    4px;
+  --space-sm:    8px;
+  --space-md:    16px;
+  --space-lg:    24px;
+  --space-xl:    32px;
+  --space-2xl:   48px;
+
+  /* ── RADIUSES ────────────────────────────────────────────────────────────── */
+  --radius-sm:   4px;
+  --radius:      6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+
+  /* ── SIDEBAR (si es necesario para admin panel) ────────────────────────── */
+  --side-w:      280px;  /* Ancho sidebar */
+  --header-h:    60px;   /* Alto header */
+}
+
+/* ── MODO OSCURO ──────────────────────────────────────────────────────────
+   Manda un solo atributo: data-tema="oscuro" en <html>, que escribe js/tema.js.
+
+   Antes esto era un `@media (prefers-color-scheme: dark)` con guardia
+   `:root:not([data-theme="light"])` — atributo en inglés — mientras el panel
+   escribía `data-tema` en español. El guardia vigilaba un atributo que nadie
+   ponía nunca, así que quien tuviera el sistema en oscuro y pidiera modo claro
+   se llevaba los tokens oscuros encima de todos modos. Con el tema explícito,
+   "automático" lo resuelve el JS y aquí solo hay un caso que atender.        */
+:root[data-tema="oscuro"] {
+  --bg:       #0B1220;
+  --white:    #131C2E;
+  --dark:     #E8EDF5;
+  --mid:      #A9B6CA;
+  --muted:    #7D8BA3;
+  --border:   #24314A;
+
+  --primary:      #34D399;
+  --primary-dark: #6EE7B7;
+  --warn:    #F87171;
+  --success: #34D399;
+  --info:    #60A5FA;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-md: 0 4px 10px rgba(0,0,0,.45);
+
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   BASE STYLES
+   ============================================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-main);
+  font-size: var(--fs-base);
+  line-height: 1.6;
+  color: var(--dark);
+  background-color: var(--bg);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* ── TIPOGRAFÍA ──────────────────────────────────────────────────────────── */
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+h1 { font-size: var(--fs-3xl); }
+h2 { font-size: var(--fs-2xl); margin-top: var(--space-lg); margin-bottom: var(--space-md); }
+h3 { font-size: var(--fs-xl); margin-top: var(--space-md); margin-bottom: var(--space-sm); }
+
+p {
+  margin: 0 0 var(--space-md) 0;
+  color: var(--mid);
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* ============================================================================
+   COMPONENTES COMUNES
+   ============================================================================ */
+
+/* ── CARD ─────────────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* .card--acento lo define plataforma-styles.css como tarjeta blanca con borde
+   verde a la izquierda. NO se redefine aquí: hacerlo con fondo relleno dejaba
+   el texto blanco sobre fondo blanco, invisible. */
+
+/* ── BOTONES ─────────────────────────────────────────────────────────────── */
+
+.btn,
+button {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius);
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background-color: var(--border);
+  color: var(--dark);
+}
+
+.btn-secondary:hover {
+  background-color: var(--muted);
+  color: var(--white);
+}
+
+/* ── INPUTS ──────────────────────────────────────────────────────────────── */
+
+input,
+textarea,
+select {
+  font: inherit;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--dark);
+  background-color: var(--white);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+/* ── TABLAS ──────────────────────────────────────────────────────────────── */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+th {
+  background-color: var(--bg);
+  color: var(--dark);
+  font-weight: 600;
+  padding: var(--space-md);
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+}
+
+td {
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border);
+}
+
+tr:hover {
+  background-color: var(--bg);
+}
+
+/* ── ALERTAS ─────────────────────────────────────────────────────────────── */
+
+.alert {
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+}
+
+.alert--info {
+  background-color: #E0F2FE;
+  color: #0C4A6E;
+  border-left: 4px solid var(--info);
+}
+
+.alert--warn {
+  background-color: #FEE2E2;
+  color: #7F1D1D;
+  border-left: 4px solid var(--warn);
+}
+
+.alert--success {
+  background-color: #ECFDF5;
+  color: #064E3B;
+  border-left: 4px solid var(--success);
+}
+
+/* ============================================================================
+   LAYOUT (Sidebar + Main)
+   ============================================================================ */
+
+body.has-sidebar {
+  display: grid;
+  grid-template-columns: var(--side-w) 1fr;
+  grid-template-rows: auto 1fr;
+}
+
+.sidebar {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  background: #1E293B;
+  color: var(--white);
+  padding: var(--space-lg);
+  overflow-y: auto;
+  box-shadow: var(--shadow-md);
+}
+
+.sidebar a {
+  color: #CBD5E1;
+  display: block;
+  padding: var(--space-sm) var(--space-md);
+  margin: var(--space-xs) 0;
+  border-radius: var(--radius);
+  transition: all 0.2s;
+}
+
+.sidebar a:hover {
+  background-color: #334155;
+  color: var(--white);
+}
+
+.sidebar a.active {
+  background-color: var(--primary);
+  color: var(--white);
+}
+
+header {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+main {
+  grid-column: 2;
+  grid-row: 2;
+  padding: var(--space-lg);
+  overflow-y: auto;
+}
+
+/* Sin sidebar */
+body:not(.has-sidebar) main {
+  grid-column: 1;
+  padding: var(--space-lg);
+}
+
+/* ============================================================================
+   UTILIDADES
+   ============================================================================ */
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-muted { color: var(--muted); }
+.text-success { color: var(--success); }
+.text-warn { color: var(--warn); }
+
+.flex { display: flex; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+
+.grid { display: grid; }
+.gap-sm { gap: var(--space-sm); }
+.gap-md { gap: var(--space-md); }
+.gap-lg { gap: var(--space-lg); }
+
+.mt-md { margin-top: var(--space-md); }
+.mb-md { margin-bottom: var(--space-md); }
+.mt-lg { margin-top: var(--space-lg); }
+.mb-lg { margin-bottom: var(--space-lg); }
+
+.w-full { width: 100%; }
+.max-w-lg { max-width: 860px; }
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --side-w: 0;
+  }
+
+  body.has-sidebar {
+    grid-template-columns: 1fr;
+    position: relative;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    height: 100vh;
+    z-index: 100;
+    transition: left 0.3s;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  main {
+    grid-column: 1;
+  }
+
+  h1 { font-size: var(--fs-2xl); }
+  h2 { font-size: var(--fs-xl); }
+
+  .card {
+    padding: var(--space-md);
+  }
+}
+
+/* ============================================================================
+   IMPRESIÓN
+   ============================================================================ */
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: var(--white); }
+  .card { box-shadow: none; border: 1px solid var(--border); }
+}

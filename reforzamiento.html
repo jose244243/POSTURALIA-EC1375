@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reforzamiento EC1375 — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  .rz-guia { border:1.5px solid #93C5FD; background:#F5F9FF; border-radius:12px; padding:16px 18px; margin-bottom:16px }
+  .rz-k { font-size:.72rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#1D4ED8 }
+  .rz-guia h1 { font-size:1.15rem; margin:4px 0 10px; color:var(--dark) }
+  .rz-pasos { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:.86rem; color:var(--mid) }
+  .rz-p { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-weight:700; border:1.5px solid var(--border); color:var(--muted); background:var(--white) }
+  .rz-p.hecho { border-color:#059669; color:#059669 }
+  .rz-p.cur { background:#0f172a; border-color:#0f172a; color:#fff }
+  .rz-guia details { margin-top:10px } .rz-guia summary { cursor:pointer; color:#1D4ED8; font-weight:700; font-size:.86rem }
+  .rz-guia ol { margin:6px 0 0 18px; padding:0; font-size:.88rem; line-height:1.7; color:var(--mid) }
+  .rz-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin-top:8px }
+  .rz-stat { border:1px solid var(--border); border-radius:10px; padding:12px 14px; background:var(--white) }
+  .rz-stat b { display:block; font-size:1.35rem; color:var(--dark) }
+  .rz-stat span { font-size:.76rem; color:var(--muted) }
+  .rz-stat.alarm b { color:#DC2626 } .rz-stat.ok b { color:#059669 }
+  .rz-tema { display:flex; gap:12px; align-items:center; border:1px solid var(--border); border-radius:12px; padding:13px 14px; margin-bottom:9px; background:var(--white) }
+  .rz-tema.hecho { background:#ECFDF5; border-color:#A7F3D0 }
+  .rz-tema.siguiente { border:2px solid #2563EB; background:#F5F9FF }
+  .rz-num { flex:0 0 32px; height:32px; border-radius:50%; display:grid; place-items:center; font-weight:700; border:1.5px solid var(--border); color:var(--muted) }
+  .rz-tema.hecho .rz-num { background:#059669; border-color:#059669; color:#fff }
+  .rz-t { flex:1; min-width:0 } .rz-t b { display:block; color:var(--dark); font-size:.93rem; line-height:1.4 }
+  .rz-t > span { font-size:.78rem; color:var(--muted) }
+  .rz-badges { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px }
+  .rz-badge { font-size:.72rem; border-radius:999px; padding:2px 9px; border:1px solid var(--border); color:var(--mid); background:var(--white) }
+  .rz-badge.crit { border-color:#FCA5A5; color:#B91C1C; background:#FEF2F2 }
+  .rz-badge.ok { border-color:#A7F3D0; color:#047857; background:#ECFDF5 }
+  .rz-badge.prac { border-color:#FCD34D; color:#92400E; background:#FFFBEB }
+  .rz-aviso { border-radius:9px; padding:11px 13px; font-size:.87rem; line-height:1.55; margin:10px 0 }
+  .rz-aviso.ok { background:#ECFDF5; color:#065F46 } .rz-aviso.warn { background:#FFFBEB; color:#92400E }
+  .rz-barra { position:sticky; bottom:0; z-index:20; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+    background:var(--white); border-top:1px solid var(--border); padding:12px 16px; margin:18px -4px 0; box-shadow:0 -6px 18px rgba(15,23,42,.06) }
+  .rz-barra .c { text-align:center; flex:1; font-size:.84rem; color:var(--dark) } .rz-barra .c small { display:block; color:var(--muted) }
+  .rz-visor { width:100%; height:min(72vh,640px); border:1px solid var(--border); border-radius:10px; background:#0b1b33 }
+  .rz-pant { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 }
+  .rz-pant button { font:inherit; font-size:.76rem; padding:5px 10px; border-radius:999px; border:1px solid var(--border); background:var(--white); cursor:pointer }
+  .rz-pant button.on { background:#1D4ED8; border-color:#1D4ED8; color:#fff }
+  .rz-pant button.visto:not(.on) { background:#ECFDF5; border-color:#A7F3D0 }
+  .rz-rx { margin:8px 0 0; padding-left:18px; font-size:.84rem; color:var(--mid); line-height:1.6 }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <section class="rz-guia" id="guia" data-tuto-ancla>
+    <div class="rz-k" id="guiaK">Reforzamiento</div>
+    <h1 id="guiaT">Reforzamiento</h1>
+    <div class="rz-pasos" id="guiaPasos"></div>
+    <details id="guiaDet">
+      <summary>Qué hacer aquí</summary>
+      <ol>
+        <li>Toca <b>«Empezar este tema»</b> y recorre sus pantallas.</li>
+        <li>Al terminar cada tema, toca <b>«Terminé este tema»</b>.</li>
+        <li>Con los obligatorios listos, toca <b>«Dar visto bueno»</b> y sigue a Alineación.</li>
+      </ol>
+    </details>
+  </section>
+
+  <!-- ── HUB ── -->
+  <section id="vHub">
+    <div class="card">
+      <div class="rz-k">Tu resultado</div>
+      <div class="rz-stats" id="stats"></div>
+      <div id="avisoAuto"></div>
+    </div>
+    <div class="card">
+      <div class="rz-k">Paso 1 de 3</div>
+      <h2 style="margin:4px 0 4px">Refuerza tus temas</h2>
+      <p id="txtTemas" style="color:var(--mid);font-size:.9rem;margin:0 0 12px"></p>
+      <div id="lista"></div>
+    </div>
+    <div class="card" id="cardVobo"></div>
+  </section>
+
+  <!-- ── TEMA ── -->
+  <section id="vTema" hidden>
+    <div class="card">
+      <div class="rz-k" id="temaK"></div>
+      <h2 id="temaT" style="margin:4px 0 2px"></h2>
+      <div id="temaRx"></div>
+      <div class="rz-pant" id="temaPant"></div>
+      <iframe class="rz-visor" id="temaVisor" title="Pantalla del tema"></iframe>
+      <div class="px-nav" style="display:flex;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn-plat btn-plat--secundario" id="temaVolver">← Volver a mis temas</button>
+        <span id="temaPos" style="color:var(--muted);font-size:.84rem;align-self:center"></span>
+        <button class="btn-plat btn-plat--primario" id="temaSig">Siguiente pantalla →</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="rz-barra" id="barra">
+    <div class="c" id="barraTxt"></div>
+    <button class="btn-plat btn-plat--primario" id="barraBtn"></button>
+  </div>
+</main>
+
+<script type="module">
+import './js/shell.js';
+import { Store } from './js/store.js';
+import { CONFIG } from './js/config.js';
+import { temasDeReforzamiento, puntajeDelAutodiagnostico, PUNTAJE_MAXIMO, reforzadosGuardados } from './js/brechas.js';
+import { pintarBarraFlujo, completar } from './js/flow.js';
+import { reactivosPlanos, respuestasVigentes } from './js/data-autodiagnostico.js';
+
+const MODULO = 'reforzamiento';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const TOTAL = reactivosPlanos().length;
+const REFERENCIA = 97.64;
+const nPaso = CONFIG.flujo.findIndex(m => m.id === MODULO) + 1, totalPasos = CONFIG.flujo.length;
+const sigMod = CONFIG.flujo[nPaso] || null;
+
+const auto = Store.get('autodiagnostico', {});
+const contestadas = Object.keys(respuestasVigentes(auto)).length;
+let d = Store.get(MODULO, {}) || {};
+/* Quien ya había cerrado Reforzamiento con el modelo anterior (repasar todo)
+   conserva su paso cerrado: equivale al visto bueno. */
+if (d.completado === true && d.vobo === undefined) d = { ...d, vobo: true, voboFecha: d._actualizado || new Date().toISOString() };
+const reforzados = reforzadosGuardados(d, auto);
+
+const temas = () => temasDeReforzamiento(auto, { ...d, reforzados: [...reforzados], repasados: [] });
+function guardar(extra = {}) {
+  const ts = temas(), n = ts.filter(t => t.hecho).length;
+  d = { ...Store.get(MODULO, {}), vobo: d.vobo, voboFecha: d.voboFecha, reforzados: [...reforzados], repasados: [], temas: ts.length, repasados_n: n, ...extra };
+  if (d.vobo) completar(MODULO, d); else Store.set(MODULO, { ...d, completado: false });
+  pintarBarraFlujo($('pasos'), MODULO);
+}
+
+function hub(resaltar) {
+  $('vHub').hidden = false; $('vTema').hidden = true;
+  const ts = temas(), obl = ts.filter(t => t.obligatorio), pendObl = obl.filter(t => !t.hecho);
+  const hechos = ts.filter(t => t.hecho).length, vobo = d.vobo === true;
+  const completo = contestadas >= TOTAL;
+  const sig = vobo ? null : ts.find(t => !t.hecho && t.obligatorio);
+  const etapa = pendObl.length ? 1 : vobo ? 3 : 2;
+  const score = puntajeDelAutodiagnostico(auto);
+
+  $('guiaK').textContent = `Reforzamiento · Paso ${nPaso} de ${totalPasos} de tu proceso`;
+  $('guiaT').textContent = vobo ? 'Reforzamiento terminado' : pendObl.length ? 'Refuerza tus temas obligatorios' : 'Da el visto bueno a tu Autodiagnóstico';
+  $('guiaPasos').innerHTML = [1, 2, 3].map(k => `<span class="rz-p ${etapa > k ? 'hecho' : etapa === k ? 'cur' : ''}">${etapa > k ? '✓' : k}</span>`).join('') +
+    `<span>${[ts.length ? `Reforzar temas (${obl.length - pendObl.length} de ${obl.length} obligatorios)` : 'Sin temas por reforzar', 'Dar visto bueno', 'Continuar con tu proceso'][etapa - 1]}</span>`;
+  $('guiaDet').open = !hechos && !vobo;
+
+  $('stats').innerHTML = `
+    <div class="rz-stat ${score >= REFERENCIA ? 'ok' : 'alarm'}"><b>${score.toFixed(2)}</b><span>puntos de ${PUNTAJE_MAXIMO.toFixed(2)} · referencia ${REFERENCIA}</span></div>
+    <div class="rz-stat"><b>${ts.reduce((a, t) => a + (t.origen === 'practica' ? 0 : t.rx.length), 0)}</b><span>reactivos en NO</span></div>
+    <div class="rz-stat"><b>${hechos} / ${ts.length}</b><span>temas reforzados</span></div>
+    <div class="rz-stat ${pendObl.length ? 'alarm' : 'ok'}"><b>${pendObl.length}</b><span>obligatorios pendientes</span></div>`;
+  $('avisoAuto').innerHTML = !contestadas
+    ? `<div class="rz-aviso warn">Todavía no contestas el Autodiagnóstico: de ahí sale esta lista. <a href="autodiagnostico.html">Ir al Autodiagnóstico</a></div>`
+    : !completo ? `<div class="rz-aviso warn">Te faltan <b>${TOTAL - contestadas}</b> reactivos del Autodiagnóstico. La lista solo cubre lo que ya marcaste en NO.</div>` : '';
+
+  $('txtTemas').innerHTML = !ts.length ? '' : pendObl.length
+    ? 'Empieza por el tema resaltado. Al terminar sus pantallas queda marcado como reforzado.'
+    : vobo ? 'Puedes repasar cualquier tema cuando quieras.'
+    : 'Tus temas obligatorios ya están listos. Los <b>recomendados</b> son opcionales: puedes repasarlos ahora o dar el visto bueno.';
+  $('lista').innerHTML = ts.length ? ts.map((t, i) => {
+    const esSig = sig && sig.criterio === t.criterio;
+    const badge = t.critico ? '<span class="rz-badge crit">Punto eliminatorio</span>' : '<span class="rz-badge">Recomendado</span>';
+    return `<div class="rz-tema ${t.hecho ? 'hecho' : ''} ${esSig ? 'siguiente' : ''}" ${resaltar === t.criterio ? 'id="temaResaltado"' : ''}>
+      <span class="rz-num">${t.hecho ? '✓' : i + 1}</span>
+      <div class="rz-t"><b>${esc(t.titulo)}</b>
+        <span>Elemento ${t.elem} · ${t.rx.length} reactivo${t.rx.length > 1 ? 's' : ''} en NO · ${t.pantallas.length} pantalla${t.pantallas.length === 1 ? '' : 's'}${t.origen !== 'autodiagnostico' ? ' · detectado en la práctica' : ''}</span>
+        <div class="rz-badges">${badge}${t.origen !== 'autodiagnostico' ? '<span class="rz-badge prac">Práctica</span>' : ''}${t.hecho ? '<span class="rz-badge ok">Reforzado</span>' : ''}</div></div>
+      <button class="btn-plat ${t.hecho ? 'btn-plat--secundario' : esSig ? 'btn-plat--primario' : 'btn-plat--secundario'}" data-c="${t.criterio}">
+        ${t.hecho ? 'Repasar' : esSig ? 'Empezar este tema' : 'Reforzar este tema'}</button></div>`;
+  }).join('') : `<div class="rz-aviso ok">${completo ? 'Respondiste SÍ a todos los reactivos: no tienes temas por reforzar. Da el visto bueno para continuar.' : 'Aún no hay temas: contesta el Autodiagnóstico.'}</div>`;
+  $('lista').querySelectorAll('[data-c]').forEach(b => b.onclick = () => abrirTema(ts.find(t => t.criterio === b.dataset.c)));
+
+  const puede = completo && !pendObl.length;
+  $('cardVobo').innerHTML = `<div class="rz-k">Paso 2 de 3</div><h2 style="margin:4px 0 6px">Visto bueno de tu Autodiagnóstico</h2>` + (vobo
+    ? `<div class="rz-aviso ok"><b>Visto bueno registrado</b> el ${new Date(d.voboFecha).toLocaleString('es-MX')}. Ya puedes seguir con tu proceso.</div>
+       ${sigMod ? `<a class="btn-plat btn-plat--primario" href="${sigMod.archivo}">Siguiente paso: ${esc(sigMod.nombre)} →</a>` : ''}`
+    : `<p style="color:var(--mid);font-size:.9rem">Al dar el visto bueno cierras esta etapa. Tus respuestas del Autodiagnóstico no cambian: lo que se pide es haber reforzado los temas obligatorios.</p>
+       ${puede ? '' : `<div class="rz-aviso warn">${!completo ? 'Primero termina de contestar el Autodiagnóstico.' : `Primero refuerza tus temas obligatorios. Te faltan <b>${pendObl.length}</b>.`}</div>`}
+       <button class="btn-plat ${puede ? 'btn-plat--primario' : 'btn-plat--secundario'}" id="btnVobo" ${puede ? '' : 'disabled'}>Dar visto bueno a mi Autodiagnóstico</button>`);
+  if ($('btnVobo')) $('btnVobo').onclick = darVobo;
+
+  $('barraTxt').innerHTML = ts.length ? `<b>${obl.length - pendObl.length} de ${obl.length} obligatorios reforzados</b><small>${hechos} de ${ts.length} temas en total</small>` : 'Sin temas por reforzar';
+  const btn = $('barraBtn');
+  if (sig) { btn.textContent = 'Empezar: ' + (sig.titulo.length > 34 ? sig.titulo.slice(0, 33) + '…' : sig.titulo); btn.disabled = false; btn.onclick = () => abrirTema(sig); }
+  else if (!vobo && puede) { btn.textContent = 'Dar visto bueno'; btn.disabled = false; btn.onclick = darVobo; }
+  else if (vobo && sigMod) { btn.textContent = `Siguiente paso: ${sigMod.nombre} ›`; btn.disabled = false; btn.onclick = () => location.href = sigMod.archivo; }
+  else { btn.textContent = 'Contesta el Autodiagnóstico'; btn.disabled = false; btn.onclick = () => location.href = 'autodiagnostico.html'; }
+  $('temaResaltado')?.scrollIntoView({ block: 'center' });
+}
+
+function darVobo() {
+  if (Store.soloLectura) return;
+  guardar({ vobo: true, voboFecha: new Date().toISOString() });
+  hub();
+}
+
+function abrirTema(t) {
+  const ts = temas(), i = ts.findIndex(x => x.criterio === t.criterio), vistos = new Set();
+  const lista = t.pantallas.length ? t.pantallas : [];
+  let pos = 0;
+  $('vHub').hidden = true; $('vTema').hidden = false; window.scrollTo({ top: 0 });
+  $('guiaK').textContent = `Reforzamiento · tema ${i + 1} de ${ts.length} · ${t.critico ? 'punto eliminatorio' : 'recomendado'}`;
+  $('guiaT').textContent = t.titulo; $('guiaDet').open = false;
+  $('temaK').textContent = `Elemento ${t.elem} · ${t.tipo} · ${t.criterio}${t.instr ? ' · se evalúa con ' + t.instr : ''}`;
+  $('temaT').textContent = t.titulo;
+  $('temaRx').innerHTML = t.reactivos.length ? `<ul class="rz-rx">${t.reactivos.map(r => `<li><b>Reactivo ${r.n}</b>${r.critico ? ' <span class="rz-badge crit">eliminatorio</span>' : ''} — ${esc(r.texto)}</li>`).join('')}</ul>` : '';
+  const ir = n => {
+    pos = n; vistos.add(lista[pos]);
+    $('temaVisor').src = `biblioteca-deck.html#${lista[pos]}`;
+    $('temaPant').innerHTML = lista.map((s, k) => `<button type="button" data-k="${k}" class="${k === pos ? 'on' : ''} ${vistos.has(s) ? 'visto' : ''}">${k + 1}</button>`).join('');
+    $('temaPant').querySelectorAll('button').forEach(b => b.onclick = () => ir(+b.dataset.k));
+    $('temaPos').textContent = `Tema ${i + 1} de ${ts.length} · pantalla ${pos + 1} de ${lista.length}`;
+    $('temaSig').textContent = pos === lista.length - 1 ? 'Terminé este tema ✓' : 'Siguiente pantalla →';
+    $('barraTxt').innerHTML = pos === lista.length - 1 ? '<b>Última pantalla de este tema</b>' : `<b>${t.titulo.slice(0, 60)}</b>`;
+    $('barraBtn').textContent = $('temaSig').textContent; $('barraBtn').onclick = $('temaSig').onclick;
+  };
+  $('temaSig').onclick = () => {
+    if (pos < lista.length - 1) return ir(pos + 1);
+    if (!Store.soloLectura) { reforzados.add(t.criterio); guardar(); }
+    hub(t.criterio);
+  };
+  $('temaVolver').onclick = () => hub(t.criterio);
+  if (!lista.length) { $('temaVisor').hidden = true; $('temaPos').textContent = 'Este criterio no tiene pantallas en el material.'; $('temaSig').textContent = 'Terminé este tema ✓'; }
+  else { $('temaVisor').hidden = false; ir(0); }
+}
+
+pintarBarraFlujo($('pasos'), MODULO);
+/* Sincroniza lo guardado con el modelo por temas (migra los repasados viejos) */
+if (!Store.soloLectura && contestadas) guardar();
+hub();
+</script>
+<script type="module" src="js/protege.js"></script>
+</body>
+</html>

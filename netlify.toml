@@ -1,0 +1,78 @@
+#  POSTURALIA · Plataforma de Certificación EC1375
+#  netlify.toml — cómo se sirve el sitio
+#
+#  Lo importante de este archivo es que el service worker y el manifest
+#  lleguen bien. Si el service worker se sirve cacheado, un candidato puede
+#  quedarse con una versión vieja de la plataforma durante días sin que nada
+#  se lo diga: el navegador guarda el sw.js y con él toda la app anterior.
+
+[build]
+  publish = "."
+
+#  El service worker NUNCA se cachea. Es el archivo que decide qué versión de
+#  todo lo demás ve la gente; si él se queda viejo, se queda viejo el sitio
+#  entero y publicar una corrección deja de servir de nada.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+#  El manifest tampoco: cambia poco, pero cuando cambia es porque cambió cómo
+#  se instala la app.
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json; charset=utf-8"
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+#  config.js decide a qué backend apunta la plataforma. Servirlo viejo
+#  significaría escribir en una base y leer de otra.
+[[headers]]
+  for = "/js/config.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+#  El HTML se revalida siempre: el service worker ya se encarga de que la app
+#  abra rápido sin red, así que aquí no hace falta cachear de más.
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+#  Los iconos sí, que no cambian.
+[[headers]]
+  for = "/iconos/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+#  Cabeceras de seguridad. La plataforma no carga nada de terceros, así que
+#  puede permitirse ser estricta.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+#  Atajo a la pantalla de entrada, para mandarla por WhatsApp sin el .html
+[[redirects]]
+  from = "/entrada"
+  to = "/portada.html"
+  status = 200
+
+[[redirects]]
+  from = "/panel"
+  to = "/admin.html"
+  status = 200
+
+#  Las pruebas viven dentro de la carpeta del sitio para que no se pierdan,
+#  pero no son parte de la plataforma: no se sirven al público. Y si alguien
+#  corrió `npm install` ahí, su node_modules pesa cientos de MB — conviene no
+#  arrastrar esa subcarpeta al publicar.
+[[redirects]]
+  from = "/pruebas/*"
+  to = "/404.html"
+  status = 404
+  force = true

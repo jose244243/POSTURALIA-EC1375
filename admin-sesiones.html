@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sesiones de Alineación — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<link rel="stylesheet" href="admin-styles.css">
+<style>
+  .ses { border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:12px; background:var(--white) }
+  .ses--pasada { opacity:.6 }
+  .ses-cab { display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; margin-bottom:8px }
+  .ses-t { font-weight:700; color:var(--dark); font-size:1rem; flex:1; min-width:150px }
+  .ses-cuando { color:var(--mid); font-size:.86rem }
+  .ses-quien { color:var(--muted); font-size:.83rem; margin-bottom:6px }
+  .ses-desc { color:var(--mid); font-size:.85rem; line-height:1.6; margin:6px 0 }
+  .ses-liga { font-size:.84rem; word-break:break-all }
+  .ses-cupo { color:var(--muted); font-size:.83rem; margin-top:8px }
+  .ses-acc { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap }
+  .inscritos { margin-top:12px; padding-top:12px; border-top:1px dashed var(--border) }
+  .ins-chip { display:inline-flex; align-items:center; gap:6px; background:var(--bg);
+              border-radius:99px; padding:4px 10px; margin:3px 4px 0 0; font-size:.82rem }
+  .ins-chip button { background:none; border:none; cursor:pointer; color:var(--muted); font-size:1rem; line-height:1 }
+  .campo { margin-bottom:13px }
+  .campo label { display:block; font-weight:600; font-size:.85rem; color:var(--dark); margin-bottom:4px }
+  .campo input, .campo textarea { width:100%; font:inherit }
+  .campo textarea { font-size:.9rem; padding:9px 11px; border:1px solid var(--border);
+                    border-radius:7px; min-height:64px; resize:vertical }
+  .campo .pista { font-weight:400; color:var(--muted); font-size:.8rem; line-height:1.55;
+                  display:block; margin-top:5px }
+  .rejilla { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:13px }
+
+  .pestanas { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px }
+  .pest { padding:9px 17px; border-radius:8px; border:1px solid var(--border);
+          background:var(--white); cursor:pointer; font-size:.87rem; font-weight:600; color:var(--mid) }
+  .pest.activa { background:#0d2a6e; border-color:#0d2a6e; color:#fff }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="ad-top">
+  <div class="ad-top-in">
+    <div>
+      <h1 class="ad-titulo">Sesiones de Alineación</h1>
+      <div class="ad-sub" id="sub"></div>
+    </div>
+  </div>
+</header>
+
+<main class="ad-wrap">
+
+  <div class="pestanas" id="pestanas">
+    <button class="pest activa" data-tab="crear">Crear sesión</button>
+    <button class="pest" data-tab="listar">Sesiones</button>
+    <button class="pest" data-tab="reportes">Reportes</button>
+    <button class="pest" data-tab="sala">Sala de evidencias</button>
+    <button class="pest" data-tab="grabacion">Grabación</button>
+  </div>
+
+  <section id="tab-crear">
+    <div class="card">
+      <h2>Programar una sesión</h2>
+      <div class="rejilla">
+        <div class="campo"><label for="fTitulo">Título</label>
+          <input type="text" id="fTitulo" placeholder="Ej. Alineación · Grupo de noviembre"></div>
+        <div class="campo"><label for="fInstructor">Instructor</label>
+          <input type="text" id="fInstructor" placeholder="Quién la imparte"></div>
+        <div class="campo"><label for="fFecha">Fecha *</label><input type="date" id="fFecha"></div>
+        <div class="campo"><label for="fCupo">Cupo *</label>
+          <input type="number" id="fCupo" min="1" value="20"></div>
+        <div class="campo"><label for="fHoraIni">Hora de inicio</label><input type="time" id="fHoraIni"></div>
+        <div class="campo"><label for="fHoraFin">Hora de fin</label><input type="time" id="fHoraFin"></div>
+      </div>
+      <div class="campo"><label for="fLiga">Liga de la videollamada
+          <span class="pista">Agenda la reunión en Zoom y pega aquí la liga: se guarda tal cual,
+            no se genera sola. Puedes dejarla vacía y agregarla después.</span></label>
+        <input type="url" id="fLiga" placeholder="https://zoom.us/j/…"></div>
+      <div class="campo"><label for="fDesc">Descripción</label>
+        <textarea id="fDesc" placeholder="Qué se cubre en esta sesión."></textarea></div>
+      <div class="acc"><button class="btn-a btn-a--pri" id="btnCrear">+ Programar sesión</button></div>
+    </div>
+  </section>
+
+  <section id="tab-listar" hidden>
+    <div id="lista"></div>
+  </section>
+
+  <section id="tab-reportes" hidden>
+    <div class="card">
+      <h2>Quién pagó Alineación y no está en ninguna sesión</h2>
+      <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">
+        Ya cobraste esa fase: cada nombre de esta lista es alguien esperando que lo citen.
+      </p>
+      <div id="sinSesion"></div>
+    </div>
+
+    <div class="card">
+      <h2>Ocupación por sesión</h2>
+      <div id="ocupacion"></div>
+    </div>
+  </section>
+
+  <!-- Sala de evidencias (como Paideia): sala de Zoom con horarios exclusivos -->
+  <section id="tab-sala" hidden>
+    <div class="card"><div id="salaAdmin"></div></div>
+  </section>
+
+  <!-- Grabación de la sesión de Alineación (como el bloque alineacion:video de Paideia) -->
+  <section id="tab-grabacion" hidden>
+    <div class="card">
+      <h2 style="margin-top:0">Grabación de la sesión de Alineación</h2>
+      <p style="color:var(--muted);font-size:.88rem;line-height:1.6;margin:0 0 14px">La ven, en su página de Alineación, los candidatos que ya tienen la fase liberada.
+        De Zoom: Grabaciones → Compartir → copia el enlace y, si tiene, el código de acceso. También sirve un video no listado de YouTube, uno de Vimeo o un mp4.</p>
+      <div class="gb-form">
+        <label>Enlace de la grabación<input type="url" id="gbUrl" placeholder="https://us06web.zoom.us/rec/share/…"></label>
+        <label>Código de acceso (si tiene)<input type="text" id="gbCodigo" placeholder="Ej. a1B2c3!@" maxlength="60"></label>
+        <label>Plataforma<select id="gbPlat"></select></label>
+        <label>Título (opcional)<input type="text" id="gbTitulo" placeholder="Ej. Sesión de Alineación · Lote 3" maxlength="120"></label>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px">
+        <button class="btn-a btn-a--pri" id="gbGuardar">Guardar</button>
+        <button class="btn-a btn-a--sec" id="gbQuitar">Quitar la grabación</button>
+        <span id="gbMsg" style="font-size:.86rem"></span></div>
+      <h3 style="margin:22px 0 8px;font-size:.95rem">Así la ve el candidato</h3>
+      <div id="gbVista" style="max-width:640px"></div>
+    </div>
+  </section>
+
+</main>
+
+<script type="module">
+import './js/admin-shell.js';
+import { cargar, actualizar, candidatos, contables, activos, sincronizarSesiones } from './js/admin-data.js';
+import { hoyLocal } from './js/fechas.js';
+import { esc, ligaSegura } from './js/seguro.js';
+
+const $ = id => document.getElementById(id);
+/* En hora local: en UTC, de las 18:00 en adelante la sesión de hoy ya salía
+   "Ya pasó". Ver fechas.js. */
+const hoy = () => hoyLocal();
+const TABS = ['crear', 'listar', 'reportes', 'sala', 'grabacion'];
+let tab = 'crear';
+
+let salaMontada = false;
+
+/* ── Grabación ─────────────────────────────────────────────────────────── */
+let gb = null;
+async function montarGrabacionEquipo() {
+  gb ||= await import('./js/grabacion.js');
+  if (!document.getElementById('gbEstilos')) { const st = document.createElement('style'); st.id = 'gbEstilos';
+    st.textContent = gb.ESTILOS_GRABACION + ' .gb-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px } .gb-form label { font-size:.8rem; font-weight:600; color:var(--muted) } .gb-form input, .gb-form select { display:block; width:100%; margin-top:4px; font:inherit; font-size:.9rem; padding:8px 10px; border:1px solid var(--border); border-radius:8px }';
+    document.head.appendChild(st); }
+  $('gbPlat').innerHTML = '<option value="">Detectar por el enlace</option>' + gb.PLATAFORMAS.map(([k, t]) => `<option value="${k}">${t}</option>`).join('');
+  const { error, valor } = await gb.grabacionEquipo();
+  $('gbMsg').style.color = 'var(--warn)'; $('gbMsg').textContent = error;
+  $('gbUrl').value = valor?.url || ''; $('gbCodigo').value = valor?.codigo || ''; $('gbTitulo').value = valor?.titulo || ''; $('gbPlat').value = valor?.url ? (valor.plataforma || '') : '';
+  gb.montarGrabacion($('gbVista'), valor);
+}
+async function guardarGrabacionEquipo(vaciar = false) {
+  const entrada = vaciar ? {} : { url: $('gbUrl').value, codigo: $('gbCodigo').value, plataforma: $('gbPlat').value, titulo: $('gbTitulo').value };
+  try {
+    const v = await gb.guardarGrabacion(entrada);
+    $('gbMsg').style.color = 'var(--spoke-deep)'; $('gbMsg').textContent = vaciar ? 'Grabación quitada.' : 'Guardada. Ya la ven los candidatos con la Alineación liberada.';
+    if (vaciar) ['gbUrl', 'gbCodigo', 'gbTitulo'].forEach(id => { $(id).value = ''; });
+    else $('gbPlat').value = v.plataforma;
+    gb.montarGrabacion($('gbVista'), v.url ? v : null);
+  } catch (e) { $('gbMsg').style.color = 'var(--warn)'; $('gbMsg').textContent = e.message; }
+}
+$('gbGuardar').onclick = () => guardarGrabacionEquipo(false);
+$('gbQuitar').onclick = () => { if (confirm('¿Quitar la grabación? Los candidatos dejarán de verla.')) guardarGrabacionEquipo(true); };
+function mostrarTab(cual) {
+  tab = cual;
+  if (cual === 'grabacion') montarGrabacionEquipo();
+  if (cual === 'sala' && !salaMontada) {
+    salaMontada = true;
+    const nombres = Object.fromEntries(candidatos(cargar()).map(c => [String(c.correo || '').toLowerCase(), c.nombre]));
+    import('./js/sala-ui.js').then(m => m.montarAdminSala($('salaAdmin'), { nombres }));
+  }
+  TABS.forEach(t => { $('tab-' + t).hidden = t !== cual; });
+  [...$('pestanas').children].forEach(b =>
+    b.classList.toggle('activa', b.dataset.tab === cual));
+}
+
+$('pestanas').addEventListener('click', e => {
+  const b = e.target.closest('[data-tab]');
+  if (b) mostrarTab(b.dataset.tab);
+});
+
+const cuando = s => [s.fecha, [s.horaIni, s.horaFin].filter(Boolean).join('–')]
+  .filter(Boolean).join(' · ') + (s.horaIni ? ' h' : '');
+
+let editando = null;   // sesión con el formulario de edición abierto
+function pintar() {
+  $('fFecha').min = hoy();   // no se programa en el pasado (como Paideia)
+  const datos = cargar();
+  const ses = [...datos.sesiones].sort((a, b) =>
+    (a.fecha + (a.horaIni || '')).localeCompare(b.fecha + (b.horaIni || '')));
+  const proximas = ses.filter(s => s.fecha >= hoy()).length;
+
+  $('sub').textContent = ses.length
+    ? `${proximas} próxima${proximas === 1 ? '' : 's'} · ${ses.length} en total`
+    : 'Ninguna sesión programada';
+
+  const disponibles = contables(candidatos(datos));
+
+  /* Un candidato inscrito en dos sesiones FUTURAS ocupa dos lugares y va a
+     una: el cupo miente. Se permite (puede estar cambiando de fecha) pero
+     se avisa en la lista para que sea una decisión y no un descuido. */
+  const otraSesion = (em, id) => ses.some(x => x.id !== id && x.fecha >= hoy() && x.inscritos.includes(em));
+
+  $('lista').innerHTML = ses.length
+    ? ses.map(s => {
+        const pasada = s.fecha < hoy();
+        const libres = Math.max(0, (s.cupo || 0) - s.inscritos.length);
+        return `<div class="ses ${pasada ? 'ses--pasada' : ''}">
+          <div class="ses-cab">
+            <span class="ses-t">${esc(s.titulo)}</span>
+            <span class="ses-cuando">${cuando(s)}
+              ${pasada ? '<span class="pastilla p-gris" style="margin-left:6px">Ya pasó</span>' : ''}</span>
+          </div>
+          ${s.instructor ? `<div class="ses-quien">Imparte: ${esc(s.instructor)}</div>` : ''}
+          ${s.descripcion ? `<div class="ses-desc">${esc(s.descripcion)}</div>` : ''}
+          ${ligaSegura(s.liga) ? `<div class="ses-liga"><a href="${esc(ligaSegura(s.liga))}" target="_blank" rel="noopener">${esc(s.liga)}</a></div>`
+            : s.liga ? `<div class="ses-liga" style="color:var(--warn)">La liga guardada no es una dirección web válida: ${esc(s.liga)}</div>`
+                   : '<div class="ses-liga" style="color:var(--warn)">Sin liga de Zoom todavía</div>'}
+          <div class="ses-cupo">${s.inscritos.length} inscritos · ${libres} lugar${libres === 1 ? '' : 'es'} libre${libres === 1 ? '' : 's'} de ${s.cupo}</div>
+          <div class="ses-barra" role="img" aria-label="Ocupación ${s.cupo ? Math.round(s.inscritos.length / s.cupo * 100) : 0}%" style="height:6px;border-radius:3px;background:var(--border);margin:4px 0 8px;overflow:hidden">
+            <i style="display:block;height:100%;width:${s.cupo ? Math.min(100, Math.round(s.inscritos.length / s.cupo * 100)) : 0}%;background:${libres <= 5 ? '#D97706' : 'var(--spoke-deep, #0d2a6e)'}"></i></div>
+          ${editando === s.id ? `<div class="ses-editar" style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px">
+            <label style="font-size:.8rem">Título<input type="text" id="eTitulo" value="${esc(s.titulo)}" style="display:block;width:100%"></label>
+            <label style="font-size:.8rem">Instructor<input type="text" id="eInstructor" value="${esc(s.instructor || '')}" style="display:block;width:100%"></label>
+            <label style="font-size:.8rem">Cupo<input type="number" id="eCupo" min="${Math.max(1, s.inscritos.length)}" value="${s.cupo}" style="display:block;width:100%"></label>
+            <label style="font-size:.8rem;grid-column:1/-1">Liga de la videollamada<input type="url" id="eLiga" value="${esc(s.liga || '')}" placeholder="https://zoom.us/j/…" style="display:block;width:100%"></label>
+            <label style="font-size:.8rem;grid-column:1/-1">Descripción<textarea id="eDesc" style="display:block;width:100%">${esc(s.descripcion || '')}</textarea></label>
+            <p style="grid-column:1/-1;font-size:.78rem;color:var(--muted);margin:0">La fecha y la hora no se cambian aquí: si cambian, cancela esta sesión y programa otra para que los inscritos se enteren.</p>
+            <div style="grid-column:1/-1;display:flex;gap:8px"><button class="btn-a btn-a--pri" data-guardar-ses="${esc(s.id)}">Guardar cambios</button><button class="btn-a btn-a--sec" data-cancelar-ed="1">Cancelar</button></div>
+          </div>` : ''}
+
+          <div class="inscritos">
+            ${s.inscritos.length
+              ? s.inscritos.map(em => {
+                  const c = disponibles.find(x => x.email === em);
+                  return `<span class="ins-chip">${esc(c?.nombre || em)}
+                    <button data-sacar="${esc(s.id)}" data-email="${esc(em)}" title="Quitar"
+                            aria-label="Quitar a ${esc(c?.nombre || em)} de esta sesión">×</button></span>`;
+                }).join('')
+              : '<span style="color:var(--muted);font-size:.84rem">Nadie inscrito todavía</span>'}
+          </div>
+
+          <div class="ses-acc">
+            <select class="chico" data-inscribir="${esc(s.id)}" aria-label="Inscribir candidato en ${esc(s.titulo)}" style="font:inherit;font-size:.84rem;padding:6px 9px;border:1px solid var(--border);border-radius:6px">
+              <option value="">Inscribir candidato…</option>
+              ${disponibles.filter(c => !s.inscritos.includes(c.email))
+                 .map(c => `<option value="${esc(c.email)}">${esc(c.nombre)}${
+                    otraSesion(c.email, s.id) ? ' — ya inscrito en otra' : ''}</option>`).join('')}
+            </select>
+            ${pasada ? '' : `<button class="btn-a btn-a--sec" data-editar="${esc(s.id)}">Editar</button>`}
+            <button class="btn-a btn-a--peligro" data-borrar="${esc(s.id)}">Cancelar sesión</button>
+          </div>
+        </div>`;
+      }).join('')
+    : `<p class="vacio">Sin sesiones. Programa la primera en la pestaña de arriba.<br>
+         <span style="font-size:.84rem">Los candidatos con la fase de Alineación pagada son los que
+         deberían asistir — los ves en <a href="admin-precios.html">Precios y pagos</a>.</span></p>`;
+
+  /* ── Reportes ── */
+  const inscritoEnAlguna = em => ses.some(s => s.inscritos.includes(em));
+  const pendientes = activos(candidatos(datos))
+    .filter(c => c.fases.alineacion && !inscritoEnAlguna(c.email));
+
+  $('sinSesion').innerHTML = pendientes.length
+    ? `<table class="tbl"><thead><tr><th>Candidato</th><th class="num">Lote</th>
+         <th class="ocultar-movil">Correo</th></tr></thead><tbody>
+       ${pendientes.map(c => `<tr><td>${esc(c.nombre)}</td><td class="num">${esc(c.lote)}</td>
+         <td class="ocultar-movil" style="color:var(--muted);font-size:.83rem">${esc(c.email)}</td></tr>`).join('')}
+       </tbody></table>`
+    : `<p class="vacio">Nadie pendiente: todos los que pagaron Alineación están inscritos
+         en alguna sesión.</p>`;
+
+  $('ocupacion').innerHTML = ses.length
+    ? `<table class="tbl"><thead><tr><th>Sesión</th><th class="ocultar-movil">Instructor</th>
+         <th class="num">Inscritos</th><th class="num">Cupo</th><th class="num">Ocupación</th>
+       </tr></thead><tbody>${ses.map(s => {
+         const pct = s.cupo ? Math.round((s.inscritos.length / s.cupo) * 100) : 0;
+         return `<tr>
+           <td>${esc(s.titulo)}<span style="display:block;color:var(--muted);font-size:.78rem">${cuando(s)}</span></td>
+           <td class="ocultar-movil">${esc(s.instructor || '—')}</td>
+           <td class="num">${s.inscritos.length}</td>
+           <td class="num">${s.cupo}</td>
+           <td class="num" style="color:${pct >= 80 ? 'var(--spoke-deep)' : pct ? 'var(--mid)' : 'var(--warn)'}">${pct}%</td>
+         </tr>`;
+       }).join('')}</tbody></table>`
+    : '<p class="vacio">Sin sesiones que medir.</p>';
+}
+
+$('btnCrear').onclick = () => {
+  const fecha = $('fFecha').value;
+  if (!fecha) { alert('La fecha es obligatoria.'); $('fFecha').focus(); return; }
+  if (fecha < hoy()) { alert('La fecha ya pasó: elige hoy o una fecha futura.'); $('fFecha').focus(); return; }
+  const cupo = Number($('fCupo').value) || 0;
+  if (cupo < 1) { alert('El cupo tiene que ser al menos 1.'); $('fCupo').focus(); return; }
+
+  const ini = $('fHoraIni').value, fin = $('fHoraFin').value;
+  if (ini && fin && fin <= ini) {
+    alert('La hora de fin tiene que ser después de la de inicio.'); $('fHoraFin').focus(); return;
+  }
+  const liga = $('fLiga').value.trim();
+  if (liga && !ligaSegura(liga)) {
+    alert('La liga tiene que ser una dirección web completa, que empiece con https://');
+    $('fLiga').focus(); return;
+  }
+
+  const titulo = $('fTitulo').value.trim() || `Alineación · ${fecha}`;
+
+  actualizar(d => d.sesiones.push({
+    id: 'ses-' + Date.now(),
+    titulo, fecha,
+    horaIni: $('fHoraIni').value,
+    horaFin: $('fHoraFin').value,
+    instructor: $('fInstructor').value.trim(),
+    descripcion: $('fDesc').value.trim(),
+    liga,
+    cupo,
+    inscritos: [],
+  }));
+
+  ['fTitulo','fInstructor','fFecha','fHoraIni','fHoraFin','fLiga','fDesc']
+    .forEach(id => { $(id).value = ''; });
+  pintar();
+  mostrarTab('listar');
+};
+
+$('lista').addEventListener('change', e => {
+  const sel = e.target.closest('[data-inscribir]');
+  if (!sel || !sel.value) return;
+  actualizar(d => {
+    const s = d.sesiones.find(x => x.id === sel.dataset.inscribir);
+    if (!s) return;
+    if (s.inscritos.length >= s.cupo) { alert('Esa sesión ya está llena.'); return; }
+    if (!s.inscritos.includes(sel.value)) s.inscritos.push(sel.value);
+  });
+  pintar();
+});
+
+/* Editar una sesión ya creada (como Paideia): cupo, instructor, liga y
+   descripción. Antes el formulario decía «puedes agregar la liga después»
+   y no había cómo: los inscritos veían «Link de Zoom pendiente» para
+   siempre. Sube a la nube con el resto de las sesiones. */
+$('lista').addEventListener('click', e => {
+  const ed = e.target.closest('[data-editar]');
+  if (ed) { editando = ed.dataset.editar; pintar(); $('eLiga')?.focus(); return; }
+  if (e.target.closest('[data-cancelar-ed]')) { editando = null; pintar(); return; }
+  const g = e.target.closest('[data-guardar-ses]');
+  if (g) {
+    const liga = $('eLiga').value.trim(), cupo = Number($('eCupo').value) || 0;
+    const s0 = cargar().sesiones.find(x => x.id === g.dataset.guardarSes);
+    if (liga && !ligaSegura(liga)) { alert('La liga tiene que ser una dirección web completa, que empiece con https://'); $('eLiga').focus(); return; }
+    if (cupo < Math.max(1, s0?.inscritos.length || 0)) { alert(`El cupo no puede ser menor que los ${s0?.inscritos.length || 0} inscritos.`); $('eCupo').focus(); return; }
+    actualizar(d => {
+      const s = d.sesiones.find(x => x.id === g.dataset.guardarSes); if (!s) return;
+      s.titulo = $('eTitulo').value.trim() || s.titulo; s.instructor = $('eInstructor').value.trim();
+      s.liga = liga; s.cupo = cupo; s.descripcion = $('eDesc').value.trim();
+    });
+    editando = null; pintar(); return;
+  }
+});
+$('lista').addEventListener('click', e => {
+  const sacar = e.target.closest('[data-sacar]');
+  const borrar = e.target.closest('[data-borrar]');
+  if (sacar) {
+    actualizar(d => {
+      const s = d.sesiones.find(x => x.id === sacar.dataset.sacar);
+      if (s) s.inscritos = s.inscritos.filter(em => em !== sacar.dataset.email);
+    });
+    pintar();
+  }
+  if (borrar) {
+    if (!confirm('¿Cancelar esta sesión? Se pierde su lista de inscritos.')) return;
+    actualizar(d => { d.sesiones = d.sesiones.filter(x => x.id !== borrar.dataset.borrar); });
+    pintar();
+  }
+});
+
+pintar();
+/* Con Supabase: trae las sesiones y a quién se inscribió desde su casa */
+sincronizarSesiones().then(r => { if (r?.ok) pintar(); }).catch(() => {});
+</script>
+</body>
+</html>

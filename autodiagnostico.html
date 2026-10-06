@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autodiagnóstico EC1375 — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>.nda-texto{max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin:10px 0 14px;font-size:.86rem;line-height:1.6;color:var(--mid)}.nda-texto ul{padding-left:18px;margin:4px 0 8px}.nda-texto p{margin:6px 0}
+.rx-elim{display:inline-block;font-size:.66rem;font-weight:700;letter-spacing:.06em;color:#fff;background:#B91C1C;border-radius:4px;padding:1px 6px;vertical-align:1px}</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <!-- ── PANTALLA 1: INTRODUCCIÓN ── -->
+  <section id="vIntro">
+    <div class="plat-head">
+      <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/></svg></div>
+      <h1>Autodiagnóstico EC1375</h1>
+      <p>Descubre qué tan listo estás para tu evaluación oficial de certificación.</p>
+    </div>
+
+    <div class="card">
+      <h2>¿En qué consiste?</h2>
+      <p style="color:var(--mid);font-size:.93rem;line-height:1.7">
+        Son <strong>142 reactivos</strong> organizados en los 4 elementos del estándar:
+        preparar el espacio, preparar al usuario, introducir al usuario a la técnica y
+        dar seguimiento. Al terminar obtienes tu porcentaje de preparación y una
+        recomendación concreta sobre si conviene evaluarte ya o reforzar primero.
+      </p>
+    </div>
+
+    <div class="card card--acento">
+      <h2>Antes de empezar</h2>
+      <p style="color:var(--mid);font-size:.93rem;line-height:1.7">
+        Responde con honestidad: <strong>Sí</strong> si ya lo haces o lo tienes,
+        <strong>No</strong> en caso contrario. Nadie más que tú ve estas respuestas, y
+        un resultado inflado solo te llevaría a una evaluación para la que no estás listo.
+        Toma entre 20 y 30 minutos, y tu avance se guarda solo: puedes pausar y volver.
+      </p>
+    </div>
+
+    <div class="card" id="cardDatos"></div>
+    <div class="card" id="cardNDA"></div>
+    <div class="card" id="cardTriptico"></div>
+
+    <div class="acciones">
+      <button class="btn-plat btn-plat--primario" id="btnComenzar">Comenzar autodiagnóstico →</button>
+    </div>
+  </section>
+
+  <!-- ── PANTALLA 2: REACTIVOS ── -->
+  <section id="vReactivos" hidden>
+    <div class="plat-head" style="padding-bottom:16px">
+      <h1 id="elNombre"></h1>
+      <p id="elDesc"></p>
+    </div>
+
+    <div class="card card--acento">
+      <div class="barra-txt">
+        <span id="elEtiqueta"></span>
+        <span id="elContador"></span>
+      </div>
+      <div class="barra"><div class="barra-fill" id="barra" style="width:0%"></div></div>
+    </div>
+
+    <div id="contenido"></div>
+
+    <div class="acciones">
+      <button class="btn-plat btn-plat--secundario" id="btnAtras">← Anterior</button>
+      <button class="btn-plat btn-plat--primario"  id="btnSiguiente">Siguiente →</button>
+    </div>
+  </section>
+
+  <!-- ── PANTALLA 3: RESULTADO ── -->
+  <section id="vResultado" hidden>
+    <div class="plat-head">
+      <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+      <h1>Tu resultado</h1>
+    </div>
+
+    <div class="card" id="cardResultado">
+      <div class="resultado" id="bloqueResultado">
+        <div class="resultado-pct" id="pct">0%</div>
+        <div class="resultado-sub" id="pctSub"></div>
+      </div>
+    </div>
+
+    <div class="card" id="cardRecomendacion"></div>
+
+    <div class="card">
+      <h2>Desglose por elemento</h2>
+      <div class="desglose" id="desglose"></div>
+    </div>
+
+    <div class="card">
+      <h2>Dónde reforzar</h2>
+      <p style="color:var(--muted);font-size:.87rem;margin-bottom:14px">
+        Estos son los puntos que marcaste como <strong>No</strong>. Son exactamente los
+        temas que conviene trabajar antes de tu evaluación.
+      </p>
+      <div id="brechas"></div>
+    </div>
+
+    <div class="card" id="cardDocsRegistro"></div>
+
+    <div class="acciones">
+      <button class="btn-plat btn-plat--secundario" id="btnRevisar">← Revisar respuestas</button>
+      <button class="btn-plat btn-plat--secundario" id="btnImprimir"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.5 9V3.5h11V9"/><path d="M6.5 17.5H5A2 2 0 0 1 3 15.5v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1.5"/><path d="M6.5 14h11v6.5h-11z"/></svg> Imprimir / PDF</button>
+      <a class="btn-plat btn-plat--primario" href="index.html">Continuar al siguiente paso →</a>
+    </div>
+  </section>
+
+</main>
+
+<script type="module">
+import './js/shell.js';
+import { montarFirma, firmaGuardada, sellar } from './js/firma.js';
+import { NDA_HTML, ACUERDO, ndaVigente } from './js/nda.js';
+import { icono as ico } from './js/iconos.js';
+import { CONFIG }  from './js/config.js';
+import { Store }   from './js/store.js';
+import { pintarBarraFlujo, completar } from './js/flow.js';
+import { INSTRUMENTO, reactivosPlanos, VERSION, criticosEnNo } from './js/data-autodiagnostico.js';
+import { montarDatosCandidato, datosCompletos, faltantes } from './js/registro.js';
+import { DOCS_REGISTRO, documentoRegistro, todosDocsRegistro, faltaEnDocumento } from './js/doc-registro.js';
+import { abrirDocumento } from './js/doc-plan-oficial.js';
+import { leerArchivo } from './js/archivos.js';
+import { recuperar } from './js/almacen-grande.js';
+
+const MODULO   = 'autodiagnostico';
+const TODOS    = reactivosPlanos();
+const UMBRAL   = CONFIG.reglas.umbralAutodiagnostico;
+
+let datos = Store.get(MODULO, { answers: {} });
+if (!datos.answers) datos.answers = {};
+
+/* El instrumento cambió de la redacción propia a los 142 reactivos
+   OFICIALES del EC1375. Las respuestas anteriores tienen las mismas claves
+   pero hablaban de otra cosa: no se pueden reusar. Se guarda la versión
+   anterior aparte (por si el Centro la quiere ver) y se empieza limpio. */
+let instrumentoNuevo = false;
+if (datos.instrumento !== VERSION) {
+  if (Object.keys(datos.answers).length) {
+    instrumentoNuevo = true;
+    Store.merge(MODULO + '.anterior', { answers: datos.answers, porcentaje: datos.porcentaje ?? null });
+  }
+  datos = { answers: {}, instrumento: VERSION, elementoActual: 0 };
+  Store.merge(MODULO, { answers: {}, instrumento: VERSION, elementoActual: 0, completado: false,
+                        porcentaje: null, cubiertos: null, recomendacion: null });
+}
+
+let elemActual = datos.elementoActual ?? 0;
+
+const $ = id => document.getElementById(id);
+const vistas = { intro: $('vIntro'), reactivos: $('vReactivos'), resultado: $('vResultado') };
+
+function mostrar(nombre) {
+  Object.entries(vistas).forEach(([k, el]) => el.hidden = (k !== nombre));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── Guardado ──────────────────────────────────────────────────────────── */
+function guardar() {
+  /* Quitar una respuesta de un autodiagnóstico ya cerrado lo reabre: el
+     paso dice "completo" y el instrumento ya no lo está. */
+  const reabrir = Store.get(MODULO).completado === true && respondidos() < TODOS.length
+    ? { completado: false } : {};
+  Store.merge(MODULO, { answers: datos.answers, instrumento: VERSION, elementoActual: elemActual, ...reabrir });
+}
+
+/* ── Conteos ───────────────────────────────────────────────────────────── */
+/* Solo cuentan respuestas a reactivos que existen: una clave vieja de otra
+   versión del instrumento inflaba el conteo. */
+const respondidos = () => TODOS.filter(r => datos.answers[r.clave]).length;
+const contarSi    = (lista = TODOS) => lista.filter(r => datos.answers[r.clave] === 'SI').length;
+
+/* ── Pintar un elemento ────────────────────────────────────────────────── */
+function pintarElemento() {
+  const el = INSTRUMENTO.elementos[elemActual];
+  const deEste = TODOS.filter(r => r.elemento === el.n);
+
+  $('elNombre').textContent = `Elemento ${el.n}: ${el.nombre}`;
+  $('elDesc').textContent   = el.descripcion;
+  $('elEtiqueta').textContent = `Elemento ${el.n} de ${INSTRUMENTO.elementos.length}`;
+
+  let html = '';
+  let n = 0;
+
+  el.criterios.forEach((cr, ci) => {
+    html += `<div class="card">
+      <h2>${cr.titulo}</h2>
+      <h3 style="color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.07em">
+        Criterio de ${cr.tipo}
+      </h3>`;
+
+    cr.grupos.forEach((gr, gi) => {
+      if (gr.titulo) html += `<div class="grupo-titulo">${gr.titulo}</div>`;
+      gr.items.forEach((texto, ii) => {
+        const clave = `e${elemActual + 1}_c${ci}_g${gi}_i${ii}`;
+        const val   = datos.answers[clave];
+        n++;
+        html += `
+          <div class="reactivo ${val ? 'reactivo--resp' : ''}" data-clave="${clave}">
+            <div class="reactivo-num">${n}</div>
+            <div class="reactivo-txt">${texto}</div>
+            <div class="si-no" role="group" aria-label="Respuesta">
+              <button type="button" data-v="SI" aria-pressed="${val === 'SI'}">Sí</button>
+              <button type="button" data-v="NO" aria-pressed="${val === 'NO'}">No</button>
+            </div>
+          </div>`;
+      });
+    });
+    html += `</div>`;
+  });
+
+  $('contenido').innerHTML = html;
+  $('btnAtras').disabled = elemActual === 0;
+  $('btnSiguiente').textContent =
+    elemActual === INSTRUMENTO.elementos.length - 1 ? 'Ver mi resultado →' : 'Siguiente →';
+
+  actualizarBarra(deEste);
+}
+
+function actualizarBarra(deEste) {
+  const hechos = deEste.filter(r => datos.answers[r.clave]).length;
+  $('barra').style.width = Math.round((hechos / deEste.length) * 100) + '%';
+  $('elContador').textContent = `${hechos} / ${deEste.length} en este elemento · ${respondidos()} / 142 en total`;
+}
+
+/* Delegación de clicks en Sí/No */
+$('contenido').addEventListener('click', e => {
+  const btn = e.target.closest('.si-no button');
+  if (!btn) return;
+
+  const fila  = btn.closest('.reactivo');
+  const clave = fila.dataset.clave;
+  const valor = btn.dataset.v;
+
+  // Volver a pulsar la misma opción la deselecciona
+  if (datos.answers[clave] === valor) delete datos.answers[clave];
+  else datos.answers[clave] = valor;
+
+  fila.querySelectorAll('.si-no button').forEach(b =>
+    b.setAttribute('aria-pressed', datos.answers[clave] === b.dataset.v));
+  fila.classList.toggle('reactivo--resp', !!datos.answers[clave]);
+
+  guardar();
+  actualizarBarra(TODOS.filter(r => r.elemento === INSTRUMENTO.elementos[elemActual].n));
+});
+
+/* ── Navegación ────────────────────────────────────────────────────────── */
+/* ── Acuerdo de confidencialidad ──────────────────────────────────────────
+   Los 142 reactivos que siguen son el instrumento de evaluación del CONOCER
+   tal como lo aplica el Centro. No es material de divulgación: es el examen.
+   Un candidato que lo fotografía y lo reparte no se perjudica a sí mismo —
+   perjudica a todos los que se evalúen después, porque un instrumento que
+   circula deja de medir nada.
+
+   Por eso el acuerdo va ANTES de la primera pantalla de reactivos y no en el
+   pie de página: después de verlo ya no hay nada que acordar. Y va firmado,
+   porque una casilla sola no es oponible a nadie.                          */
+/* Lo sellado NO lleva el nombre: corregir un dato del registro no debe
+   invalidar la firma. El nombre y la CURP se muestran en pantalla y quedan
+   en el sello junto a la firma. */
+const parteNDA = () => {
+  const c = Store.get('candidato', {});
+  return c.nombre ? `${c.nombre}${c.curp ? ` (CURP ${c.curp})` : ''}` : 'el/la candidato/a';
+};
+
+/* Tríptico de Derechos y Obligaciones del Sistema Nacional de Competencias
+   (CONOCER): se entrega al registrarse y el candidato firma de recibido. */
+const TRIPTICO_ITEMS = [
+  'Tienes derecho a consultar gratuitamente el Estándar de Competencia en el RENEC (www.conocer.gob.mx).',
+  'Tu autodiagnóstico es libre de costo y confidencial.',
+  'Tienes derecho a recibir retroalimentación verbal y documental sobre tu evaluación.',
+  'Debes entregar información veraz y cumplir con las actividades acordadas en tu plan de evaluación.',
+  'Puedes inconformarte formalmente si consideras que tus derechos fueron violados.',
+];
+const TRIPTICO = 'Acuso de recibido con conformidad un Tríptico de Derechos y Obligaciones del Usuario ' +
+  '(Sistema Nacional de Competencias, CONOCER): ' + TRIPTICO_ITEMS.join(' ');
+const tripticoFirmado = () => {
+  const t = Store.get(MODULO).triptico;
+  return !!(t && t.firma && t.acepto === TRIPTICO);
+};
+
+const ndaFirmado = () => ndaVigente(Store.get(MODULO));
+
+function pintarNDA() {
+  const marcado = Store.get(MODULO).ndaMarcado === true;
+  const f = firmaGuardada();
+  const listo = ndaFirmado();
+
+  $('cardNDA').innerHTML = `
+    <h2>Acuerdo de confidencialidad</h2>
+    ${listo ? `
+      <p class="ev-sellada">${ico('cheque', 15)}
+         Acuerdo firmado el ${new Date(Store.get(MODULO).nda.fecha)
+           .toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+      <p class="pn-nota" style="margin-bottom:0">
+        Ya puedes empezar. Si necesitas leerlo otra vez, está en tu expediente.
+      </p>`
+    : `
+      <p class="pn-nota" style="margin-top:0">
+        Lo que sigue es el instrumento oficial con el que te van a evaluar.
+        Antes de abrirlo hay que acordar esto:
+      </p>
+
+      <div class="nda-texto">${NDA_HTML}</div>
+      <label class="ev-check">
+        <input type="checkbox" id="chkNDA" ${marcado ? 'checked' : ''}>
+        <span>He leído y acepto los términos de este Acuerdo de Confidencialidad.</span>
+      </label>
+
+      ${marcado && !f ? `
+        <p class="ev-pendiente">${ico('alerta', 15)}
+           Falta tu firma para que el acuerdo quede cerrado.</p>` : ''}
+
+      <h3 style="margin:20px 0 4px;font-size:.95rem">Tu firma</h3>
+      <div id="firmaNDA"></div>`}`;
+
+  if (!listo) {
+    montarFirma($('firmaNDA'), {
+      nombreSugerido: Store.get('candidato', {}).nombre || '',
+      onCambio: () => { sellarNDA(); pintarNDA(); pintarTriptico(); refrescarComenzar(); },
+    });
+
+    $('chkNDA').addEventListener('change', e => {
+      if (Store.soloLectura) { e.target.checked = marcado; return; }
+      Store.merge(MODULO, { ndaMarcado: e.target.checked });
+      if (e.target.checked) sellarNDA(); else Store.merge(MODULO, { nda: null });
+      pintarNDA(); refrescarComenzar();
+    });
+  }
+  refrescarComenzar();
+}
+
+function sellarNDA() {
+  if (Store.get(MODULO).ndaMarcado !== true || !firmaGuardada()) return;
+  const sello = sellar(ACUERDO);
+  if (sello) Store.merge(MODULO, { nda: sello });
+}
+
+/* ── Tríptico de derechos y obligaciones ───────────────────────────────── */
+function pintarTriptico() {
+  const marcado = Store.get(MODULO).tripticoMarcado === true;
+  const listo = tripticoFirmado();
+  $('cardTriptico').innerHTML = `
+    <h2>Tríptico de Derechos y Obligaciones</h2>
+    ${listo ? `
+      <p class="ev-sellada">${ico('cheque', 15)}
+         Acuse firmado el ${new Date(Store.get(MODULO).triptico.fecha)
+           .toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}</p>`
+    : `
+      <p class="pn-nota" style="margin-top:0">Del Sistema Nacional de Competencias (CONOCER). Léelo y firma de recibido:</p>
+      <ul class="nda-texto" style="padding-left:28px">${TRIPTICO_ITEMS.map(x => `<li>${x}</li>`).join('')}</ul>
+      <label class="ev-check">
+        <input type="checkbox" id="chkTriptico" ${marcado ? 'checked' : ''}>
+        <span>He leído y acepto el Tríptico de Derechos y Obligaciones del Sistema Nacional de
+          Competencias (CONOCER), y acuso de recibido con conformidad.</span>
+      </label>
+      ${firmaGuardada() ? '<p class="pn-nota">Se firma con la misma firma que registraste arriba.</p>'
+                        : '<p class="ev-pendiente">' + ico('alerta', 15) + ' Primero registra tu firma en el acuerdo de confidencialidad.</p>'}`}`;
+  if (!listo) $('chkTriptico').addEventListener('change', e => {
+    if (Store.soloLectura) { e.target.checked = marcado; return; }
+    Store.merge(MODULO, { tripticoMarcado: e.target.checked });
+    if (e.target.checked && firmaGuardada()) {
+      const sello = sellar(TRIPTICO); if (sello) Store.merge(MODULO, { triptico: sello });
+    } else Store.merge(MODULO, { triptico: null });
+    pintarTriptico(); refrescarComenzar();
+  });
+}
+
+function refrescarComenzar() {
+  const b = $('btnComenzar');
+  if (!b) return;
+  const datosOk = datosCompletos();
+  const listo = datosOk && ndaFirmado() && tripticoFirmado();
+  b.disabled = !listo;
+  b.title = listo ? '' : 'Completa tus datos, firma el acuerdo de confidencialidad y el acuse del tríptico';
+  b.textContent = listo
+    ? 'Comenzar autodiagnóstico →'
+    : !datosOk ? 'Completa tus datos generales para empezar'
+    : (!ndaFirmado() ? 'Acuerda la confidencialidad para empezar' : 'Firma el acuse del tríptico para empezar');
+  document.querySelectorAll('.nda-parte').forEach(x => x.textContent = parteNDA());
+}
+
+montarDatosCandidato($('cardDatos'), refrescarComenzar);
+pintarNDA();
+pintarTriptico();
+
+$('btnComenzar').onclick = () => {
+  if (!datosCompletos() || !ndaFirmado() || !tripticoFirmado()) return;
+  /* Quien ya contestó todo y solo volvió a firmar va directo a su resultado. */
+  if (respondidos() === TODOS.length) { finalizar(); return; }
+  mostrar('reactivos');
+  pintarElemento();
+};
+
+$('btnAtras').onclick = () => {
+  if (elemActual > 0) { elemActual--; guardar(); pintarElemento(); window.scrollTo({top:0,behavior:'smooth'}); }
+};
+
+$('btnSiguiente').onclick = () => {
+  const el = INSTRUMENTO.elementos[elemActual];
+  const deEste = TODOS.filter(r => r.elemento === el.n);
+  const faltan = deEste.filter(r => !datos.answers[r.clave]).length;
+
+  if (faltan > 0 && !confirm(`Te faltan ${faltan} reactivos en este elemento. ¿Continuar de todos modos?`))
+    return;
+
+  if (elemActual < INSTRUMENTO.elementos.length - 1) {
+    elemActual++; guardar(); pintarElemento();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    finalizar();
+  }
+};
+
+/* ── Resultado ─────────────────────────────────────────────────────────── */
+function finalizar() {
+  const si  = contarSi();
+  const pct = Math.round((si / TODOS.length) * 100);
+
+  $('pct').textContent = pct + '%';
+  $('pctSub').textContent = `${si} de ${TODOS.length} reactivos cubiertos`;
+  /* Un reactivo eliminatorio en NO reprueba la evaluación completa, por
+     alta que sea la suma: con uno solo no se recomienda evaluarse. */
+  const criticos = criticosEnNo(datos.answers);
+  const listo = pct >= UMBRAL && criticos.length === 0;
+  $('bloqueResultado').classList.toggle('resultado--bajo', !listo);
+
+  /* Recomendación */
+  $('cardRecomendacion').innerHTML = (pct >= UMBRAL && criticos.length)
+    ? `<h2>Todavía no: tienes ${criticos.length} punto${criticos.length === 1 ? '' : 's'} eliminatorio${criticos.length === 1 ? '' : 's'} en “No”</h2>
+       <p style="color:var(--mid);line-height:1.7;font-size:.93rem">
+         Tu cobertura (${pct}%) supera el ${UMBRAL}%, pero en el EC1375 hay 17 reactivos
+         eliminatorios: basta uno en cero para no ser declarado competente, por alta que sea
+         la suma. Resuélvelos primero:</p>
+       <ul style="color:var(--ink);line-height:1.7;font-size:.9rem;margin:10px 0 0 18px">
+         ${criticos.map(c => `<li><strong>Reactivo ${c.n}</strong> (${c.crit}) · ${c.texto}</li>`).join('')}
+       </ul>`
+    : pct >= UMBRAL
+    ? `<h2>Estás listo para evaluarte</h2>
+       <p style="color:var(--mid);line-height:1.7;font-size:.93rem">
+         Con ${pct}% de cobertura cumples el umbral de ${UMBRAL}% que recomendamos antes de
+         la evaluación oficial. Revisa de todos modos los puntos marcados abajo y agenda tu
+         evaluación con el Centro Evaluador.</p>`
+    : `<h2>Conviene reforzar antes</h2>
+       <p style="color:var(--mid);line-height:1.7;font-size:.93rem">
+         Con ${pct}% aún estás por debajo del ${UMBRAL}% que recomendamos. No es un problema:
+         los puntos que marcaste como <strong>No</strong> son un plan de trabajo concreto.
+         Trabájalos con tu Centro Evaluador y vuelve a aplicar este autodiagnóstico.</p>`;
+
+  /* Desglose por elemento */
+  $('desglose').innerHTML = INSTRUMENTO.elementos.map(el => {
+    const deEste = TODOS.filter(r => r.elemento === el.n);
+    const s = contarSi(deEste);
+    const p = Math.round((s / deEste.length) * 100);
+    return `<div class="desglose-fila">
+      <div class="desglose-nom">Elemento ${el.n} · ${el.nombre}</div>
+      <div class="desglose-val" style="color:${p >= UMBRAL ? 'var(--spoke-deep)' : 'var(--warn)'}">
+        ${p}% <span style="color:var(--muted);font-weight:500">(${s}/${deEste.length})</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  /* Brechas: distinguimos lo marcado como "No" de lo que quedó sin contestar */
+  const enNo       = TODOS.filter(r => datos.answers[r.clave] === 'NO');
+  const sinContestar = TODOS.filter(r => !datos.answers[r.clave]);
+
+  const listar = (lista) => INSTRUMENTO.elementos.map(el => {
+    const deEl = lista.filter(b => b.elemento === el.n);
+    if (!deEl.length) return '';
+    return `<div class="grupo-titulo">Elemento ${el.n} · ${el.nombre}</div>` +
+      deEl.map(b => `<div class="reactivo" style="padding:10px 0">
+        <div class="reactivo-txt">${b.critico ? '<span class="rx-elim">ELIMINATORIO</span> ' : ''}${b.texto}
+          <span style="color:var(--muted);font-size:.78rem">· reactivo ${b.n} (${b.cod})</span></div></div>`).join('');
+  }).join('');
+
+  let htmlBrechas = '';
+
+  if (enNo.length) {
+    htmlBrechas += listar(enNo);
+  } else if (!sinContestar.length) {
+    htmlBrechas += `<p style="color:var(--spoke-deep);font-weight:600">
+      No marcaste ningún reactivo como "No". Excelente.</p>`;
+  }
+
+  if (sinContestar.length) {
+    htmlBrechas += `
+      <div class="aviso aviso--warn" style="margin-top:${enNo.length ? '22px' : '0'}">
+        <strong>Quedaron ${sinContestar.length} reactivos sin contestar,</strong>
+        y mientras falten este paso sigue abierto: se cierra con el instrumento completo.
+        No cuentan como cubiertos, así que tu porcentaje real puede ser más alto de lo que
+        aparece arriba. Vuelve con “Revisar respuestas” y complétalos para tener una lectura
+        confiable.
+      </div>` + listar(sinContestar);
+  }
+
+  $('brechas').innerHTML = htmlBrechas;
+
+  /* Antes se cerraba con lo que hubiera: 1 reactivo contestado y 141 en
+     blanco daban el paso por terminado, abrían Reforzamiento con un plan
+     vacío ("no marcaste ningún No") y sumaban el 15% de la fase. Ahora el
+     resultado se guarda igual, pero el paso se cierra con los 142. */
+  const resultado = {
+    answers: datos.answers,
+    instrumento: VERSION,
+    porcentaje: pct,
+    cubiertos: si,
+    total: TODOS.length,
+    criticosEnNo: criticos.map(c => c.n),
+    recomendacion: listo ? 'evaluar' : 'reforzar',
+  };
+  /* Sin el acuse del tríptico y el acuerdo firmados el paso no se cierra
+     (quien ya había empezado antes de que existiera el tríptico lo firma
+     aquí mismo, desde la portada del autodiagnóstico). */
+  const firmasOk = datosCompletos() && ndaFirmado() && tripticoFirmado();
+  if (!firmasOk) {
+    $('brechas').insertAdjacentHTML('afterbegin', `<div class="aviso aviso--warn" style="margin-bottom:16px">
+      <strong>Falta ${!datosCompletos() ? 'completar tus datos generales (' + faltantes().join(', ') + ')'
+        : !ndaFirmado() ? 'firmar el acuerdo de confidencialidad' : 'firmar el acuse del Tríptico de Derechos y Obligaciones'}.</strong>
+      Tu resultado ya está guardado; el paso se cierra al firmar.
+      <button class="btn-plat btn-plat--secundario" id="btnIrFirmar" style="margin-top:10px">Ir a firmar</button></div>`);
+    setTimeout(() => { const b = $('btnIrFirmar'); if (b) b.onclick = () => mostrar('intro'); });
+  }
+  if (sinContestar.length || !firmasOk) Store.merge(MODULO, { ...resultado, completado: false });
+  else completar(MODULO, resultado);
+
+  pintarBarraFlujo($('pasos'), MODULO);
+  pintarDocsRegistro();
+  mostrar('resultado');
+}
+
+/* ── Tus documentos de Registro (como Paideia) ────────────────────────────
+   Lo que firmó al registrarse, en el formato oficial del Centro: las
+   mismas hojas que van a su portafolio. Se abren en una pestaña para
+   imprimir o guardar como PDF. */
+async function fotoRegistro() {
+  const a = leerArchivo('candidato', 'fotoRegistro');
+  if (!a) return '';
+  let src = a.dato || a.miniatura || '';
+  if (!src && a.enAlmacen) { try { const g = await recuperar(a); src = g?.dato || g?.miniatura || ''; } catch {} }
+  return /^data:image\//.test(src) ? src : '';
+}
+async function ctxDocs() {
+  return { auto: Store.get(MODULO, {}), cand: Store.get('candidato', {}), firma: firmaGuardada(), foto: await fotoRegistro(), ndaHtml: NDA_HTML };
+}
+/* El contexto (con la foto, que puede venir de IndexedDB) se arma al pintar,
+   para que el clic abra la pestaña de inmediato: si la abriera después de
+   esperar, el navegador podría tomarla por una ventana emergente. */
+let ctxDocsListo = null;
+async function pintarDocsRegistro() {
+  const ctx = ctxDocsListo = await ctxDocs();
+  $('cardDocsRegistro').innerHTML = `<h2>Tus documentos de Registro</h2>
+    <p style="color:var(--muted);font-size:.87rem;margin-bottom:12px">En el formato oficial del Centro, como van en tu portafolio. Ábrelos y usa «Imprimir / Guardar PDF» para quedarte con tu copia.</p>
+    ${DOCS_REGISTRO.map(d => {
+      const falta = faltaEnDocumento(d.id, ctx);
+      return `<div class="doc-reg" style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+        <div style="flex:1 1 220px"><b>${d.titulo}</b><br><small style="color:var(--muted)">${falta.length ? 'Falta: ' + falta.join(', ') : d.desc}</small></div>
+        <button class="btn-plat btn-plat--secundario" data-doc-reg="${d.id}">Ver / descargar</button></div>`;
+    }).join('')}
+    <div class="acciones" style="margin-top:6px"><button class="btn-plat btn-plat--primario" id="btnDocsTodos">Abrir los cuatro juntos</button></div>`;
+}
+$('cardDocsRegistro').addEventListener('click', e => {
+  if (!ctxDocsListo) return;
+  const ctx = { ...ctxDocsListo, auto: Store.get(MODULO, {}), cand: Store.get('candidato', {}), firma: firmaGuardada() };
+  const b = e.target.closest('[data-doc-reg]');
+  if (b) return abrirDocumento(documentoRegistro(b.dataset.docReg, ctx));
+  if (e.target.id === 'btnDocsTodos') abrirDocumento(todosDocsRegistro(ctx));
+});
+
+$('btnRevisar').onclick  = () => { elemActual = 0; pintarElemento(); mostrar('reactivos'); };
+$('btnImprimir').onclick = () => window.print();
+
+/* ── Arranque ──────────────────────────────────────────────────────────── */
+pintarBarraFlujo($('pasos'), MODULO);
+
+if (instrumentoNuevo) {
+  const av = document.createElement('div');
+  av.className = 'aviso aviso--warn';
+  av.style.marginBottom = '18px';
+  av.innerHTML = `<strong>Actualizamos el autodiagnóstico a los 142 reactivos oficiales del EC1375.</strong>
+    Tus respuestas anteriores eran de una versión preliminar con otra redacción, así que hay que
+    contestarlo de nuevo. Te toma unos 30 minutos.`;
+  $('vIntro').prepend(av);
+}
+
+if (datos.completado)        { finalizar(); }
+else if (respondidos() > 0)  { mostrar('reactivos'); pintarElemento(); }
+else                         { mostrar('intro'); }
+</script>
+</body>
+</html>

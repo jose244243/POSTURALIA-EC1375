@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Centro Evaluador — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<link rel="stylesheet" href="admin-styles.css">
+<style>
+  .ev-grid { display:grid; grid-template-columns: 1fr; gap:16px }
+  .et { display:flex; gap:12px; align-items:center; padding:9px 0; border-bottom:1px solid var(--border) }
+  .et:last-child { border-bottom:0 }
+  .et-i { flex:0 0 28px; height:28px; border-radius:50%; display:grid; place-items:center; font-weight:800; font-size:.8rem; border:1.5px solid var(--border); color:var(--muted) }
+  .et.hecha .et-i { background:#059669; border-color:#059669; color:#fff }
+  .et.actual .et-i { background:#0d2a6e; border-color:#0d2a6e; color:#fff }
+  .et.bloq { opacity:.45 }
+  .et-t { flex:1; font-size:.9rem } .et-t small { display:block; color:var(--muted); font-size:.76rem }
+  .chip { display:inline-block; padding:3px 10px; border-radius:999px; font-size:.75rem; font-weight:700 }
+  .chip-ok { background:#D1FAE5; color:#065F46 } .chip-no { background:#FEE2E2; color:#991B1B } .chip-gris { background:#E2E8F0; color:#334155 }
+  .iec-g { margin:10px 0 4px; font-weight:700; font-size:.86rem; color:var(--dark) }
+  .iec-g small { color:var(--muted); font-weight:600 }
+  .cq { padding:8px 0 10px; border-bottom:1px dashed var(--border); font-size:.84rem }
+  .cq-p { margin-bottom:4px }
+  .cq-op { margin:2px 0 6px 18px; padding:0; list-style:none; color:var(--mid); font-size:.8rem }
+  .cq-op li { margin:1px 0 }
+  .cq-r { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center }
+  .cq-r select { padding:4px 6px; border:1px solid var(--border); border-radius:6px; font:inherit }
+  .cq-rel { display:flex; gap:8px; align-items:center; width:100%; flex-wrap:wrap }
+  .cq-rel > span { flex:1; min-width:180px }
+  .cq-chk { display:inline-flex; gap:2px; align-items:center; font-size:.8rem }
+  .cq-ok { font-size:.8rem; font-weight:600; color:var(--muted) }
+  .iec-r { display:grid; grid-template-columns: 76px 1fr 96px 150px; gap:8px; align-items:center; padding:6px 0; border-bottom:1px dashed var(--border); font-size:.84rem }
+  .iec-r .cod { color:var(--muted); font-size:.72rem }
+  .sn { display:flex; gap:4px } .sn button { flex:1; padding:5px 0; border-radius:6px; border:1px solid var(--border); background:var(--white); cursor:pointer; font-weight:700; font-size:.78rem }
+  .sn button.si.on { background:#059669; border-color:#059669; color:#fff } .sn button.no.on { background:#DC2626; border-color:#DC2626; color:#fff }
+  .sug { outline:2px dashed #93C5FD; outline-offset:2px }
+  .iec-r input { width:100%; padding:5px 7px; border:1px solid var(--border); border-radius:6px; font:inherit; font-size:.78rem }
+  .marcador { position:sticky; top:0; z-index:5; background:var(--white); border:1px solid var(--border); border-radius:10px; padding:10px 14px; display:flex; gap:16px; flex-wrap:wrap; align-items:center; font-size:.86rem; margin-bottom:10px }
+  .campo-e { margin:10px 0 } .campo-e label { display:block; font-weight:600; font-size:.84rem; margin-bottom:4px }
+  .campo-e input, .campo-e select, .campo-e textarea { width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:8px; font:inherit; font-size:.88rem; background:var(--white); color:var(--dark) }
+  .avisos li { margin:3px 0; font-size:.86rem } .falta { color:#B91C1C; font-size:.85rem }
+  .port-li { display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid var(--border); font-size:.86rem }
+  details.card > summary { cursor:pointer; font-weight:800; font-size:1.05rem; list-style:none }
+  details.card > summary::after { content:' ▾'; color:var(--muted) }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="ad-top">
+  <div class="ad-top-in">
+    <div>
+      <h1 class="ad-titulo" id="titulo">Centro Evaluador</h1>
+      <div class="ad-sub" id="sub">Evaluación, Cédula y portafolio del candidato</div>
+      <div class="acc-rap"><a class="btn-a btn-a--sec" href="admin-candidatos.html">← Candidatos</a>
+        <a class="btn-a btn-a--pri" id="btnPortafolio" href="#">Generar portafolio (PDF)</a></div>
+    </div>
+  </div>
+</header>
+
+<main class="ad-wrap">
+  <div id="sinCandidato" class="card" hidden><h2>Elige un candidato</h2><div id="listaCand"></div></div>
+  <div id="app" class="ev-grid" hidden>
+    <section class="card"><h2>Etapas del Centro Evaluador</h2><div id="etapas"></div></section>
+
+    <details class="card" id="cardIec"><summary>Instrumento de Evaluación (IEC)</summary><div id="iec"></div></details>
+
+    <section class="card"><h2>Cédula de Evaluación</h2><div id="cedula"></div></section>
+
+    <details class="card"><summary>Verificación Interna</summary><div id="verif"></div></details>
+
+    <section class="card"><h2>Firmas del evaluador</h2>
+      <p style="color:var(--muted);font-size:.84rem">Cada documento lleva su propia firma: el Plan de Evaluación, la rúbrica del IEC y la Verificación Interna.</p>
+      <div id="firmas"></div></section>
+
+    <section class="card"><h2>Grabación de la sesión</h2><div id="video"></div></section>
+
+    <section class="card"><h2>Portafolio de Evidencias</h2><div id="portafolio"></div></section>
+  </div>
+</main>
+
+<script type="module">
+import './js/admin-shell.js';
+import { esc, ligaSegura } from './js/seguro.js';
+import { CONFIG } from './js/config.js';
+
+import { botonTutorial, montarTutoriales } from './js/tutorial-equipo.js';
+montarTutoriales();
+const TUTO_VERIF = botonTutorial('evaluador_verificacion', 'Tutorial');
+import { cargar, candidatos, evaluacionDe, guardarEvaluacion, fasesPagadas, sincronizarEvaluaciones } from './js/admin-data.js';
+import { sesion } from './js/cuenta.js';
+import { recuperar } from './js/almacen-grande.js';
+import { imagenesDe } from './js/portafolio-imagenes.js';
+import { estadoPortafolio, htmlAvance, CSS_AVANCE } from './js/portafolio-avance.js';
+import { montarFirmaSimple, firmaHtml } from './js/firma-simple.js';
+import { lineaDeTiempo, ETAPAS, JUICIOS, juicioOficial, CAMPOS_CEDULA, TEXTO_ACUERDO, validarCedula, publicarCedula, guardarBorrador,
+         cedulaPublicada, calificarIec, validarIec, sugerenciasIec, guardarIec, seccionesIec, CUESTIONARIO_IEC,
+         GRUPOS_CUESTIONARIO, letraDe, normalizarRespuesta, esCorrecta, correctaTexto, calificarCuestionario,
+         SECCIONES_PORTAFOLIO, avisosPortafolio, mensajeWhatsApp, telefonoWhatsApp, firmaValida } from './js/evaluacion.js';
+import { htmlPortafolio, cedula as hojaCedula, iec as hojaIec, verificacion as hojaVerif, PUNTOS_VERIFICACION } from './js/doc-portafolio.js';
+import { envolverOficial, abrirDocumento } from './js/doc-plan-oficial.js';
+
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const clave = (params.get('email') || '').toLowerCase();
+const hoy = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+const fechaCorta = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }); };
+const por = () => sesion()?.correo || '';
+
+function candidato() { return candidatos(cargar()).find(c => c.email === clave); }
+const ev = () => evaluacionDe(cargar(), clave);
+const guardar = cambios => { guardarEvaluacion(clave, cambios); };
+
+if (!clave || !candidato()) {
+  $('sinCandidato').hidden = false;
+  $('btnPortafolio').hidden = true;
+  const lista = candidatos(cargar());
+  $('listaCand').innerHTML = lista.length ? lista.map(c => `<div class="port-li"><span>${esc(c.nombre)} <small style="color:var(--muted)">${esc(c.email)}</small></span>
+    <a class="btn-a btn-a--pri" href="admin-evaluacion.html?email=${encodeURIComponent(c.email)}">Abrir evaluación</a></div>`).join('')
+    : '<p class="vacio">No hay expedientes cargados. Cárgalos en <a href="admin-candidatos.html">Candidatos</a>.</p>';
+} else {
+  $('app').hidden = false;
+}
+
+function pintarTodo() { pintarCabecera(); pintarEtapas(); pintarIec(); pintarCedula(); pintarVerif(); pintarFirmas(); pintarVideo(); pintarPortafolio(); }
+
+function pintarCabecera() {
+  const c = candidato(), e = ev();
+  const t = lineaDeTiempo({ evaluacion: e, evidenciasHechas: !!c.estado?.evidencias?.completado, entregaPagada: !!c.fases?.entrega });
+  $('titulo').textContent = c.nombre;
+  $('sub').innerHTML = `${esc(c.email)} · ${t.dictamen ? `<span class="chip ${t.dictamen === 'competente' ? 'chip-ok' : 'chip-no'}">${t.dictamen === 'competente' ? 'COMPETENTE' : 'TODAVÍA NO COMPETENTE'}</span>` : '<span class="chip chip-gris">Sin dictamen</span>'}`;
+}
+
+/* ── Etapas ── */
+function pintarEtapas() {
+  const c = candidato(), e = ev();
+  const t = lineaDeTiempo({ evaluacion: e, evidenciasHechas: !!c.estado?.evidencias?.completado, entregaPagada: !!c.fases?.entrega });
+  const tel = telefonoWhatsApp(c.candidato?.telefonoCelular);
+  $('etapas').innerHTML = t.etapas.map((x, i) => `<div class="et ${x.hecha ? 'hecha' : ''} ${t.actual === x.clave ? 'actual' : ''} ${x.bloqueada ? 'bloq' : ''}">
+      <span class="et-i">${x.hecha ? '✓' : i + 1}</span>
+      <span class="et-t">${esc(x.label)}<small>${x.hecha ? (x.fecha ? 'el ' + fechaCorta(x.fecha) : 'hecho') : x.manual ? 'la marca el equipo' : x.clave === 'evidencias' ? 'se cierra cuando el candidato entrega sus evidencias' : x.clave === 'dictamen' ? 'se cierra al publicar la Cédula' : 'se cierra al registrar el pago de Entrega'}</small></span>
+      ${x.manual && !x.bloqueada ? `<button class="btn-a ${x.hecha ? 'btn-a--sec' : 'btn-a--pri'}" data-etapa="${x.clave}">${x.hecha ? 'Desmarcar' : 'Marcar hecha'}</button>` : ''}
+      ${tel && x.hecha && x.clave !== 'evidencias' && x.clave !== 'pago_entrega' ? `<a class="btn-a btn-a--sec" target="_blank" rel="noopener" href="https://wa.me/${tel}?text=${encodeURIComponent(mensajeWhatsApp(x.clave, { nombre: (c.nombre || '').split(' ')[0], dictamen: t.dictamen, liga: location.origin + location.pathname.replace(/[^/]*$/, 'index.html') }))}">Avisar por WhatsApp</a>` : ''}
+    </div>`).join('');
+}
+$('etapas').addEventListener('click', e => {
+  const b = e.target.closest('[data-etapa]'); if (!b) return;
+  const etapas = { ...(ev().etapas || {}) };
+  if (etapas[b.dataset.etapa]) delete etapas[b.dataset.etapa]; else etapas[b.dataset.etapa] = { fecha: new Date().toISOString(), por: por() };
+  guardar({ etapas }); pintarEtapas();
+});
+
+/* ── IEC ── */
+let iecEdit = null;
+const LETRAS = q => q.opciones.map(o => letraDe(o)).filter(Boolean);
+function preguntaIec(q) {
+  const v = normalizarRespuesta(q, iecEdit.cuestionario[q.n]);
+  const opts = `<ol class="cq-op">${q.opciones.map(o => `<li>${esc(o)}</li>`).join('')}</ol>`;
+  let control;
+  if (q.tipo !== 'relacionar_columnas') {
+    control = `<select data-cuest="${q.n}" aria-label="Respuesta a la pregunta ${q.n}"><option value="">—</option>${LETRAS(q).map(l => `<option ${v === l ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+  } else if (q.correcta[0]?.letras) {
+    const grupos = String(v || '').split('|');
+    control = q.izquierda.map((it, i) => { const marc = (grupos[i] || '').split(',').map(x => letraDe(x));
+      return `<div class="cq-rel"><span>${esc(it)}</span>${LETRAS(q).map(l => `<label class="cq-chk"><input type="checkbox" data-cq-multi="${q.n}" data-i="${i}" value="${l}" ${marc.includes(l) ? 'checked' : ''}>${l}</label>`).join('')}</div>`; }).join('');
+  } else {
+    const partes = String(v || '').split(',').map(x => letraDe(x));
+    control = q.izquierda.map((it, i) => `<div class="cq-rel"><span>( ${esc(partes[i] || ' ')} ) ${esc(it)}</span><select data-cq-rel="${q.n}" data-i="${i}" aria-label="${esc(it)}"><option value="">—</option>${LETRAS(q).map(l => `<option ${partes[i] === l ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`).join('');
+  }
+  const ok = esCorrecta(q, v);
+  return `<div class="cq" data-q="${q.n}"><div class="cq-p"><b>${q.num}.</b> ${esc(q.pregunta)}${q.imagen ? `<br><small>(${esc(q.imagen.titulo)}: ${esc(q.imagen.leyenda.join(' · '))})</small>` : ''}</div>
+    ${opts}<div class="cq-r">${control}<span class="cq-ok" data-cq-ok="${q.n}">${ok === null ? '' : ok ? '✓ correcta' : '✗ la correcta es ' + esc(correctaTexto(q))}</span></div></div>`;
+}
+function leerPregunta(n) {
+  const q = CUESTIONARIO_IEC.find(x => x.n === Number(n)); const cont = document.querySelector(`#iec .cq[data-q="${n}"]`);
+  if (!q || !cont) return;
+  if (q.tipo !== 'relacionar_columnas') iecEdit.cuestionario[n] = cont.querySelector('[data-cuest]').value;
+  else if (q.correcta[0]?.letras) {
+    const vals = q.izquierda.map((_, i) => [...cont.querySelectorAll(`[data-cq-multi][data-i="${i}"]:checked`)].map(x => x.value).join(','));
+    iecEdit.cuestionario[n] = vals.every(x => !x) ? '' : vals.join(' | ');
+  } else {
+    const vals = [...cont.querySelectorAll('[data-cq-rel]')].map(x => x.value);
+    iecEdit.cuestionario[n] = vals.every(x => !x) ? '' : vals.map(x => x || '?').join(',');
+  }
+  const ok = esCorrecta(q, iecEdit.cuestionario[n]);
+  cont.querySelector('[data-cq-ok]').textContent = ok === null ? '' : ok ? '✓ correcta' : '✗ la correcta es ' + correctaTexto(q);
+  aplicarCuestionario();
+}
+/* El Sí/No de los reactivos 135–142 sale del cuestionario cuando su grupo
+   está completo; mientras falte alguna pregunta no se toca. */
+function aplicarCuestionario(soloEtiquetas = false) {
+  const c = calificarCuestionario(iecEdit.cuestionario);
+  Object.entries(c).forEach(([n, v]) => {
+    const res = document.querySelector(`#iec [data-cq-res="${n}"]`);
+    if (res) res.textContent = v ? `→ ${v === 'si' ? 'Sí' : 'No'} (según Anexo 2)` : '· faltan respuestas';
+    if (!v || soloEtiquetas) return;
+    iecEdit.respuestas[n] = v;
+    const fila = document.querySelector(`#iec .iec-r[data-n="${n}"]`);
+    fila?.querySelectorAll('.sn button').forEach(x => x.classList.toggle('on', v === x.dataset.v));
+  });
+  marcadorIec();
+}
+function pintarIec() {
+  const d = ev().iec || {};
+  iecEdit = { respuestas: { ...(d.respuestas || {}) }, observaciones: { ...(d.observaciones || {}) }, cuestionario: { ...(d.cuestionario || {}) }, fecha: d.fecha || candidato().fechaEvaluacion || hoy() };
+  const sug = sugerenciasIec(candidato());
+  const secciones = seccionesIec();
+  $('iec').innerHTML = `
+    <p style="color:var(--muted);font-size:.84rem;margin:8px 0">Califica viendo la grabación. Los 142 reactivos: el IEC no admite "No aplica". Las actitudes
+      (AHV) se califican al revés: restan su peso si NO se presentan. COMPETENTE = ${CONFIG.centroEvaluacion?.umbral ?? 97.64} puntos o más y al menos un reactivo cumplido
+      en cada criterio de producto y desempeño.</p>
+    <p style="margin:6px 0 10px"><a class="btn-a btn-a--pri" href="admin-iec.html?email=${encodeURIComponent(clave)}">Calificar en pantalla completa →</a>
+      <span style="color:var(--muted);font-size:.8rem">con filtros, «Todo Sí» por grupo y la grabación a la mano</span></p>
+    <div class="marcador" id="iecMarcador"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn-a btn-a--sec" id="iecSug" ${Object.keys(sug.respuestas).length ? '' : 'disabled'}>Aplicar ${Object.keys(sug.respuestas).length} sugerencias del expediente</button>
+      <label class="campo-e" style="margin:0;display:flex;gap:8px;align-items:center">Fecha de aplicación <input type="date" id="iecFecha" value="${esc(iecEdit.fecha)}" style="width:auto"></label>
+    </div>
+    ${secciones.map(s => `<h3 style="margin:16px 0 4px">Elemento ${s.elem}: ${esc(s.titulo)}</h3>` + s.grupos.map(g => `
+      <div class="iec-g">${esc(g.tipoNombre)} <small>· ${esc(g.titulo)}</small></div>
+      ${g.reactivos.map(r => `<div class="iec-r" data-n="${r.n}">
+        <span class="cod">${esc(r.cod)}<br>${r.peso} pts</span><span>${esc(r.texto)}${sug.fuentes[r.n] ? `<br><small style="color:#1D4ED8">Sugerido: ${esc(sug.fuentes[r.n])}</small>` : ''}</span>
+        <span class="sn"><button class="si ${iecEdit.respuestas[r.n] === 'si' ? 'on' : ''}" data-v="si">Sí</button><button class="no ${iecEdit.respuestas[r.n] === 'no' ? 'on' : ''}" data-v="no">No</button></span>
+        <input data-obs placeholder="Observaciones" aria-label="Observaciones del reactivo ${r.n}" value="${esc(iecEdit.observaciones[r.n] || '')}">
+      </div>`).join('')}`).join('')).join('')}
+    <h3 style="margin:18px 0 4px">Cuestionario · respuesta elegida por el candidato</h3>
+    <p style="color:var(--muted);font-size:.84rem;margin:4px 0 8px">Las 37 preguntas oficiales del IEC (reactivos 135 a 142). Anota la letra que eligió el candidato:
+      el Sí/No de cada reactivo de conocimiento se calcula con el Anexo 2 (Sí = todas sus preguntas correctas). Puedes corregirlo arriba si lo decides distinto.</p>
+    ${GRUPOS_CUESTIONARIO.map(g => `<div class="iec-g">Reactivo ${g.reactivo} · ${esc(g.tema)} ${esc(g.subtemas.join(' '))} <small data-cq-res="${g.reactivo}"></small></div>
+      <p style="font-size:.82rem;color:var(--mid);margin:2px 0 6px"><i>${esc(g.instruccion)}</i></p>
+      ${CUESTIONARIO_IEC.filter(q => q.reactivo === g.reactivo).map(q => preguntaIec(q)).join('')}`).join('')}
+    <div id="iecFalta" class="falta" style="margin-top:10px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button class="btn-a btn-a--pri" id="iecGuardar">Guardar IEC</button>
+      <button class="btn-a btn-a--sec" id="iecImprimir">Imprimir IEC (formato oficial)</button></div>`;
+  aplicarCuestionario(true);
+  const d2 = ev().iec;
+  $('cardIec').querySelector('summary').innerHTML = `Instrumento de Evaluación (IEC) ${d2 ? `<span class="chip ${d2.completo ? (d2.juicio === 'COMPETENTE' ? 'chip-ok' : 'chip-no') : 'chip-gris'}">${d2.completo ? juicioOficial(d2.juicio) : 'en proceso'} · ${Number(d2.total || 0).toFixed(2)}</span>` : ''}`;
+}
+function marcadorIec() {
+  const c = calificarIec(iecEdit.respuestas);
+  $('iecMarcador').innerHTML = `<b>${c.total.toFixed(2)}</b> de ${c.maximo} (mínimo ${c.umbral}) · ${c.contestados}/${c.reactivos} contestados
+    ${c.penalizacion ? `· −${c.penalizacion} por actitudes` : ''} · criterios sin cumplir: ${c.criteriosSinCumplir.length || 'ninguno'}
+    · juicio: <span class="chip ${c.completo ? (c.juicio === 'COMPETENTE' ? 'chip-ok' : 'chip-no') : 'chip-gris'}">${c.completo ? c.juicio : 'incompleto'}</span>`;
+}
+$('iec').addEventListener('click', e => {
+  const b = e.target.closest('.sn button');
+  if (b) { const n = b.closest('[data-n]').dataset.n; iecEdit.respuestas[n] = iecEdit.respuestas[n] === b.dataset.v ? undefined : b.dataset.v;
+    if (!iecEdit.respuestas[n]) delete iecEdit.respuestas[n];
+    b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', iecEdit.respuestas[n] === x.dataset.v)); marcadorIec(); return; }
+  if (e.target.id === 'iecSug') { Object.assign(iecEdit.respuestas, sugerenciasIec(candidato()).respuestas);
+    document.querySelectorAll('#iec [data-n]').forEach(r => r.querySelectorAll('.sn button').forEach(x => x.classList.toggle('on', iecEdit.respuestas[r.dataset.n] === x.dataset.v))); marcadorIec(); return; }
+  if (e.target.id === 'iecGuardar') {
+    iecEdit.fecha = $('iecFecha').value;
+    const nuevo = guardarIec(ev().iec || {}, iecEdit, { por: por() });
+    guardar({ iec: nuevo });
+    const f = validarIec(nuevo);
+    $('iecFalta').innerHTML = f.length ? 'Guardado. Para cerrarlo falta: ' + f.map(esc).join(' · ') : '<span style="color:#047857">IEC completo y guardado.</span>';
+    pintarCabecera(); pintarPortafolio(); pintarCedula();
+    const d2 = ev().iec; $('cardIec').querySelector('summary').innerHTML = `Instrumento de Evaluación (IEC) <span class="chip ${d2.completo ? (d2.juicio === 'COMPETENTE' ? 'chip-ok' : 'chip-no') : 'chip-gris'}">${d2.completo ? juicioOficial(d2.juicio) : 'en proceso'} · ${Number(d2.total || 0).toFixed(2)}</span>`;
+    return;
+  }
+  if (e.target.id === 'iecImprimir') { const c = candidato(); const d = { ...ev(), iec: { ...(ev().iec || {}), ...iecEdit, fecha: $('iecFecha').value } }; abrirDocumento(envolverOficial('IEC · ' + (c.nombre || ''), hojaIec(d, { candidato: c.nombre, evaluador: ev().cedula?.evaluadora || CONFIG.centroEvaluacion?.evaluadora || '' }))); }
+});
+$('iec').addEventListener('input', e => {
+  const o = e.target.closest('[data-obs]'); if (o) { iecEdit.observaciones[o.closest('[data-n]').dataset.n] = o.value; return; }
+});
+$('iec').addEventListener('change', e => { const q = e.target.closest('.cq[data-q]'); if (q) leerPregunta(q.dataset.q); });
+
+/* ── Cédula ── */
+let firmaEval = null, firmaCand = null;
+function pintarCedula() {
+  const e = ev(), c = candidato();
+  const pub = cedulaPublicada(e), ced = e.cedula || {};
+  const iecJ = e.iec?.completo ? e.iec.juicio : '';
+  firmaEval = ced.firmaEvaluador || null;
+  $('cedula').innerHTML = `
+    ${pub ? `<p>Publicada el ${fechaCorta(pub.publicada_at)} · juicio <span class="chip ${pub.juicio === 'COMPETENTE' ? 'chip-ok' : 'chip-no'}">${esc(juicioOficial(pub.juicio))}</span>
+      · firma del candidato: ${e.firma_candidato ? '<b style="color:#047857">firmada</b>' : '<b style="color:#B45309">pendiente</b>'}</p>` : ced.borrador ? '<p style="color:var(--muted)">Borrador guardado, sin publicar.</p>' : ''}
+    <div class="campo-e"><label for="cEval">Evaluador(a)</label><input id="cEval" value="${esc(ced.evaluadora || CONFIG.centroEvaluacion?.evaluadora || sesion()?.nombre || '')}"></div>
+    <div class="campo-e"><label for="cFecha">Fecha</label><input type="date" id="cFecha" value="${esc(ced.fecha || hoy())}"></div>
+    <div class="campo-e"><label for="cJuicio">Juicio</label><select id="cJuicio"><option value="">—</option>${JUICIOS.map(j => `<option ${juicioOficial(ced.juicio || iecJ) === j ? 'selected' : ''}>${j}</option>`).join('')}</select>
+      ${iecJ ? `<small style="color:var(--muted)">El IEC da <b>${iecJ}</b>.</small>` : ''}</div>
+    ${CAMPOS_CEDULA.map(k => `<div class="campo-e"><label for="c_${k.id}">${k.label}</label><textarea id="c_${k.id}" rows="2">${esc(ced[k.id] || '')}</textarea></div>`).join('')}
+    <div class="campo-e"><label for="c_incidencias">Incidencias</label><textarea id="c_incidencias" rows="1">${esc(ced.incidencias || '')}</textarea></div>
+    <div class="campo-e"><label for="c_obsCandidato">Observaciones para el candidato <small style="color:var(--muted);font-weight:400">(solo las lee él en su Cédula; no van al portafolio)</small></label><textarea id="c_obsCandidato" rows="2">${esc(ced.observacionesCandidato || '')}</textarea></div>
+    <div class="campo-e"><label>Firma del evaluador(a)</label><div id="cFirma"></div></div>
+    <div id="cFalta" class="falta"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn-a btn-a--sec" id="cBorrador">Guardar borrador</button>
+      <button class="btn-a btn-a--pri" id="cPublicar">${pub ? 'Volver a publicar' : 'Publicar Cédula'}</button>
+      <button class="btn-a btn-a--sec" id="cImprimir">Imprimir Cédula (formato oficial)</button></div>
+    ${pub ? `<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+      <h3 style="margin:0 0 6px">Firma del candidato</h3>
+      <p style="font-size:.86rem;color:var(--mid)">«${esc(TEXTO_ACUERDO)}» — en modo local la firma el candidato aquí, en persona.</p>
+      ${e.firma_candidato ? `<div>${firmaHtml(e.firma_candidato, 60)}</div><button class="btn-a btn-a--sec" id="cQuitarFirmaCand">Quitar firma del candidato</button>` : `<div id="cFirmaCand"></div><button class="btn-a btn-a--pri" id="cFirmarCand" style="margin-top:6px">Registrar firma del candidato</button>`}
+    </div>` : ''}`;
+  montarFirmaSimple($('cFirma'), { valor: firmaEval, nombreSugerido: () => $('cEval').value, onCambio: f => { firmaEval = f; } });
+  if ($('cFirmaCand')) montarFirmaSimple($('cFirmaCand'), { nombreSugerido: c.nombre, onCambio: f => { firmaCand = f; } });
+}
+const datosCedula = () => ({
+  evaluadora: $('cEval').value.trim(), fecha: $('cFecha').value, juicio: $('cJuicio').value,
+  ...Object.fromEntries(CAMPOS_CEDULA.map(k => [k.id, $('c_' + k.id).value.trim()])), incidencias: $('c_incidencias').value.trim(),
+  observacionesCandidato: $('c_obsCandidato').value.trim(),
+  firmaEvaluador: firmaEval,
+});
+$('cedula').addEventListener('click', e => {
+  const id = e.target.id;
+  if (id === 'cBorrador') { guardar(guardarBorrador(ev(), datosCedula(), { por: por() })); pintarCedula(); return; }
+  if (id === 'cPublicar') {
+    const d = datosCedula(), falta = validarCedula(d);
+    if (falta.length) { $('cFalta').textContent = 'Falta: ' + falta.join(' · '); return; }
+    if (cedulaPublicada(ev()) && !confirm('Ya hay una Cédula publicada. La anterior pasa al historial y el candidato tendrá que volver a firmar. ¿Continuar?')) return;
+    guardar(publicarCedula(ev(), d, { por: por() })); pintarTodo(); return;
+  }
+  if (id === 'cImprimir') { abrirDocumento(envolverOficial('Cédula de Evaluación', hojaCedula({ ...ev(), cedula: { ...(ev().cedula || {}), ...datosCedula() } }, { candidato: candidato().nombre }))); return; }
+  if (id === 'cFirmarCand') { if (!firmaValida(firmaCand)) { alert('Falta la firma del candidato.'); return; } guardar({ firma_candidato: { ...firmaCand, fecha: new Date().toISOString(), acepto: TEXTO_ACUERDO } }); pintarCedula(); pintarPortafolio(); return; }
+  if (id === 'cQuitarFirmaCand' && confirm('¿Quitar la firma del candidato?')) { guardar({ firma_candidato: null }); pintarCedula(); }
+});
+
+/* ── Verificación interna ── */
+function pintarVerif() {
+  const v = ev().verificacion || {};
+  $('verif').innerHTML = `<p style="color:var(--muted);font-size:.84rem;margin:8px 0">La hoja del Centro Evaluador (pág. 41 del formato): 14 puntos antes de enviar el portafolio. ${TUTO_VERIF}</p>
+    <div class="campo-e"><label for="vVerificador">Verificador(a) del proceso</label><input id="vVerificador" value="${esc(v.verificador || '')}"></div>
+    <div class="campo-e"><label for="vFecha">Fecha</label><input type="date" id="vFecha" value="${esc(v.fecha || hoy())}"></div>
+    ${PUNTOS_VERIFICACION.map(([t, n]) => n == null ? `<div class="iec-g">${esc(t)}</div>` : `<div class="iec-r" data-v="${n}" style="grid-template-columns:30px 1fr 110px">
+      <span class="cod">${n}</span><span>${esc(t)}</span><span class="sn"><button class="si ${v[n] === 'si' ? 'on' : ''}" data-x="si">Sí</button><button class="no ${v[n] === 'no' ? 'on' : ''}" data-x="no">No</button></span></div>`).join('')}
+    <div class="campo-e"><label for="vObs">Observaciones</label><textarea id="vObs" rows="2">${esc(v.observaciones || '')}</textarea></div>
+    <button class="btn-a btn-a--pri" id="vGuardar">Guardar verificación</button> <button class="btn-a btn-a--sec" id="vImprimir">Imprimir</button>`;
+}
+$('verif').addEventListener('click', e => {
+  const b = e.target.closest('[data-x]');
+  if (b) { b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b && !b.classList.contains('on'))); return; }
+  const leer = () => { const v = { verificador: $('vVerificador').value.trim(), fecha: $('vFecha').value, observaciones: $('vObs').value.trim() };
+    document.querySelectorAll('#verif [data-v]').forEach(r => { const on = r.querySelector('.on'); if (on) v[r.dataset.v] = on.dataset.x; }); return v; };
+  if (e.target.id === 'vGuardar') { guardar({ verificacion: leer() }); e.target.textContent = 'Guardado'; setTimeout(() => { e.target.textContent = 'Guardar verificación'; }, 1400); pintarPortafolio(); }
+  if (e.target.id === 'vImprimir') abrirDocumento(envolverOficial('Verificación Interna', hojaVerif({ ...ev(), verificacion: leer() }, { candidato: candidato().nombre })));
+});
+
+/* ── Firmas del evaluador ── */
+function pintarFirmas() {
+  const f = ev().firmas || {};
+  const docs = [['diagnostico', 'Autodiagnóstico', 'Firma Evaluadora en el Resultado del autodiagnóstico.'], ['plan', 'Plan de Evaluación', 'Va en "Nombre del Evaluador" del Plan y en el Formato de Atención a Usuarios.'], ['iec', 'Instrumento de Evaluación (IEC)', 'Rúbrica al pie del instrumento.'], ['cierre', 'Verificación Interna', 'Al pie de la hoja de verificación.']];
+  $('firmas').innerHTML = docs.map(([k, t, d]) => `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+    <b>${t}</b> ${firmaValida(f[k]) ? '<span class="chip chip-ok">firmado</span>' : '<span class="chip chip-gris">sin firma</span>'}<br><small style="color:var(--muted)">${d}</small>
+    <div id="fir_${k}" style="margin-top:6px"></div></div>`).join('');
+  docs.forEach(([k]) => montarFirmaSimple($('fir_' + k), { valor: f[k] || null, nombreSugerido: ev().cedula?.evaluadora || CONFIG.centroEvaluacion?.evaluadora || '',
+    onCambio: v => { const firmas = { ...(ev().firmas || {}) }; if (v) firmas[k] = v; else delete firmas[k]; guardar({ firmas }); pintarPortafolio(); } }));
+}
+
+/* ── Video ── */
+function pintarVideo() {
+  const v = ev().video || {};
+  const delCand = candidato().estado?.evidencias?.datos?.documentos?.video;
+  const ligaCand = typeof delCand === 'string' ? delCand : delCand?.liga || '';
+  $('video').innerHTML = `${ligaCand ? `<p style="font-size:.86rem">El candidato entregó: <a href="${esc(ligaSegura(ligaCand) || '#')}" target="_blank" rel="noopener">${esc(ligaCand)}</a></p>` : ''}
+    <div class="campo-e"><label for="vidLiga">Liga de la grabación que va al portafolio</label><input id="vidLiga" value="${esc(v.liga || ligaCand)}" placeholder="https://…"></div>
+    <div class="campo-e"><label for="vidClave">Clave de acceso (si la tiene)</label><input id="vidClave" value="${esc(v.clave || '')}"></div>
+    <button class="btn-a btn-a--pri" id="vidGuardar">Guardar</button>
+    <div id="salaCand" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)"></div>`;
+  pintarSalaCand();
+}
+/* Sala de evidencias del candidato: su horario y el plazo, que el equipo
+   puede extender (como Paideia). */
+async function pintarSalaCand() {
+  const S = await import('./js/sala.js');
+  const d = cargar(), cfg = { ...S.CONFIG_SALA, ...(d.salaConfig || {}) };
+  const r = (d.reservasEvidencia || []).filter(x => x.email === clave && x.estado !== 'cancelada').sort((a, b) => Date.parse(b.inicio) - Date.parse(a.inicio))[0];
+  const pago = (d.pagos || []).find(p => p.email === clave && p.fase === 'alineacion');
+  const ext = (d.limitesEvidencia || {})[clave];
+  const limite = ext || S.limiteDesde(pago?.autorizado_en, cfg.dias_limite);
+  const ESTADO = { reservada: 'reservado', asistio: 'asistió', no_asistio: 'no asistió' };
+  $('salaCand').innerHTML = `<b>Sala de evidencias</b>
+    <p style="font-size:.86rem;margin:6px 0">${r ? `Horario: <b>${esc(S.fechaLarga(r.inicio))} · ${esc(S.horarioTexto(r.inicio, r.fin))}</b> (${esc(ESTADO[r.estado] || r.estado)})` : 'Sin horario reservado en la sala.'}</p>
+    <p style="font-size:.86rem;margin:6px 0">Plazo para entregar la evidencia: <b>${limite ? esc(S.fechaLarga(limite)) : '— (se cuenta desde que se libera la Alineación)'}</b>${ext ? ' <span class="chip chip-gris">extendido</span>' : ''}</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="campo-e" style="margin:0;display:flex;gap:8px;align-items:center">Extender hasta <input type="date" id="salaExt" value="${esc(ext || '')}" style="width:auto"></label>
+      <button class="btn-a btn-a--sec" id="salaExtGuardar">Guardar plazo</button>${ext ? '<button class="btn-a btn-a--sec" id="salaExtQuitar">Quitar extensión</button>' : ''}</div>`;
+}
+$('video').addEventListener('click', async e => {
+  if (e.target.id !== 'salaExtGuardar' && e.target.id !== 'salaExtQuitar') return;
+  const { extenderLimite } = await import('./js/sala-datos.js');
+  await extenderLimite(clave, e.target.id === 'salaExtQuitar' ? null : ($('salaExt').value || null));
+  pintarSalaCand();
+});
+$('video').addEventListener('click', e => {
+  if (e.target.id !== 'vidGuardar') return;
+  guardar({ video: { liga: $('vidLiga').value.trim(), clave: $('vidClave').value.trim() } }); e.target.textContent = 'Guardado'; pintarPortafolio();
+});
+
+/* ── Portafolio ── */
+function pintarPortafolio() {
+  const c = candidato(), e = ev();
+  const avisos = avisosPortafolio(c, e);
+  /* v47: la misma lista sección por sección que ve el candidato en «Mi
+     portafolio»: qué ya está guardado, de qué paso y qué falta. */
+  if (!document.getElementById('cssAvance')) { const st = document.createElement('style'); st.id = 'cssAvance'; st.textContent = CSS_AVANCE; document.head.appendChild(st); }
+  $('portafolio').innerHTML = `<p style="color:var(--muted);font-size:.84rem">Se arma en el orden del FORMATO PORTAFOLIO-1375-2026, listo para subir a SEP-CONOCER. Lo que falta sale como hoja pendiente.</p>
+    <details class="pfa-det" open><summary style="cursor:pointer;font-weight:700;margin:6px 0">Sección por sección</summary>${htmlAvance(estadoPortafolio(c, e), { enlaces: false })}</details>
+    ${avisos.length ? `<ul class="avisos">${avisos.map(a => `<li class="falta">${esc(a)}</li>`).join('')}</ul>` : '<p style="color:#047857;font-weight:700">Todo listo para generar el portafolio.</p>'}
+    <div>${SECCIONES_PORTAFOLIO.map(s => `<div class="port-li"><span>${s.separador ? `<b>${esc(s.titulo)}</b>` : esc(s.titulo)}</span><small style="color:var(--muted)">${s.generado ? 'lo arma la plataforma' : s.separador ? 'separador' : 'del expediente'}</small></div>`).join('')}</div>`;
+}
+
+/* Imágenes entregadas (IndexedDB del panel) para meterlas al portafolio */
+/* imagenesDe: js/portafolio-imagenes.js (la usa también «Mi portafolio» del candidato) */
+$('btnPortafolio').onclick = async e => {
+  e.preventDefault();
+  const c = candidato(); if (!c) return;
+  const w = window.open('', '_blank');
+  const btn = $('btnPortafolio'), antes = btn.textContent;
+  if (w) w.document.write('<p style="font:16px system-ui;padding:24px">Armando el portafolio integrado… (los PDF entregados se convierten en hojas)</p>');
+  const html = htmlPortafolio({ expediente: c, evaluacion: ev(), lote: c.sinAlta ? '' : c.lote,
+    imagenes: await imagenesDe(c, t => { btn.textContent = t; }) });
+  btn.textContent = antes;
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  if (w) w.location.href = url; else location.href = url;
+};
+window.addEventListener('admin:cambio', () => { if (candidato()) pintarCabecera(); });
+if (clave && candidato()) pintarTodo();
+/* Con Supabase: trae lo que cambió en la nube (p. ej. la firma que el
+   candidato puso en su Cédula desde su celular) y vuelve a pintar. */
+sincronizarEvaluaciones().then(r => { if (r.ok && r.cambios && clave && candidato()) pintarTodo(); }).catch(() => {});
+</script>
+</body>
+</html>

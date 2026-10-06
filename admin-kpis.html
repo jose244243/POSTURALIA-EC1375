@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPIs — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<link rel="stylesheet" href="admin-styles.css">
+<style>
+  .fila { display:flex; align-items:center; gap:12px; padding:9px 0 }
+  .fila-n { flex:0 0 160px; font-size:.86rem; color:var(--dark) }
+  .fila-b { flex:1; height:22px; background:var(--bg); border-radius:6px; overflow:hidden }
+  .fila-b i { display:block; height:100%; background:#0d2a6e; transition:width .3s }
+  .fila-v { flex:0 0 120px; text-align:right; font-size:.83rem; color:var(--muted); font-variant-numeric:tabular-nums }
+  .caida { color:var(--warn); font-weight:700 }
+  .lote-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px }
+  .lote-tab { padding:7px 15px; border-radius:7px; border:1px solid var(--border);
+              background:var(--white); cursor:pointer; font-size:.85rem; font-weight:600; color:var(--mid) }
+  .lote-tab.activo { background:#0d2a6e; border-color:#0d2a6e; color:#fff }
+  .lectura { background:var(--bg); border-radius:9px; padding:15px; margin-top:16px;
+             color:var(--mid); font-size:.89rem; line-height:1.7 }
+  .lectura b { color:var(--dark) }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="ad-top">
+  <div class="ad-top-in">
+    <div>
+      <h1 class="ad-titulo">KPIs</h1>
+      <div class="ad-sub">Conversión, ingresos y avance</div>
+    </div>
+  </div>
+</header>
+
+<main class="ad-wrap">
+
+  <div class="lote-tabs" id="lotes"></div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="card">
+    <h2>Conversión entre fases</h2>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">
+      De los que llegaron a una fase, cuántos pasaron a la siguiente.
+    </p>
+    <div id="conv"></div>
+    <div class="lectura" id="lectura"></div>
+  </div>
+
+  <div class="card">
+    <h2>Ingreso por fase</h2>
+    <div id="ingresos"></div>
+  </div>
+
+  <div class="card">
+    <h2>Estado de la cartera</h2>
+    <div id="cartera"></div>
+  </div>
+
+  <div class="card">
+    <h2>Estado de los candidatos</h2>
+    <div id="estados"></div>
+  </div>
+
+  <div class="card">
+    <h2>Progreso por fase</h2>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">
+      El promedio por cabeza es lo que delata un descuento que se volvió costumbre.
+    </p>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr><th>Fase</th><th class="num">Candidatos</th><th class="num">Peso</th>
+        <th class="num">Ingresos</th><th class="num">Promedio</th></tr></thead>
+        <tbody id="progreso"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Desglose por lote</h2>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr><th>Lote</th><th class="num">Registrados</th><th class="num">Activos</th>
+        <th class="num">Desistieron</th><th class="num">Cambio</th>
+        <th class="num">Cobrado</th><th class="num">Proyectado</th></tr></thead>
+        <tbody id="desglose"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Reparto de utilidades por lote</h2>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">
+      Según el reparto configurado en <a href="admin-utilidades.html">Utilidades</a>,
+      sobre lo efectivamente cobrado en cada lote.
+    </p>
+    <div id="reparto"></div>
+  </div>
+
+</main>
+
+<script type="module">
+import './js/admin-shell.js';
+import { esc } from './js/seguro.js';
+import { cargar, candidatos, contables, kpis, lotes, pesos, utilidades,
+         FASES, FASE_LABEL } from './js/admin-data.js';
+
+const $ = id => document.getElementById(id);
+let loteActivo = null;   // null = todos
+
+function pintar() {
+  const datos = cargar();
+  const ls = lotes(datos);
+
+  $('lotes').innerHTML =
+    `<button class="lote-tab ${loteActivo == null ? 'activo' : ''}" data-lote="">Todos</button>` +
+    ls.map(l => `<button class="lote-tab ${l === loteActivo ? 'activo' : ''}" data-lote="${l}">Lote ${l}</button>`).join('');
+
+  const k = kpis(datos, loteActivo);
+  const lista = contables(candidatos(datos)).filter(c => loteActivo == null || c.lote === loteActivo);
+
+  $('kpis').innerHTML = `
+    <div class="kpi"><b>${k.inscritos}</b><span>activos</span></div>
+    <div class="kpi kpi--ok"><b>${k.completados}</b><span>concluidos</span></div>
+    <div class="kpi"><b>${k.avanceMedio}%</b><span>avance promedio</span></div>
+    <div class="kpi kpi--dinero"><b>${pesos(k.ingresosTotales)}</b><span>cobrado</span></div>
+    <div class="kpi kpi--warn"><b>${k.desistieron}</b><span>desistieron</span></div>
+    <div class="kpi"><b>${k.cambioLote}</b><span>cambiaron de lote</span></div>`;
+
+  const max = Math.max(1, ...FASES.map(f => k.porFase[f]));
+  $('conv').innerHTML = FASES.map((f, i) => `
+    <div class="fila">
+      <div class="fila-n">${FASE_LABEL[f]}</div>
+      <div class="fila-b"><i style="width:${(k.porFase[f] / max) * 100}%"></i></div>
+      <div class="fila-v">${k.porFase[f]} ${i > 0
+        ? `· <span class="${k.conv[f] < 50 ? 'caida' : ''}">${k.conv[f]}%</span>` : ''}</div>
+    </div>`).join('');
+
+  /* Dónde se cae más gente, dicho en palabras */
+  const caidas = FASES.slice(1)
+    .map(f => ({ f, pct: k.conv[f], previa: k.porFase[FASES[FASES.indexOf(f) - 1]] }))
+    .filter(x => x.previa > 0);
+  const peor = caidas.sort((a, b) => a.pct - b.pct)[0];
+
+  $('lectura').innerHTML = !k.inscritos
+    ? 'Sin candidatos activos todavía. Carga expedientes y registra sus pagos para ver esto.'
+    : !peor
+    ? `Tienes <b>${k.inscritos}</b> activos, pero todavía no hay pagos registrados más allá
+       del Registro, así que no hay conversión que medir.`
+    : `De cada 100 que pagan <b>${FASE_LABEL[FASES[FASES.indexOf(peor.f) - 1]]}</b>,
+       <b>${peor.pct}</b> pasan a <b>${FASE_LABEL[peor.f]}</b>. Es el punto más flojo del embudo.
+       ${peor.pct < 50
+         ? ' Ahí se está quedando más de la mitad de la gente: vale la pena entender por qué antes de meter más candidatos arriba.'
+         : ''}`;
+
+  $('ingresos').innerHTML = FASES.map(f => {
+    const maxI = Math.max(1, ...FASES.map(x => k.ingresosPorFase[x]));
+    return `<div class="fila">
+      <div class="fila-n">${FASE_LABEL[f]}</div>
+      <div class="fila-b"><i style="width:${(k.ingresosPorFase[f] / maxI) * 100}%"></i></div>
+      <div class="fila-v">${pesos(k.ingresosPorFase[f])}</div>
+    </div>`;
+  }).join('') + `
+    <div class="fila" style="border-top:2px solid var(--border);margin-top:8px;padding-top:14px">
+      <div class="fila-n"><strong>Total cobrado</strong></div>
+      <div class="fila-b"></div>
+      <div class="fila-v"><strong>${pesos(k.ingresosTotales)}</strong></div>
+    </div>`;
+
+  /* Cartera solo de ACTIVOS, con las dos cifras de la misma población. Antes
+     era "proyectado de activos − cobrado de todos": lo que pagó alguien que
+     después desistió se restaba de lo que deben los que siguen, y la barra
+     podía pasar de 100%. Y quien desistió aparecía "con saldo" por fases
+     que ya no va a tomar. */
+  const act = lista.filter(c => c.estadoComercial === 'activo');
+  const cobradoAct = act.reduce((s, c) => s + c.cobrado, 0);
+  const porCobrar  = act.reduce((s, c) => s + c.porCobrar, 0);
+  const cartera    = cobradoAct + porCobrar;
+  const conDeuda = act.filter(c => c.porCobrar > 0).sort((a, b) => b.porCobrar - a.porCobrar);
+
+  $('cartera').innerHTML = `
+    <div class="fila">
+      <div class="fila-n">Cobrado</div>
+      <div class="fila-b"><i style="width:${cartera ? (cobradoAct / cartera) * 100 : 0}%"></i></div>
+      <div class="fila-v">${pesos(cobradoAct)} de ${pesos(cartera)}</div>
+    </div>
+    <p style="color:var(--mid);font-size:.88rem;line-height:1.7;margin:14px 0 0">
+      Te falta cobrar <strong>${pesos(porCobrar)}</strong> de lo ya acordado.
+      ${conDeuda.length
+        ? `Son <strong>${conDeuda.length}</strong> candidato${conDeuda.length === 1 ? '' : 's'} con saldo;
+           el mayor es ${esc(conDeuda[0].nombre)} con ${pesos(conDeuda[0].porCobrar)}.`
+        : 'No hay saldos pendientes registrados.'}
+    </p>`;
+
+  /* ── Estado de los candidatos ── */
+  const pctDe = n => (k.registrados ? Math.round((n / k.registrados) * 100) : 0);
+  const internas = candidatos(datos).filter(c => c.estadoComercial === 'administrador').length;
+
+  $('estados').innerHTML = k.registrados
+    ? [['Activos', k.inscritos, '#0d2a6e'],
+       ['Desistieron', k.desistieron, '#DC2626'],
+       ['Cambio de lote', k.cambioLote, '#D97706']].map(([t, n, col]) => `
+        <div class="fila">
+          <div class="fila-n">${t}</div>
+          <div class="fila-b"><i style="width:${pctDe(n)}%;background:${col}"></i></div>
+          <div class="fila-v">${n} (${pctDe(n)}%)</div>
+        </div>`).join('') + `
+      <p style="color:var(--muted);font-size:.84rem;line-height:1.6;margin:14px 0 0">
+        Sobre ${k.registrados} registrado${k.registrados === 1 ? '' : 's'}${
+          internas ? ` · ${internas} cuenta${internas === 1 ? '' : 's'} interna${
+            internas === 1 ? '' : 's'} fuera de todas las sumas` : ''}.
+      </p>`
+    : '<p class="vacio">Sin candidatos registrados todavía.</p>';
+
+  /* ── Progreso por fase ── */
+  $('progreso').innerHTML = k.fases.map(f => `
+    <tr>
+      <td>${f.label}</td>
+      <td class="num">${f.candidatos}</td>
+      <td class="num">${f.peso}%</td>
+      <td class="num">${pesos(f.ingresos)}</td>
+      <td class="num">${f.promedio == null ? '—' : pesos(f.promedio)}</td>
+    </tr>`).join('');
+
+  /* ── Desglose por lote ── */
+  const todos = contables(candidatos(datos));
+  $('desglose').innerHTML = ls.map(l => {
+    const kl = kpis(datos, l);
+    return `<tr>
+      <td>Lote ${l}</td>
+      <td class="num">${kl.registrados}</td>
+      <td class="num">${kl.inscritos}</td>
+      <td class="num">${kl.desistieron}</td>
+      <td class="num">${kl.cambioLote}</td>
+      <td class="num">${pesos(kl.ingresosTotales)}</td>
+      <td class="num">${pesos(kl.proyectado)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" class="vacio">Sin lotes con movimiento.</td></tr>';
+
+  /* ── Reparto por lote ── */
+  /* Respeta la pestaña de lote (como Paideia) y dice de dónde sale cada
+     monto: «cobrado − costos = a repartir». Antes decía «$X cobrado» encima
+     de montos que ya traían los costos descontados. */
+  const repartos = (loteActivo == null ? ls : [loteActivo]).map(l => utilidades(datos, l)).filter(u => u.ingresos || u.socios.length);
+  $('reparto').innerHTML = repartos.length
+    ? repartos.map(u => {
+        const maxS = Math.max(1, ...u.socios.map(s => s.aRepartir));
+        return `<div style="margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;font-size:.9rem;
+                      font-weight:700;color:var(--dark);margin-bottom:8px">
+            <span>Lote ${u.lote}</span><span style="font-weight:600">${pesos(u.ingresos)} cobrado − ${pesos(u.costos)} costos = ${pesos(u.base)} a repartir</span>
+          </div>
+          ${u.socios.length
+            ? u.socios.map(s => `
+                <div class="fila">
+                  <div class="fila-n">${esc(s.label)}</div>
+                  <div class="fila-b"><i style="width:${(s.aRepartir / maxS) * 100}%"></i></div>
+                  <div class="fila-v">${s.pct}% · ${pesos(s.aRepartir)}</div>
+                </div>`).join('')
+            : '<p style="color:var(--muted);font-size:.85rem">Sin socios configurados en este lote.</p>'}
+          ${u.socios.length && Math.round(u.sumaPct) !== 100
+            ? `<p style="color:var(--warn);font-size:.83rem;margin:8px 0 0">
+                 El reparto suma ${u.sumaPct.toFixed(2)}%: ${pesos(u.sinRepartir)} sin asignar.</p>`
+            : ''}
+        </div>`;
+      }).join('')
+    : '<p class="vacio">Configura el reparto en <a href="admin-utilidades.html">Utilidades</a>.</p>';
+}
+
+$('lotes').addEventListener('click', e => {
+  const t = e.target.closest('[data-lote]');
+  if (!t) return;
+  loteActivo = t.dataset.lote ? Number(t.dataset.lote) : null;
+  pintar();
+});
+
+pintar();
+</script>
+</body>
+</html>

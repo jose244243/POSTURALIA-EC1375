@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Candidatos — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<link rel="stylesheet" href="admin-styles.css">
+<style>
+  .zona { border:2px dashed var(--border); border-radius:12px; padding:28px 20px;
+          text-align:center; background:var(--white); cursor:pointer; transition:all .18s }
+  .zona:hover, .zona.sobre { border-color:#0d2a6e; background:#F5F8FF }
+  .zona h2 { margin:10px 0 5px; font-size:1rem }
+  .zona p { color:var(--muted); font-size:.86rem; margin:0; line-height:1.6 }
+  .err-fila { background:#FEF2F2; border-left:4px solid #DC2626; color:#7F1D1D;
+              padding:9px 13px; border-radius:6px; margin-bottom:7px; font-size:.84rem }
+  .mini { height:6px; background:var(--border); border-radius:99px; overflow:hidden; width:62px; display:inline-block; vertical-align:middle }
+  .mini i { display:block; height:100%; background:#0d2a6e }
+  .nom { font-weight:600; color:var(--dark) }
+  .sub { color:var(--muted); font-size:.76rem; display:block; margin-top:2px }
+  select.chico, input.chico { font:inherit; font-size:.82rem; padding:4px 7px; border:1px solid var(--border); border-radius:5px }
+  input.chico { width:62px }
+  dialog.imp { border:none; border-radius:14px; padding:0; max-width:980px; width:calc(100% - 32px) }
+  dialog.imp::backdrop { background:rgba(15,23,42,.55) }
+  .imp-top { padding:18px 22px 10px; border-bottom:1px solid var(--border) } .imp-top h2 { margin:0 0 4px; font-size:1.1rem }
+  .imp-top p { margin:0; color:var(--muted); font-size:.85rem; line-height:1.55 }
+  .imp-cuerpo { padding:16px 22px; max-height:62vh; overflow:auto }
+  .imp-pie { padding:12px 22px 16px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; align-items:center }
+  .imp-map { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; margin:10px 0 14px }
+  .imp-map label { font-size:.76rem; color:var(--muted); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .imp-map select { width:100%; font:inherit; font-size:.82rem; padding:5px 7px; border:1px solid var(--border); border-radius:6px; margin-top:3px }
+  .imp-map .ok select { border-color:#0d2a6e }
+  .imp-res { display:flex; gap:10px; flex-wrap:wrap; margin:6px 0 12px } .imp-res b { display:block; font-size:1.2rem }
+  .imp-res div { background:#F5F8FF; border-radius:8px; padding:8px 12px; font-size:.78rem; color:var(--muted); min-width:110px }
+  .imp-err { font-size:.8rem; color:#7F1D1D; background:#FEF2F2; border-radius:6px; padding:8px 12px; margin:0 0 10px; max-height:130px; overflow:auto }
+  .tbl td.sel, .tbl th.sel { width:28px; text-align:center }
+  .th-orden { background:none; border:none; padding:0; font:inherit; color:inherit; font-weight:inherit; cursor:pointer; text-align:inherit }
+  .th-orden[aria-sort="ascending"]::after { content:' ▲'; font-size:.7em } .th-orden[aria-sort="descending"]::after { content:' ▼'; font-size:.7em }
+  .ficha-res { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px 14px; margin:8px 0 12px; font-size:.84rem }
+  .ficha-res b { display:block; font-size:.72rem; color:var(--muted); font-weight:600 }
+  #barraSel { display:none; align-items:center; gap:12px; margin:0 0 10px; padding:8px 12px; background:#FEF2F2; border-radius:8px; font-size:.86rem }
+  #barraSel.on { display:flex }
+  dialog.ficha { border:none; border-radius:14px; padding:0; max-width:640px; width:calc(100% - 32px) }
+  dialog.ficha::backdrop { background:rgba(15,23,42,.55) }
+  .fi-top { background:linear-gradient(180deg,#0d2a6e,#0a1f52); color:#fff; padding:18px 22px }
+  .fi-top h2 { color:#fff; margin:0 0 3px; font-size:1.15rem }
+  .fi-top p { color:rgba(255,255,255,.75); margin:0; font-size:.83rem }
+  .fi-cuerpo { padding:20px 22px; max-height:62vh; overflow-y:auto }
+  .fi-fila { display:flex; gap:12px; align-items:center; padding:9px 0; border-bottom:1px solid var(--border) }
+  .fi-fila:last-child { border-bottom:none }
+  .fi-t { flex:1; font-size:.88rem; color:var(--dark) }
+  .fi-t small { display:block; color:var(--muted); font-size:.77rem; margin-top:1px }
+  .fi-pie { padding:14px 22px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end }
+
+  .filtros { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:16px }
+  .filtros label { font-size:.78rem; font-weight:600; color:var(--muted); display:block }
+  .filtros select { font:inherit; font-size:.85rem; padding:6px 9px; margin-top:4px;
+                    border:1px solid var(--border); border-radius:6px; background:var(--white) }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="ad-top">
+  <div class="ad-top-in">
+    <div>
+      <h1 class="ad-titulo">Candidatos</h1>
+      <div class="ad-sub" id="sub"></div>
+    </div>
+    <div class="acc" style="margin-left:auto">
+      <button class="btn-a btn-a--sec" id="btnCSV"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3.5"/><path d="M7.5 11 12 15.5 16.5 11"/><path d="M12 3v12.5"/></svg> Exportar CSV</button>
+      <button class="btn-a btn-a--sec" id="btnLiga" title="La liga que le mandas a una persona interesada para que se registre y firme su Acuerdo de Confidencialidad antes de pagar">Copiar liga de registro</button>
+      <button class="btn-a btn-a--sec" id="btnMiAvance" hidden title="Sin Supabase: sube a esta lista lo que se contestó en la vista del candidato de este mismo navegador">Traer el avance de este navegador</button>
+      <button class="btn-a btn-a--pri" id="btnImportar" title="Candidatos, precios y pagos desde un CSV o Excel (guardado como CSV)">Importar lista</button>
+      <button class="btn-a btn-a--peligro" id="btnLimpiar">Vaciar</button>
+    </div>
+  </div>
+</header>
+
+<main class="ad-wrap">
+
+  <div class="zona" id="zona" tabindex="0" role="button">
+    <div class="zona-ico" id="zonaIco"></div>
+    <h2>Arrastra aquí los respaldos de tus candidatos</h2>
+    <p>O haz clic para elegirlos. Son los <code>.json</code> que cada quien descarga desde Entrega.</p>
+  </div>
+  <input type="file" id="archivos" accept="application/json,.json" multiple hidden>
+  <div id="errores" style="margin-top:14px"></div>
+
+  <div class="card" style="margin-top:22px">
+    <div class="filtros">
+      <div style="flex:1 1 220px"><label for="fBuscar">Buscar</label><input type="search" id="fBuscar" placeholder="Nombre, correo o CURP" style="width:100%;font:inherit;font-size:.85rem;padding:6px 9px;margin-top:4px;border:1px solid var(--border);border-radius:7px"></div>
+      <div><label for="fLote">Lote</label><select id="fLote"></select></div>
+      <div><label for="fEstado">Estado</label><select id="fEstado"></select></div>
+      <div><label for="fPaso">Paso actual</label><select id="fPaso"></select></div>
+    </div>
+
+    <div id="barraSel" role="region" aria-live="polite"><span id="selTxt"></span>
+      <button class="btn-a btn-a--peligro" id="btnBorrarSel">Borrar del todo</button>
+      <button class="btn-a btn-a--sec" id="btnSelNinguno">Quitar selección</button></div>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr>
+          <th class="sel"><input type="checkbox" id="selTodos" aria-label="Seleccionar todos los que se ven"></th>
+          <th><button class="th-orden" data-orden="nombre">Candidato</button></th>
+          <th class="ocultar-movil"><button class="th-orden" data-orden="paso">Paso actual</button></th>
+          <th class="num"><button class="th-orden" data-orden="avance">Avance</button></th>
+          <th class="num ocultar-movil"><button class="th-orden" data-orden="docs">Docs</button></th>
+          <th class="ocultar-movil"><button class="th-orden" data-orden="lote">Lote</button></th>
+          <th><button class="th-orden" data-orden="estado">Estado</button></th>
+          <th class="ocultar-movil"><button class="th-orden" data-orden="fase">Fase pagada</button></th>
+          <th>Atención</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p id="vacio" class="vacio">Todavía no hay expedientes cargados.</p>
+    <div id="pruebaRapida"></div>
+  </div>
+
+</main>
+
+<dialog class="ficha" id="ficha">
+  <div class="fi-top"><h2 id="fiNombre"></h2><p id="fiSub"></p></div>
+  <div class="fi-cuerpo" id="fiCuerpo"></div>
+  <div class="fi-pie">
+    <button class="btn-a btn-a--peligro" id="fiBorrar" title="Borra expediente, precio, pagos, evaluación y horario">Borrar del todo</button>
+    <button class="btn-a btn-a--sec" id="fiQuitar" title="Quita solo el expediente; conserva precio y pagos">Quitar expediente</button>
+    <a class="btn-a btn-a--pri" id="fiEvaluacion" href="#">Evaluación, Cédula y portafolio</a>
+    <button class="btn-a btn-a--sec" id="fiEspejo" title="Recorre la plataforma como la ve este candidato, sin poder modificar nada">
+      <svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M1.5 12S5.5 4.5 12 4.5 22.5 12 22.5 12 18.5 19.5 12 19.5 1.5 12 1.5 12z"/><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg> Ver como este candidato
+    </button>
+    <button class="btn-a btn-a--pri" id="fiCerrar">Cerrar</button>
+  </div>
+</dialog>
+
+<dialog class="imp" id="imp" aria-labelledby="impTit">
+  <div class="imp-top"><h2 id="impTit">Importar candidatos, precios y pagos</h2>
+    <p>Un CSV (o Excel «Guardar como CSV») o un JSON, por ejemplo lo que exportes del CRM de Paideia o de su Supabase.
+      Una fila por candidato con columnas por fase, o una fila por pago (correo, fase, monto, fecha). El archivo no sale de esta computadora.</p></div>
+  <div class="imp-cuerpo">
+    <p style="margin:0 0 10px"><input type="file" id="impArchivo" accept=".csv,.txt,.json,text/csv,application/json" aria-label="Archivo con la lista (CSV o JSON)">
+      <button class="btn-a btn-a--sec" id="impPlantilla" type="button">Bajar plantilla CSV</button></p>
+    <div id="impDetalle"></div>
+  </div>
+  <div class="imp-pie"><span id="impMsg" style="margin-right:auto;font-size:.85rem"></span>
+    <button class="btn-a btn-a--sec" id="impCerrar" type="button">Cerrar</button>
+    <button class="btn-a btn-a--pri" id="impOk" type="button" disabled>Importar</button></div>
+</dialog>
+
+<dialog class="visor-archivo" id="visor">
+  <div class="va-top">
+    <strong id="visorTitulo"></strong>
+    <button class="btn-a btn-a--sec" id="visorCerrar">Cerrar</button>
+  </div>
+  <img id="visorImg" alt="Evidencia entregada por el candidato">
+  <div id="visorTexto" hidden></div>
+</dialog>
+
+<script type="module">
+import './js/admin-shell.js';
+import { esc, ligaSegura, imagenSegura } from './js/seguro.js';
+import { hoyLocal } from './js/fechas.js';
+import { CONFIG } from './js/config.js';
+import { icono, iconoDe } from './js/iconos.js';
+import { cargar, actualizar, candidatos, kpis, pesos, fasesPagadas, alternarFase,
+         ESTADOS_CANDIDATO, FASE_LABEL, FASES, evaluacionDe } from './js/admin-data.js';
+import { MODULOS } from './js/expediente.js';
+import { incorporarRespaldos } from './js/incorporar.js';
+import { dictamenDe, lineaDeTiempo } from './js/evaluacion.js';
+import { recuperar, borrarDeExpediente, disponible as hayAlmacen }
+  from './js/almacen-grande.js';
+import { encenderEspejo } from './js/sesion.js';
+import { leerTabla, detectarColumnas, interpretar, resumen, plantillaCsv, FASES_IMP } from './js/importar.js';
+import { importarCandidatos, borrarCandidatos } from './js/admin-data.js';
+import { sesion as sesionCuenta, guardarMiembro, quitarMiembro, equipoLocal } from './js/cuenta.js';
+import { ofrecerPrueba } from './js/prueba-rapida.js';
+
+const $ = id => document.getElementById(id);
+let abierto = null;
+const seleccion = new Set();   // correos marcados para borrar
+let listaVisible = [];
+const filtro = { q: '', lote: '', estado: '', paso: '' };
+
+/* Cuántos documentos pide el proceso completo, sumando los de cada módulo.
+   Es la cifra contra la que se mide "va 4 de 15". */
+const DOCS_TOTAL = MODULOS.reduce((s, m) => s + (m.docs?.length || 0), 0);
+
+const docsDe = c => MODULOS.reduce((s, m) => {
+  const d = c.estado?.[m.id]?.datos?.documentos || {};
+  return s + (m.docs || []).filter(k => {
+    const v = d[k]; return Array.isArray(v) ? v.length > 0 : !!v;
+  }).length;
+}, 0);
+
+/* En qué módulo está parado: el primero que no ha cerrado. */
+function pasoActual(c) {
+  const e = c.estado || {};
+  if (!MODULOS.some(m => e[m.id]?.iniciado || e[m.id]?.completado)) return { id: '__sin', label: 'Sin iniciar' };
+  const pend = MODULOS.find(m => !e[m.id]?.completado);
+  if (!pend) return { id: '__fin', label: 'Certificado entregado' };
+  if (pend.requiere === 'evaluador' && MODULOS.filter(m => m.requiere !== 'evaluador').every(m => e[m.id]?.completado))
+    return { id: '__esp', label: 'Esperando evaluador' };
+  return { id: pend.id, label: pend.nombre };
+}
+
+/* ── Carga de respaldos ───────────────────────────────────────────────── */
+async function procesar(lista) {
+  /* El camino es el mismo para respaldos, «Traer el avance» y la nube:
+     js/incorporar.js (limpieza, fotos a IndexedDB, mezcla por correo). */
+  const entradas = [];
+  for (const archivo of lista) entradas.push({ nombre: archivo.name, texto: await archivo.text() });
+  const { errores } = await incorporarRespaldos(entradas);
+
+  $('errores').innerHTML = errores.map(e =>
+    `<div class="err-fila"><strong>${esc(e.archivo)}</strong> — ${esc(e.motivo)}</div>`).join('');
+  pintar();
+}
+
+$('zona').onclick = () => $('archivos').click();
+$('zona').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('archivos').click(); } };
+$('archivos').onchange = e => { procesar([...e.target.files]); e.target.value = ''; };
+['dragenter','dragover'].forEach(ev => $('zona').addEventListener(ev, e => { e.preventDefault(); $('zona').classList.add('sobre'); }));
+['dragleave','drop'].forEach(ev => $('zona').addEventListener(ev, e => { e.preventDefault(); $('zona').classList.remove('sobre'); }));
+$('zona').addEventListener('drop', e => {
+  const f = [...(e.dataTransfer?.files || [])].filter(x => /\.json$/i.test(x.name));
+  if (f.length) procesar(f);
+});
+
+/* ── Tabla ────────────────────────────────────────────────────────────── */
+/* Ordenar por columna con un clic en el encabezado (como Paideia); el
+   segundo clic invierte. «Actividad» es la fecha del último respaldo. */
+let orden = { k: '', dir: 1 };
+const ORDEN_FASE = Object.fromEntries(FASES.map((f, i) => [f, i + 1]));
+const CLAVES_ORDEN = {
+  nombre: c => c.nombre.toLowerCase(), paso: c => c.paso.label, avance: c => c.avance || 0, docs: c => c.docs,
+  lote: c => c.lote, estado: c => c.estadoComercial, fase: c => ORDEN_FASE[c.fasePagada] || 0, actividad: c => c.respaldadoEl || '',
+};
+function ordenar(a, b) {
+  if (!orden.k) return 0;
+  const f = CLAVES_ORDEN[orden.k], x = f(a), y = f(b);
+  return (x < y ? -1 : x > y ? 1 : 0) * orden.dir;
+}
+/* El evaluador consulta; lo comercial (lote, estado, importar, borrar) es
+   del administrador (como Paideia). */
+const soloLectura = sesionCuenta()?.rol === 'evaluador';
+if (soloLectura) ['btnImportar', 'btnLimpiar', 'barraSel'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; });
+
+/* Probar sin Supabase (y el Centro que atiende a alguien en su propio
+   equipo): lo que se contestó en la vista del candidato de ESTE navegador
+   entra a la lista como si hubiera subido su respaldo, sin descargar ni
+   arrastrar archivos. Si ya estaba (mismo correo), se actualiza. */
+(async () => {
+  const enNube = !!(CONFIG.supabase?.url && CONFIG.supabase?.anonKey);
+  if (enNube || soloLectura) return;
+  const { Store } = await import('./js/store.js');
+  const armar = async () => {
+    const r = await Store.exportarCompleto();
+    const correo = r.candidato.correo || String(sesionCuenta()?.correo || '').trim();
+    if (!correo || !Object.keys(r.modulos).some(k => !['candidato', 'firma', 'biblioteca'].includes(k))) return null;
+    r.candidato.correo = correo;
+    if (!r.candidato.nombre) r.candidato.nombre = correo;
+    return r;
+  };
+  const b = $('btnMiAvance');
+  b.hidden = !(await armar());
+  b.onclick = async () => {
+    const r = await armar(); if (!r) return;
+    const nombre = `este-navegador-${r.candidato.correo}.json`;
+    await procesar([{ name: nombre, text: async () => JSON.stringify(r) }]);
+    b.textContent = 'Avance actualizado ✓';
+    setTimeout(() => { b.textContent = 'Traer el avance de este navegador'; }, 2500);
+  };
+})();
+
+/* Liga pública de registro (como la de Paideia): se comparte por WhatsApp
+   o correo. Quien se registra sale aquí como «Sin dar de alta». */
+$('btnLiga').onclick = async () => {
+  const liga = new URL('registro.html', location.href).href;
+  const b = $('btnLiga');
+  try { await navigator.clipboard.writeText(liga); b.textContent = 'Liga copiada ✓'; }
+  catch { prompt('Copia esta liga:', liga); }
+  setTimeout(() => { b.textContent = 'Copiar liga de registro'; }, 2500);
+};
+
+function pintar() {
+  const datos = cargar();
+  const todos = candidatos(datos).map(c => ({ ...c, paso: pasoActual(c), docs: docsDe(c) }));
+  const k = kpis(datos);
+
+  /* ── Filtros ── */
+  const cuenta = (campo, val) => todos.filter(c => campo(c) === val).length;
+  const lotesDisp = [...new Set(todos.map(c => c.lote))].sort((a, b) => a - b);
+  const pasosDisp = [...MODULOS.map(m => [m.id, m.nombre]), ['__esp', 'Esperando evaluador'],
+                     ['__fin', 'Certificado entregado'], ['__sin', 'Sin iniciar']];
+
+  const opciones = (sel, items, valor) => {
+    const el = $(sel);
+    const previo = valor;
+    el.innerHTML = items.map(([v, t]) =>
+      `<option value="${v}" ${v === previo ? 'selected' : ''}>${t}</option>`).join('');
+  };
+
+  opciones('fLote', [['', `Todos los lotes (${todos.length})`],
+    ...lotesDisp.map(l => [String(l), `Lote ${l} (${cuenta(c => c.lote, l)})`])], filtro.lote);
+
+  opciones('fEstado', [['', 'Todos los estados'],
+    ...ESTADOS_CANDIDATO.map(e =>
+      [e.id, `${e.label} (${cuenta(c => c.estadoComercial, e.id)})`]),
+    ['prospecto', `Sin dar de alta (${cuenta(c => c.estadoComercial, 'prospecto')})`]], filtro.estado);
+
+  opciones('fPaso', [['', 'Todos los pasos'],
+    ...pasosDisp.map(([id, t]) => [id, `${t} (${cuenta(c => c.paso.id, id)})`])], filtro.paso);
+
+  const lista = todos.filter(c =>
+    (!filtro.lote   || String(c.lote) === filtro.lote) &&
+    (!filtro.estado || c.estadoComercial === filtro.estado) &&
+    (!filtro.paso   || c.paso.id === filtro.paso) &&
+    (!filtro.q || `${c.nombre} ${c.email} ${c.candidato?.curp || ''}`.toLowerCase().includes(filtro.q.toLowerCase())))
+    .sort(ordenar);
+
+  $('sub').textContent = todos.length
+    ? `${k.inscritos} activos · ${k.registrados} en total${
+        lista.length !== todos.length ? ` · mostrando ${lista.length}` : ''}`
+    : 'Sin expedientes';
+  $('vacio').hidden = todos.length > 0;
+  /* Panel vacío: se ofrece el escenario de prueba aquí mismo (v44). */
+  if (todos.length) $('pruebaRapida').innerHTML = '';
+  else if (!$('pruebaRapida').firstElementChild) ofrecerPrueba($('pruebaRapida'), pintar);
+
+  $('tbody').innerHTML = lista.map(c => {
+    const altas = c.alertas.filter(a => a.nivel === 'alto').length;
+    const medias = c.alertas.filter(a => a.nivel === 'medio').length;
+    const pastilla = altas ? `<span class="pastilla p-alto">${altas} urgente${altas === 1 ? '' : 's'}</span>`
+                   : medias ? `<span class="pastilla p-medio">${medias} por revisar</span>`
+                   : c.completos === 0 ? `<span class="pastilla p-medio">Sin empezar</span>`
+                   : `<span class="pastilla p-ok">Sin pendientes</span>`;
+
+    return `<tr>
+      <td class="sel">${soloLectura ? '' : `<input type="checkbox" data-sel="${esc(c.email)}" ${seleccion.has(c.email) ? 'checked' : ''} aria-label="Seleccionar a ${esc(c.nombre)}">`}</td>
+      <td data-ficha="${encodeURIComponent(c.id)}" style="cursor:pointer">
+        <span class="nom">${esc(c.nombre)}</span>
+        <span class="sub">${[c.evaluador && 'Eval.: ' + c.evaluador,
+                             c.respaldadoEl && 'Respaldo: ' + c.respaldadoEl.slice(0,10)]
+                            .filter(Boolean).join(' · ')}</span>
+      </td>
+      <td class="ocultar-movil" style="font-size:.84rem;color:var(--mid)">${c.paso.label}</td>
+      <td class="num">
+        <span class="mini"><i style="width:${c.avance}%"></i></span>
+        <span style="margin-left:6px">${c.completos}/${c.total}</span>
+      </td>
+      <td class="num ocultar-movil" style="font-size:.84rem;color:${
+        c.docs === DOCS_TOTAL ? 'var(--spoke-deep)' : 'var(--muted)'}">${c.docs} / ${DOCS_TOTAL}</td>
+      <td class="ocultar-movil">${soloLectura ? (c.sinAlta ? '—' : esc(c.lote))
+        : `<input class="chico" type="number" min="1" value="${c.sinAlta ? '' : esc(c.lote)}" placeholder="—" data-lote="${esc(c.email)}" title="${c.sinAlta ? 'Poner lote lo da de alta' : 'Lote'}">`}</td>
+      <td>${soloLectura
+        ? (c.sinAlta ? '<span class="pastilla p-medio">Sin dar de alta</span>' : esc(ESTADOS_CANDIDATO.find(e => e.id === c.estadoComercial)?.label || c.estadoComercial))
+        : `<select class="chico" data-estado="${esc(c.email)}" ${c.sinAlta ? 'style="border-color:#D97706"' : ''}>
+          ${c.sinAlta ? '<option value="" selected disabled>Sin dar de alta</option>' : ''}
+          ${ESTADOS_CANDIDATO.map(e =>
+            `<option value="${e.id}" ${!c.sinAlta && c.estadoComercial === e.id ? 'selected' : ''}>${e.label}</option>`).join('')}
+        </select>`}</td>
+      <td class="ocultar-movil">
+        ${c.fasePagada
+          ? `<span class="pastilla p-info">${FASE_LABEL[c.fasePagada]}</span>`
+          : '<span class="pastilla p-gris">Sin pago</span>'}
+      </td>
+      <td>${pastilla}</td>
+    </tr>`;
+  }).join('');
+  listaVisible = lista.map(c => c.email);
+  const existentes = new Set(todos.map(c => c.email));
+  [...seleccion].forEach(k => { if (!existentes.has(k)) seleccion.delete(k); });
+  pintarSeleccion();
+}
+
+/* ── Selección y borrado ─────────────────────────────────────────────── */
+function pintarSeleccion() {
+  const n = seleccion.size;
+  $('barraSel').classList.toggle('on', n > 0);
+  $('selTxt').textContent = `${n} seleccionado${n === 1 ? '' : 's'}`;
+  const vis = listaVisible.filter(k => seleccion.has(k)).length;
+  $('selTodos').checked = listaVisible.length > 0 && vis === listaVisible.length;
+  $('selTodos').indeterminate = vis > 0 && vis < listaVisible.length;
+}
+$('selTodos').onchange = e => { listaVisible.forEach(k => e.target.checked ? seleccion.add(k) : seleccion.delete(k)); pintar(); };
+$('btnSelNinguno').onclick = () => { seleccion.clear(); pintar(); };
+/* No se borra a la cuenta con la que se entró: quedarse sin acceso al
+   panel por un clic es peor que tener un renglón de más. */
+function borrarDelTodo(correos) {
+  const yo = (sesionCuenta()?.correo || '').toLowerCase();
+  const lista = correos.filter(k => k !== yo);
+  if (!lista.length) { alert('No puedes borrar la cuenta con la que entraste.'); return false; }
+  const nombres = candidatos(cargar()).filter(c => lista.includes(c.email)).map(c => c.nombre).slice(0, 6);
+  if (!confirm(`¿Borrar del todo a ${lista.length === 1 ? nombres[0] || lista[0] : lista.length + ' candidatos'}?\n\n` +
+      (lista.length > 1 ? nombres.join(', ') + (lista.length > 6 ? '…' : '') + '\n\n' : '') +
+      'Se borran su expediente, precio, pagos, evaluación y horario de sala. No se puede deshacer; si solo quieres ocultarlo, cámbiale el estado a «Desistió».' +
+      (lista.length < correos.length ? '\n\n(Tu propia cuenta no se borra.)' : ''))) return false;
+  const r = borrarCandidatos(lista);
+  r.ids.forEach(id => borrarDeExpediente(id));
+  seleccion.clear();
+  return true;
+}
+$('btnBorrarSel').onclick = () => { if (borrarDelTodo([...seleccion])) pintar(); };
+
+$('fBuscar').addEventListener('input', e => { filtro.q = e.target.value; pintar(); });
+document.querySelector('thead').addEventListener('click', e => {
+  const b = e.target.closest('[data-orden]'); if (!b) return;
+  orden = orden.k === b.dataset.orden ? { k: orden.k, dir: -orden.dir } : { k: b.dataset.orden, dir: 1 };
+  document.querySelectorAll('[data-orden]').forEach(x => x.setAttribute('aria-sort', x === b ? (orden.dir > 0 ? 'ascending' : 'descending') : 'none'));
+  pintar();
+});
+/* ?q= en la dirección: las alertas del panel y «Últimos pagos» llegan aquí
+   con el correo del candidato, y se le abre su ficha. */
+{
+  const q = new URLSearchParams(location.search).get('q');
+  if (q) { filtro.q = q; $('fBuscar').value = q; }
+}
+[['fLote', 'lote'], ['fEstado', 'estado'], ['fPaso', 'paso']].forEach(([sel, campo]) => {
+  $(sel).addEventListener('change', e => { filtro[campo] = e.target.value; pintar(); });
+});
+
+/* Lote y estado se editan en la propia tabla */
+$('tbody').addEventListener('change', e => {
+  const sel = e.target.closest('[data-sel]');
+  if (sel) { sel.checked ? seleccion.add(sel.dataset.sel) : seleccion.delete(sel.dataset.sel); pintarSeleccion(); return; }
+  const lote = e.target.closest('[data-lote]');
+  const est  = e.target.closest('[data-estado]');
+  if (lote) actualizar(d => {
+    d.precio[lote.dataset.lote] = { ...(d.precio[lote.dataset.lote] || {}), lote: Number(lote.value) || 1 };
+  });
+  if (est) {
+    const correo = est.dataset.estado, antes = cargar().precio?.[correo]?.estado;
+    actualizar(d => { d.precio[correo] = { ...(d.precio[correo] || {}), estado: est.value }; });
+    /* Como en Paideia: marcar a alguien «Administrador» le da acceso al
+       panel, y con él el cambio entre la vista del equipo y la del candidato.
+       Solo lo hace un administrador. */
+    if (sesionCuenta()?.rol === 'admin') {
+      const miembro = equipoLocal().find(m => m.correo === correo.toLowerCase());
+      if (est.value === 'administrador' && miembro?.rol !== 'admin') {
+        const nombre = candidatos(cargar()).find(c => c.email === correo)?.nombre || '';
+        guardarMiembro(correo, 'admin', nombre);
+      } else if (antes === 'administrador' && est.value !== 'administrador' && miembro && !miembro.fijo && miembro.rol === 'admin'
+                 && correo.toLowerCase() !== sesionCuenta()?.correo) quitarMiembro(correo);
+    }
+  }
+  pintar();
+});
+
+$('tbody').addEventListener('click', e => {
+  const celda = e.target.closest('[data-ficha]');
+  if (celda) abrirFicha(decodeURIComponent(celda.dataset.ficha));
+});
+
+/* ── Ficha ────────────────────────────────────────────────────────────── */
+function abrirFicha(id) {
+  const c = candidatos(cargar()).find(v => v.id === id);
+  if (!c) return;
+  abierto = id;
+
+  $('fiNombre').textContent = c.nombre;
+  $('fiEvaluacion').href = `admin-evaluacion.html?email=${encodeURIComponent(c.email)}`;
+  $('fiSub').textContent = [
+    c.evaluador && 'Evaluador: ' + c.evaluador,
+    c.fechaEvaluacion && 'Evaluación: ' + c.fechaEvaluacion,
+    c.respaldadoEl && 'respaldo del ' + c.respaldadoEl.slice(0,10),
+  ].filter(Boolean).join(' · ') || 'Sin datos del Plan de Evaluación';
+
+  const alertas = c.alertas.length
+    ? c.alertas.map(a => `
+        <div style="background:${a.nivel === 'alto' ? '#FEF2F2' : '#FFFBEB'};
+                    border-left:4px solid ${a.nivel === 'alto' ? '#DC2626' : '#D97706'};
+                    color:${a.nivel === 'alto' ? '#7F1D1D' : '#78350F'};
+                    padding:9px 13px;border-radius:6px;margin-bottom:6px;font-size:.85rem">${esc(a.txt)}</div>`).join('')
+    : c.completos === 0
+    ? `<div style="background:#FFFBEB;border-left:4px solid #D97706;color:#78350F;
+                   padding:10px 13px;border-radius:6px;font-size:.86rem">
+         No ha abierto ningún módulo. Vale una llamada.</div>`
+    : `<div style="background:#ECFDF5;border-left:4px solid #059669;color:#065F46;
+                   padding:10px 13px;border-radius:6px;font-size:.86rem">Sin pendientes marcados.</div>`;
+
+  /* Lo básico arriba de la ficha (como Paideia): quién es, en qué va y cómo
+     va su evaluación, sin tener que abrir la Evaluación. */
+  const ev = evaluacionDe(cargar(), c.email), dict = dictamenDe(ev);
+  const etapa = (() => { try { return lineaDeTiempo({ evaluacion: ev }).etapas.filter(x => x.hecha).pop()?.label || ''; } catch { return ''; } })();
+  const res = [['Correo', c.email], ['CURP', c.candidato?.curp || '—'],
+    ['Lote · estado', c.sinAlta ? 'Sin dar de alta' : `Lote ${c.lote} · ${ESTADOS_CANDIDATO.find(e => e.id === c.estadoComercial)?.label || c.estadoComercial}`],
+    ...(soloLectura ? [] : [['Total acordado', pesos(c.totalAcordado)]]),
+    ['Paso actual', pasoActual(c).label], ['Última actividad', c.respaldadoEl ? c.respaldadoEl.slice(0, 10) : '—'],
+    ['Dictamen', dict ? (dict === 'competente' ? 'COMPETENTE' : 'TODAVÍA NO COMPETENTE') : 'Sin dictamen'],
+    ...(etapa ? [['Etapa del Centro', etapa]] : [])];
+  /* Como Paideia: a quien se registró sin alta se le dice qué le falta y
+     qué implica, con el camino para darlo de alta. */
+  const nda = c.estado?.autodiagnostico?.datos?.nda?.fecha || c.estado?.autodiagnostico?.datos?.ndaFirmadoEl || '';
+  const notaAlta = (!soloLectura && c.sinAlta) ? `<div class="aviso aviso--warn" style="margin:8px 0;font-size:.84rem">Se registró${nda ? ` y firmó su Acuerdo de Confidencialidad el ${esc(String(nda).slice(0, 10))}` : ''}, pero <strong>todavía no tiene lote ni montos capturados</strong>. Hasta que se los captures no cuenta en KPIs ni en el reparto de utilidades. <a href="admin-precios.html?alta=${encodeURIComponent(c.email)}">Darlo de alta</a></div>` : '';
+  const resumenFicha = notaAlta + `<div class="ficha-res">${res.map(([k, v]) => `<div><b>${esc(k)}</b>${esc(v)}</div>`).join('')}</div>`;
+  $('fiCuerpo').innerHTML = resumenFicha + `<div style="margin-bottom:16px">${alertas}</div>`
+    + acuerdosFirmados(c)
+    + archivosEntregados(c)
+    + MODULOS.map(m => {
+      const e = c.estado[m.id] || {};
+      const txt = e.completado ? '✓ Completo' : e.iniciado ? '◐ En curso' : 'Sin empezar';
+      const col = e.completado ? 'var(--spoke-deep)' : e.iniciado ? '#B45309' : 'var(--muted)';
+      const d = e.datos || {};
+      let det = '';
+      if (m.id === 'autodiagnostico' && d.porcentaje != null) det = `${d.porcentaje}% de cobertura`;
+      /* Leía `porcentaje`, que el examen nunca escribe — guarda `score`. La
+         línea salía siempre vacía, así que la ficha no decía la calificación
+         de nadie. Mismo defecto que ya se había corregido en expediente.js
+         y que aquí se quedó. */
+      if (m.id === 'examen') {
+        const sc = d.score ?? d.porcentaje;
+        const n = Array.isArray(d.intentos) ? d.intentos.length : (sc != null ? 1 : 0);
+        if (sc != null) det = `mejor calificación ${sc}%` +
+          (n > 1 ? ` · ${n} intentos` : '') +
+          (d.aprobado ? '' : ' · sin aprobar');
+      }
+      if (m.id === 'practica' && d.completados != null) det = `${d.completados}/${d.requeridos || 20} temas`;
+      else if (m.id === 'practica' && d.porcentaje != null) det = `${d.porcentaje}% autocalificable`;
+      if (m.docs?.length) {
+        const n = m.docs.filter(x => { const v = (d.documentos || {})[x]; return Array.isArray(v) ? v.length : !!v; }).length;
+        det = `${n} de ${m.docs.length} documentos`;
+      }
+      return `<div class="fi-fila">
+        <span style="flex:0 0 24px;display:flex;justify-content:center">${icono(iconoDe(m.id), 17)}</span>
+        <span class="fi-t">${m.nombre}${det ? `<small>${det}</small>` : ''}</span>
+        <span style="font-weight:700;font-size:.79rem;color:${col};white-space:nowrap">${txt}</span>
+      </div>`;
+    }).join('')
+    + fichaComercial(c);
+
+  $('ficha').showModal();
+  cargarMiniaturas();
+}
+
+/* Rellena los huecos de miniatura con lo que tenga el almacén */
+async function cargarMiniaturas() {
+  const huecos = [...document.querySelectorAll('[data-mini]')];
+  for (const img of huecos) {
+    const a = archivosAbiertos[+img.dataset.mini];
+    const g = await recuperar(a);
+    const fuente = g?.miniatura || (/^data:image\//.test(g?.dato || '') ? g.dato : '');
+
+    if (fuente) {
+      const el = document.createElement('img');
+      el.src = fuente;
+      el.alt = a.nombreDoc || 'Evidencia';
+      img.replaceWith(el);
+    } else {
+      img.classList.remove('fa-cargando');
+      img.innerHTML = icono('archivo', 18);
+    }
+  }
+}
+
+/* ── Los archivos que el candidato entregó ────────────────────────────────
+   El respaldo ya los traía adentro desde que Evidencias dejó de ser una lista
+   de casillas, pero la ficha seguía diciendo nada más "2 de 4 documentos".
+   Un número no sirve para revisar: el evaluador necesita ver que la foto del
+   diploma esté de frente y que el INE se lea, y eso solo se puede viendo el
+   archivo.
+
+   Los que no cupieron en el respaldo se marcan aparte. Es la diferencia entre
+   "todavía no lo manda" y "lo tiene, pero hay que pedírselo por fuera", y sin
+   esa distinción se le reclama a la persona equivocada.                     */
+function archivosEntregados(c) {
+  const piezas = [];
+
+  /* v47: no solo los obligatorios — también los opcionales (certificados)
+     y lo de la Ficha de Registro (foto y diplomas), que van al portafolio. */
+  const NOMBRES = { certificados: 'Certificados / diplomas', fotoRegistro: 'Foto de la Ficha de Registro' };
+  const fuentes = [...MODULOS.map(m => ({ docs: c.estado?.[m.id]?.datos?.documentos || {}, orden: m.docs || [] })),
+    { docs: c.candidato?.documentos || {}, orden: [] }];
+  fuentes.forEach(({ docs, orden }) => {
+    const claves = [...orden, ...Object.keys(docs).filter(k => !orden.includes(k))];
+    claves.forEach(clave => {
+      const v = docs[clave];
+      if (!v) return;
+      const nombreDoc = CONFIG.documentos?.[clave]?.nombre || NOMBRES[clave] || (clave.startsWith('cert_') ? 'Certificado (Ficha de Registro)' : clave);
+
+      if (v === true)            return piezas.push({ nombreDoc, marca: 'viejo' });
+      if (typeof v === 'string') return piezas.push({ nombreDoc, liga: v });
+      if (typeof v !== 'object') return;
+      /* v47: INE frente y reverso, varias capturas: una tarjeta por archivo */
+      const lista = Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : [v];
+      lista.forEach((x, n) => piezas.push({ nombreDoc: lista.length > 1 ? `${nombreDoc} (${n + 1}/${lista.length})` : nombreDoc, ...x }));
+    });
+  });
+
+  if (!piezas.length) return '';
+
+  /* `dato` para los expedientes de antes de que los archivos se movieran a
+     IndexedDB, `enAlmacen` para los de ahora. Contar solo `dato` haría que
+     una ficha con sus cuatro archivos completos dijera "0 de 4". */
+  const completos = piezas.filter(a => a.dato || a.enAlmacen).length;
+
+  const tarjetas = piezas.map((a, i) => {
+    /* La miniatura vive en IndexedDB desde que los expedientes traen fotos:
+       en localStorage no cabían. Aquí va el hueco y se rellena en cuanto el
+       almacén responde — la ficha abre al instante en vez de esperar a que
+       carguen cuatro imágenes. */
+    /* Un <img> sin src hace que el navegador intente cargar la página actual
+       como imagen y tire ERR_INVALID_URL en la consola — cuatro por ficha.
+       No rompe nada, pero es ruido que después tapa un error de verdad. El
+       hueco es un <span> y se convierte en <img> cuando hay qué mostrar. */
+    const vista = a.enAlmacen
+      ? `<span class="fa-sin fa-cargando" data-mini="${i}"></span>`
+      : a.miniatura
+        ? `<img src="${imagenSegura(a.miniatura)}" alt="${esc(a.nombreDoc)}">`
+        : `<span class="fa-sin">${icono(a.liga ? 'flecha' : 'archivo', 18)}</span>`;
+
+    const nota = a.revision?.nivel === 'aviso'
+      ? `<span class="fa-ojo" title="${esc((a.revision.notas || []).join(' · '))}">${icono('alerta', 12)} ${esc((a.revision.notas || []).find(t => !/^(PDF de|Foto de)/.test(t)) || 'revisar')}</span>` : '';
+    const pie = a.perdido ? `<span class="fa-ojo">${icono('alerta', 12)} el archivo se perdió en su navegador: pídeselo</span>`
+              : (a.dato || a.enAlmacen)
+                         ? `<span class="fa-ok">${icono('cheque', 12)} completo${a.paginas ? ` · PDF ${a.paginas} pág.` : ''}</span>${nota}`
+              : a.liga   ? `<span class="fa-ok">liga</span>`
+              : a.marca === 'viejo'
+                         ? `<span class="fa-ojo">solo marcado</span>`
+                         : `<span class="fa-ojo">${icono('alerta', 12)} pídeselo aparte</span>`;
+
+    const abrible = a.dato || a.enAlmacen || a.liga;
+    return `<${abrible ? 'button' : 'div'} class="fa-card"
+              ${(a.dato || a.enAlmacen) ? `data-ver="${i}"` : ''}
+              ${a.liga ? `data-liga="${esc(a.liga)}"` : ''}
+              title="${esc(a.nombre || a.nombreDoc)}">
+        ${vista}
+        <strong>${esc(a.nombreDoc)}</strong>
+        ${pie}
+      </${abrible ? 'button' : 'div'}>`;
+  }).join('');
+
+  /* Los data URL completos no se meten al HTML: una foto de 250 KB repetida
+     en el marcado hace lentísimo el diálogo. Se guardan aparte y se sacan al
+     abrir. */
+  archivosAbiertos = piezas;
+
+  return `
+    <div class="fa-bloque">
+      <div class="fa-titulo">Lo que entregó
+        <small>${completos} de ${piezas.length} llegaron completos</small>
+      </div>
+      <div class="fa-grid">${tarjetas}</div>
+    </div>`;
+}
+
+/* ── Lo que firmó ─────────────────────────────────────────────────────────
+   Dos acuerdos distintos, cada uno con su propia fecha: el de
+   confidencialidad del instrumento, que firma antes de ver los 142
+   reactivos, y la declaración de autenticidad de las evidencias, al final.
+
+   Se guardan con el texto completo de lo aceptado, no con un `true`. El día
+   que alguien pregunte qué fue exactamente lo que esa persona firmó, la
+   respuesta tiene que estar en el expediente y no en la memoria de nadie. */
+const ACUERDOS = [
+  { modulo: 'autodiagnostico', campo: 'nda',
+    titulo: 'Confidencialidad del instrumento' },
+  { modulo: 'autodiagnostico', campo: 'triptico',
+    titulo: 'Acuse del Tríptico de Derechos y Obligaciones' },
+  { modulo: 'evidencias', campo: 'declaracion',
+    titulo: 'Declaración de autenticidad' },
+  { modulo: 'encuesta', campo: 'sello',
+    titulo: 'Encuesta de Satisfacción' },
+  { modulo: 'plan', campo: 'documentos.acusePlanEvaluacion',
+    titulo: 'Acuse del Plan de Evaluación' },
+];
+
+/* `campo` puede ir anidado con puntos: el acuse vive dentro de documentos */
+const selloDe = (c, a) => a.campo.split('.')
+  .reduce((o, k) => (o && typeof o === 'object' ? o[k] : undefined), c.estado?.[a.modulo]?.datos);
+
+function acuerdosFirmados(c) {
+  const filas = ACUERDOS
+    .map(a => ({ ...a, sello: selloDe(c, a) }))
+    .filter(a => imagenSegura(a.sello?.firma || ''));
+
+  if (!filas.length) return '';
+
+  return `
+    <div class="fa-bloque">
+      <div class="fa-titulo">Lo que firmó
+        <small>${filas.length} de ${ACUERDOS.length} acuerdos</small>
+      </div>
+      ${filas.map(a => `
+        <div class="fa-firma">
+          <img src="${imagenSegura(a.sello.firma)}" alt="Firma del candidato">
+          <div>
+            <strong>${a.titulo}</strong>
+            <small>${new Date(a.sello.fecha).toLocaleDateString('es-MX',
+              { day: 'numeric', month: 'long', year: 'numeric' })}</small>
+          </div>
+          <button class="btn-a btn-a--sec fa-leer" data-acuerdo="${a.modulo}|${a.campo}">
+            Leer lo que aceptó
+          </button>
+        </div>`).join('')}
+    </div>`;
+}
+
+/* ── Nota interna y fases de pago (como el detalle de candidato de Paideia) ──
+   La nota solo la ve el equipo ("acordó pagar en 3 partes, llamar el
+   lunes…"). Las fases se liberan o revocan aquí mismo, con la misma
+   escritura que Precios y pagos. */
+function fichaComercial(c) {
+  /* Como en Paideia: el evaluador no ve nota interna ni pagos */
+  if (sesionCuenta()?.rol === 'evaluador') return '';
+  const d = cargar();
+  const pr = d.precio[c.email] || {};
+  const fases = fasesPagadas(d, c.email);
+  return `
+    <h3 style="margin:18px 0 6px;font-size:.95rem">Nota interna</h3>
+    <textarea id="fiNota" rows="2" style="width:100%;font:inherit;font-size:.86rem;padding:9px 11px;border:1px solid var(--border);border-radius:8px"
+      placeholder="Solo la ve el equipo (ej. acordó pagar en 3 partes, llamar el lunes…)">${esc(pr.nota_interna || '')}</textarea>
+    <div style="display:flex;justify-content:flex-end;margin:6px 0 10px"><button class="btn-a btn-a--pri" id="fiGuardarNota" data-email="${esc(c.email)}">Guardar nota</button></div>
+    <h3 style="margin:10px 0 6px;font-size:.95rem">Fases de pago</h3>
+    ${FASES.map(f => {
+      const p = d.pagos.find(x => x.email === c.email && x.fase === f);
+      return `<div class="fi-fila">
+        <span class="fi-t">${FASE_LABEL[f]}<small>${p ? `${pesos(Number(p.monto) || pr['monto_' + f] || 0)} · ${p.origen === 'mercado_pago' || p.origen === 'mercadopago' ? 'Mercado Pago' : p.origen === 'manual' ? 'Liberada a mano' : p.origen === 'importado' ? 'Importado de lista' : esc(p.origen || 'registrado')}` : 'Pendiente'}</small></span>
+        <button class="btn-a ${fases[f] ? 'btn-a--peligro' : 'btn-a--pri'}" data-fase-pago="${f}" data-email="${esc(c.email)}">${fases[f] ? 'Revocar' : 'Liberar'}</button>
+      </div>`; }).join('')}`;
+}
+
+document.addEventListener('click', e => {
+  const n = e.target.closest('#fiGuardarNota');
+  if (n) {
+    const texto = $('fiNota').value.trim();
+    actualizar(d => { d.precio[n.dataset.email] = { ...(d.precio[n.dataset.email] || { lote: 1, estado: 'activo' }), nota_interna: texto }; });
+    n.textContent = 'Guardado'; setTimeout(() => { n.textContent = 'Guardar nota'; }, 1500);
+    return;
+  }
+  const f = e.target.closest('[data-fase-pago]');
+  if (f) {
+    const email = f.dataset.email, fase = f.dataset.fasePago;
+    const liberada = fasesPagadas(cargar(), email)[fase];
+    if (!confirm(liberada ? `¿Revocar la fase "${FASE_LABEL[fase]}" para ${email}? Se borra su pago.` : `¿Liberar manualmente la fase "${FASE_LABEL[fase]}" para ${email}?`)) return;
+    alternarFase(email, fase, 'manual');
+    const id = abierto; pintar(); abrirFicha(id);
+  }
+});
+
+let archivosAbiertos = [];
+
+/* Abrir un archivo entregado a tamaño completo */
+$('fiCuerpo').addEventListener('click', e => {
+  const liga = e.target.closest('[data-liga]');
+  /* window.open con una liga javascript: la ejecuta: se valida aquí también,
+     aunque ya venga limpia de la importación. */
+  if (liga) { const u = ligaSegura(liga.dataset.liga); if (u) window.open(u, '_blank', 'noopener'); return; }
+
+  const leer = e.target.closest('[data-acuerdo]');
+  if (leer) {
+    const [mod, campo] = leer.dataset.acuerdo.split('|');
+    const datos = cargar();
+    const cand = candidatos(datos).find(x => x.id === abierto);
+    const sello = cand ? selloDe(cand, { modulo: mod, campo }) : null;
+    if (!sello) return;
+    $('visorTitulo').textContent = 'Texto aceptado';
+    $('visorImg').removeAttribute('src');
+    $('visorImg').hidden = true;
+    $('visorTexto').hidden = false;
+    $('visorTexto').innerHTML = `
+      <p class="va-parrafo" style="white-space:pre-line">${esc(sello.acepto || '(sin texto guardado)')}</p>
+      <p class="va-pie">Firmado el ${new Date(sello.fecha).toLocaleString('es-MX')}</p>`;
+    $('visor').showModal();
+    return;
+  }
+
+  const ver = e.target.closest('[data-ver]');
+  if (!ver) return;
+  const a = archivosAbiertos[+ver.dataset.ver];
+  if (!a) return;
+
+  $('visorTitulo').textContent = a.nombre || a.nombreDoc;
+  $('visorTexto').hidden = true;
+  $('visorImg').hidden = false;
+  $('visorImg').removeAttribute('src');
+  $('visor').showModal();
+
+  /* Se abre primero y se llena después: la foto vive en IndexedDB y puede
+     tardar. Un diálogo que tarda en abrir se siente roto; uno que abre
+     vacío y se llena, no. */
+  (async () => {
+    const g = a.dato ? { dato: a.dato } : await recuperar(a);
+    if (g?.dato && /^data:application\/pdf/.test(g.dato)) {
+      /* Un PDF se ve página por página, convertido a imagen con pdf.js */
+      $('visorImg').hidden = true;
+      $('visorTexto').hidden = false;
+      $('visorTexto').innerHTML = '<p class="va-parrafo">Abriendo el PDF…</p>';
+      try {
+        const { paginasComoImagenes } = await import('./js/pdf-util.js');
+        const pags = await paginasComoImagenes(g.dato, { ancho: 1000, max: 20 });
+        $('visorTexto').innerHTML = pags.map((src, n) => `<img src="${imagenSegura(src)}" alt="Página ${n + 1}" style="display:block;max-width:100%;margin:0 auto 10px;border:1px solid #ddd">`).join('');
+      } catch { $('visorTexto').innerHTML = '<p class="va-parrafo">No se pudo abrir el PDF.</p>'; }
+    } else if (g?.dato) $('visorImg').src = g.dato;
+    else {
+      $('visorImg').hidden = true;
+      $('visorTexto').hidden = false;
+      $('visorTexto').innerHTML =
+        `<p class="va-parrafo">Este archivo no quedó guardado en este navegador.
+          Pídeselo al candidato por WhatsApp o correo.</p>`;
+    }
+  })();
+});
+
+$('visorCerrar').onclick = () => $('visor').close();
+
+$('fiCerrar').onclick = () => $('ficha').close();
+
+/* Ver como este candidato ─────────────────────────────────────────────────
+   Carga su expediente en el espejo y salta a la vista del candidato. Le
+   pasamos también qué fases tiene pagadas: sin eso, el evaluador vería
+   bloqueada la Alineación de alguien que sí la tiene liberada, porque las
+   autorizaciones no viajan dentro del respaldo — las escribe el panel.     */
+$('fiEspejo').onclick = () => {
+  const datos = cargar();
+  const c = candidatos(datos).find(x => x.id === abierto);
+  if (!c) return;
+
+  const pagadas = fasesPagadas(datos, c.email);
+
+  const ok = encenderEspejo({
+    ...c,
+    autorizaciones: { ...pagadas, entrega: c.estado?.entrega?.completado === true },
+  });
+
+  if (!ok) {
+    alert('No se pudo abrir el espejo. Revisa que el navegador permita guardar datos de sesión.');
+    return;
+  }
+  location.href = 'index.html';
+};
+$('fiBorrar').onclick = () => {
+  const c = candidatos(cargar()).find(x => x.id === abierto);
+  if (c && borrarDelTodo([c.email])) { $('ficha').close(); pintar(); }
+};
+$('fiQuitar').onclick = () => {
+  if (!abierto || !confirm('¿Quitar este expediente del panel? No borra el archivo original.')) return;
+  borrarDeExpediente(abierto);   // sus archivos, en IndexedDB, se van con él
+  actualizar(d => { d.expedientes = d.expedientes.filter(x => x.id !== abierto); });
+  $('ficha').close(); pintar();
+};
+
+/* ── Exportar / vaciar ────────────────────────────────────────────────── */
+$('btnCSV').onclick = () => {
+  const lista = candidatos(cargar());
+  const cab = ['Candidato','Correo','CURP','Evaluador','Lote','Estado','Fase pagada','Paso actual','Documentos',
+               'Módulos','Avance %','Autodiagnóstico %','Examen %','Cobrado','Por cobrar',
+               'Alertas','Respaldo'];
+  /* Una celda de texto que empieza con = + - @ la ejecuta Excel como
+     fórmula al abrir el archivo. El nombre sale del respaldo que manda el
+     candidato: `=HYPERLINK("https://…?"&B2;"Ver")` en su nombre se llevaría
+     datos de la hoja con un clic del evaluador. Las comillas no lo impiden;
+     un apóstrofo al frente sí, y Excel no lo muestra. Los números se dejan
+     tal cual para que sigan sumando. */
+  const esc = v => {
+    let t = String(v ?? '');
+    if (typeof v !== 'number' && /^[=+\-@\t\r]/.test(t)) t = "'" + t;
+    return `"${t.replace(/"/g, '""')}"`;
+  };
+  const filas = lista.map(c => [
+    c.nombre, c.email, c.candidato?.curp || '', c.evaluador, c.lote, c.estadoComercial,
+    c.fasePagada ? FASE_LABEL[c.fasePagada] : '',
+    pasoActual(c).label, `${docsDe(c)}/${DOCS_TOTAL}`,
+    `${c.completos}/${c.total}`, c.avance,
+    c.metricas.autodiagnostico ?? '', c.metricas.examen ?? '',
+    c.cobrado, c.porCobrar,
+    c.alertas.filter(a => a.nivel === 'alto').length, c.respaldadoEl.slice(0,10),
+  ].map(esc).join(','));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + [cab.map(esc).join(','), ...filas].join('\r\n')],
+                                        { type:'text/csv;charset=utf-8' }));
+  a.download = `posturalia-candidatos-${hoyLocal()}.csv`;
+  a.click();
+};
+
+$('btnLimpiar').onclick = () => {
+  if (!confirm('¿Quitar todos los expedientes? Los pagos y precios se conservan.')) return;
+  cargar().expedientes.forEach(x => borrarDeExpediente(x.id));
+  actualizar(d => { d.expedientes = []; });
+  $('errores').innerHTML = ''; pintar();
+};
+
+/* ── Importar lista ───────────────────────────────────────────────────── */
+const OPC_MAPA = [['', '— ignorar —'], ['correo', 'Correo'], ['nombre', 'Nombre'], ['telefono', 'Teléfono'], ['curp', 'CURP'],
+  ['lote', 'Lote'], ['estado', 'Estado'], ['motivo', 'Notas'], ['fase', 'Fase (una fila por pago)'], ['monto', 'Monto del pago'], ['fecha', 'Fecha del pago'],
+  ...FASES_IMP.flatMap(f => [[`precio:${f}`, `Precio · ${FASE_LABEL[f]}`], [`pagado:${f}`, `¿Pagó? · ${FASE_LABEL[f]}`], [`fecha:${f}`, `Fecha pago · ${FASE_LABEL[f]}`]])];
+let imp = null;   // { tabla, mapa, registros }
+
+function pintarImportacion() {
+  const { tabla, mapa } = imp;
+  const { registros, errores } = interpretar(tabla.filas, mapa);
+  imp.registros = registros;
+  const existentes = new Set(candidatos(cargar()).map(c => c.email));
+  const r = resumen(registros, existentes);
+  const sinCorreo = !Object.values(mapa).includes('correo');
+  const muestra = registros.slice(0, 8);
+  $('impDetalle').innerHTML = `
+    <p style="margin:0;font-size:.85rem"><b>${tabla.filas.length}</b> renglones · <b>${tabla.columnas.length}</b> columnas. Revisa qué es cada columna:</p>
+    <div class="imp-map">${tabla.columnas.map((c, i) => `<div class="${mapa[c] ? 'ok' : ''}"><label title="${esc(c)}">${esc(c)}</label>
+      <select data-col="${i}" aria-label="Qué es la columna ${esc(c)}">${OPC_MAPA.map(([v, t]) => `<option value="${v}" ${(mapa[c] || '') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>`).join('')}</div>
+    ${sinCorreo ? '<div class="imp-err">Falta indicar cuál columna es el <b>correo</b>: es lo que identifica a cada candidato.</div>' : `
+    <div class="imp-res"><div><b>${r.total}</b>candidatos</div><div><b>${r.nuevos}</b>nuevos</div><div><b>${r.actualizados}</b>ya estaban (se actualizan)</div><div><b>${r.pagos}</b>fases pagadas</div></div>
+    ${errores.length ? `<div class="imp-err"><b>${errores.length} aviso${errores.length === 1 ? '' : 's'}:</b><br>${errores.slice(0, 40).map(e => `Renglón ${e.fila}: ${esc(e.motivo)}`).join('<br>')}${errores.length > 40 ? '<br>…' : ''}</div>` : ''}
+    <table class="tbl" style="font-size:.8rem"><thead><tr><th>Correo</th><th>Nombre</th><th>Lote</th><th>Estado</th>${FASES_IMP.map(f => `<th class="num">${FASE_LABEL[f]}</th>`).join('')}</tr></thead>
+      <tbody>${muestra.map(x => `<tr><td>${esc(x.correo)}${existentes.has(x.correo) ? ' <span class="pastilla p-gris">ya estaba</span>' : ''}</td><td>${esc(x.nombre)}</td><td>${esc(x.lote ?? '')}</td><td>${esc(x.estado ?? '')}</td>
+        ${FASES_IMP.map(f => `<td class="num">${x.montos[f] != null ? pesos(x.montos[f]) : ''}${x.pagos[f] ? ' ✓' + (x.pagos[f].fecha ? '<br><small>' + x.pagos[f].fecha.slice(0, 10) + '</small>' : '') : ''}</td>`).join('')}</tr>`).join('')}</tbody></table>
+    ${registros.length > muestra.length ? `<p style="font-size:.8rem;color:var(--muted)">…y ${registros.length - muestra.length} más.</p>` : ''}`}`;
+  $('impOk').disabled = sinCorreo || !registros.length;
+  $('impOk').textContent = registros.length ? `Importar ${registros.length} candidato${registros.length === 1 ? '' : 's'}` : 'Importar';
+}
+$('btnImportar').onclick = () => { imp = null; $('impDetalle').innerHTML = ''; $('impMsg').textContent = ''; $('impOk').disabled = true; $('impArchivo').value = ''; $('imp').showModal(); };
+$('impCerrar').onclick = () => $('imp').close();
+$('impArchivo').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  const tabla = leerTabla(await f.text(), f.name);
+  $('impMsg').textContent = '';
+  if (!tabla.ok) { imp = null; $('impDetalle').innerHTML = `<div class="imp-err">${esc(tabla.motivo)}</div>`; $('impOk').disabled = true; return; }
+  imp = { tabla, mapa: detectarColumnas(tabla.columnas) };
+  pintarImportacion();
+};
+$('impDetalle').addEventListener('change', e => {
+  const s = e.target.closest('[data-col]'); if (!s || !imp) return;
+  const col = imp.tabla.columnas[+s.dataset.col];
+  if (s.value) { Object.keys(imp.mapa).forEach(k => { if (imp.mapa[k] === s.value && !s.value.includes(':') && !['fase', 'monto', 'fecha'].includes(s.value)) delete imp.mapa[k]; }); imp.mapa[col] = s.value; }
+  else delete imp.mapa[col];
+  pintarImportacion();
+});
+$('impOk').onclick = () => {
+  if (!imp?.registros?.length) return;
+  const r = importarCandidatos(imp.registros);
+  if (!r.guardado) { $('impMsg').style.color = 'var(--warn)'; $('impMsg').textContent = 'No se pudo guardar: el almacenamiento de este navegador está lleno.'; return; }
+  $('imp').close();
+  $('errores').innerHTML = `<div class="err-fila" style="background:#ECFDF5;color:#065F46"><strong>Importado:</strong> ${r.nuevos} nuevo${r.nuevos === 1 ? '' : 's'}, ${r.actualizados} actualizado${r.actualizados === 1 ? '' : 's'}, ${r.pagos} pago${r.pagos === 1 ? '' : 's'} registrado${r.pagos === 1 ? '' : 's'}. Los precios y pagos se ven en Precios y pagos.</div>`;
+  pintar();
+};
+$('impPlantilla').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([plantillaCsv()], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'posturalia-plantilla-candidatos.csv'; a.click();
+};
+
+pintar();
+{
+  const q = (new URLSearchParams(location.search).get('q') || '').toLowerCase();
+  const c = q && candidatos(cargar()).find(x => x.email === q);
+  if (c) abrirFicha(c.id);
+}
+
+document.getElementById('zonaIco').innerHTML = icono('descarga', 30);
+</script>
+</body>
+</html>

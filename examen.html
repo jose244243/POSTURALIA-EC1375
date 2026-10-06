@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examen de Conocimientos EC1375 — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+.ex-mapa { display:flex; flex-wrap:wrap; gap:6px }
+.ex-mapa button { width:34px; height:34px; border-radius:8px; border:1px solid var(--border); background:var(--white); font-size:.8rem; font-weight:600; color:var(--mid); cursor:pointer }
+.ex-mapa button.hecho { background:var(--spoke-pale); border-color:var(--spoke-lt); color:var(--spoke-deep) }
+.ex-mapa button.actual { outline:2px solid var(--spoke-deep); outline-offset:1px }
+.ex-mapa button:disabled { opacity:.45; cursor:default }
+.ex-rel { display:flex; flex-direction:column; gap:10px; margin-top:6px }
+.ex-rel .fila { display:grid; grid-template-columns:1fr minmax(160px, 1.2fr); gap:10px; align-items:center; padding:8px 10px; border:1px solid var(--border); border-radius:10px }
+.ex-rel .fila.ok { border-color:var(--ok); background:#ECFDF5 } .ex-rel .fila.bad { border-color:var(--err); background:#FEF2F2 }
+.ex-rel select { font:inherit; font-size:.9rem; padding:7px 9px; border:1px solid var(--border); border-radius:8px; width:100% }
+.ex-rel .chks { display:flex; flex-wrap:wrap; gap:6px 12px } .ex-rel .chks label { display:inline-flex; gap:4px; align-items:center; font-size:.88rem }
+.ex-der { margin:8px 0 0; padding:10px 12px; background:var(--bg); border-radius:10px; font-size:.86rem; line-height:1.6 }
+.ex-der div { margin:2px 0 }
+.ex-fb { margin-top:14px; border-radius:10px; padding:12px 14px; font-size:.92rem; line-height:1.6 }
+.ex-fb.ok { background:#ECFDF5; color:#065F46 } .ex-fb.bad { background:#FEF2F2; color:#7F1D1D }
+.ex-fb .h { font-weight:800; margin-bottom:4px }
+.ex-fb .acc { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px }
+.ex-fig { margin:8px 0 12px } .ex-fig .ie-fig { display:flex; gap:16px; align-items:center; flex-wrap:wrap } .ex-fig ol { margin:0; padding-left:4px; font-size:.84rem }
+.ex-temas .t { display:flex; gap:10px; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); flex-wrap:wrap }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <!-- ── INTRODUCCIÓN ── -->
+  <section id="vIntro">
+    <div class="plat-head">
+      <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.5 3a3 3 0 0 0-3 3 3 3 0 0 0-2 5.2A3 3 0 0 0 6 16.5 3 3 0 0 0 9.5 21a2.5 2.5 0 0 0 2.5-2.5V5.5A2.5 2.5 0 0 0 9.5 3z"/><path d="M14.5 3a3 3 0 0 1 3 3 3 3 0 0 1 2 5.2A3 3 0 0 1 18 16.5 3 3 0 0 1 14.5 21a2.5 2.5 0 0 1-2.5-2.5V5.5A2.5 2.5 0 0 1 14.5 3z"/></svg></div>
+      <h1>Examen de Conocimientos</h1>
+      <p>Las 37 preguntas oficiales del cuestionario de tu Instrumento de Evaluación.</p>
+    </div>
+    <div class="card card--acento">
+      <h2>Cómo funciona</h2>
+      <ol style="color:var(--mid);font-size:.93rem;line-height:1.8;margin:0;padding-left:20px" id="descExamen">
+        <li>Una pregunta a la vez: se revisa al instante.</li>
+        <li>Si fallas, ves cuál era la correcta y puedes <b>repasar el tema</b> en la Biblioteca; luego la intentas otra vez.</li>
+        <li><b>No avanzas hasta acertar</b>, así que todos terminan con el 100 %. No es un juicio de competencia: ese lo emite tu Centro Evaluador.</li>
+        <li>Tu primera respuesta de cada pregunta sí cuenta: es la que ve tu evaluador. Contesta con calma.</li>
+      </ol>
+    </div>
+    <div id="avisoIntro"></div>
+    <div class="acciones"><button class="btn-plat btn-plat--primario" id="btnComenzar">Comenzar examen →</button></div>
+  </section>
+
+  <!-- ── PREGUNTA ── -->
+  <section id="vReactivo" hidden>
+    <div class="card card--acento">
+      <div class="barra-txt"><span id="contador"></span><span id="marcador"></span></div>
+      <div class="barra"><div class="barra-fill" id="barra" style="width:0%"></div></div>
+    </div>
+    <div class="card">
+      <div class="ex-categoria" id="categoria"></div>
+      <div class="ex-pregunta" id="pregunta"></div>
+      <div class="ex-fig" id="figura"></div>
+      <div id="opciones"></div>
+      <div id="feedback" aria-live="polite"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">Puedes volver a cualquier pregunta ya contestada</div>
+      <div class="ex-mapa" id="mapa"></div>
+    </div>
+  </section>
+
+  <!-- ── RESULTADO ── -->
+  <section id="vResultado" hidden>
+    <div class="plat-head">
+      <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h1>Examen completado</h1>
+    </div>
+    <div class="card"><div class="resultado"><div class="resultado-pct" id="pct">100%</div><div class="resultado-sub" id="pctSub"></div></div></div>
+    <div class="card"><h2>Por tema</h2><div class="desglose" id="porArea"></div></div>
+    <div class="card ex-temas" id="cardTemas"></div>
+    <div class="acciones">
+      <button class="btn-plat btn-plat--secundario" id="btnRepetir">↺ Reintentar el examen completo</button>
+      <button class="btn-plat btn-plat--secundario" id="btnImprimir">Descargar comprobante (PDF)</button>
+      <a class="btn-plat btn-plat--primario" id="btnSigPaso" href="index.html">Volver al proceso →</a>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+/* Examen de Conocimientos guiado, como estudio.html?modo=examen de Paideia.
+   La lógica vive en js/examen-guiado.js; aquí solo se pinta. El examen
+   anterior (formulario de 37, sin retroalimentación, 80 %) sigue en
+   examen-formulario.html por si el Centro lo prefiere. */
+import './js/shell.js';
+import { CONFIG } from './js/config.js';
+import { Store } from './js/store.js';
+import { pintarBarraFlujo, completar } from './js/flow.js';
+import { PREGUNTAS, TOTAL, REPASO, BANCO_IEC, temaDe, opcionesDe, esMultiple, nuevo, valido, responder, reintentar, contestada, todas, resumen, datosFinales } from './js/examen-guiado.js';
+import { figura } from './js/doc-iec-oficial.js';
+import { BIBLIOTECA } from './js/data-biblioteca.js';
+
+const MODULO = 'examen';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const LETRAS = 'ABCDEFGHI';
+const vistas = { intro: $('vIntro'), reactivo: $('vReactivo'), resultado: $('vResultado') };
+const mostrar = n => { Object.entries(vistas).forEach(([k, el]) => el.hidden = k !== n); scrollTo({ top: 0 }); };
+const tituloBib = sid => (BIBLIOTECA.find(x => x.sid === sid) || {}).t || sid;
+const linksRepaso = reactivo => (REPASO[reactivo] || []).filter(sid => BIBLIOTECA.some(x => x.sid === sid))
+  .map(sid => `<a class="btn-plat btn-plat--secundario" href="biblioteca.html#${sid}" target="_blank" rel="noopener">Repasar: ${esc(tituloBib(sid))}</a>`).join('');
+
+const guardado = Store.get(MODULO, {});
+let st = valido(guardado.guiado) ? guardado.guiado : null;
+let fb = null;          // { ok, renglones, resp } de la última revisión en pantalla
+let borrador = {};      // selecciones de relacionar aún sin comprobar
+const guardar = () => { if (!Store.soloLectura) Store.merge(MODULO, { guiado: st }); };
+
+/* ── Intro ───────────────────────────────────────────────────────────── */
+if (guardado.completado && guardado.banco && guardado.banco !== BANCO_IEC)
+  $('avisoIntro').innerHTML = `<div class="aviso aviso--warn">Tu resultado anterior (${guardado.score ?? '—'}%) fue con el formulario previo. El examen ahora usa las 37 preguntas oficiales de tu Instrumento de Evaluación.</div>`;
+if (Store.soloLectura) $('avisoIntro').innerHTML += '<div class="aviso">Estás viendo el expediente de un candidato: puedes recorrerlo, pero no se contesta nada.</div>';
+$('btnComenzar').textContent = st && !st.submitted && Object.keys(st.primer).length ? 'Continuar donde me quedé →' : 'Comenzar examen →';
+$('btnComenzar').onclick = () => {
+  if (!st) { st = nuevo({ barajarOpciones: CONFIG.reglas.barajarExamen !== false }); guardar(); }
+  if (st.submitted) return pintarResultado();
+  const i = PREGUNTAS.findIndex(q => !contestada(st, q));
+  st.actual = i < 0 ? 0 : Math.min(st.actual ?? 0, i);
+  mostrar('reactivo'); pintar();
+};
+
+/* ── Pregunta ────────────────────────────────────────────────────────── */
+function pintar() {
+  const q = PREGUNTAS[st.actual], g = temaDe(q), hechas = PREGUNTAS.filter(x => contestada(st, x)).length;
+  const yaBien = contestada(st, q);
+  $('contador').textContent = `Pregunta ${st.actual + 1} de ${TOTAL}`;
+  $('marcador').textContent = `${hechas} de ${TOTAL} correctas`;
+  $('barra').style.width = Math.round(hechas / TOTAL * 100) + '%';
+  $('categoria').textContent = `${g.tema} ${g.subtemas.join(' ')}`.trim();
+  $('pregunta').textContent = q.pregunta;
+  $('figura').innerHTML = figura(q.imagen);
+  const bloqueada = yaBien || (fb && !fb.ok) || Store.soloLectura;
+  if (q.tipo !== 'relacionar_columnas') {
+    const ops = opcionesDe(q), orden = st.ordenOpciones[q.n];
+    const elegida = yaBien ? st.respuestas[q.n] : fb?.resp;
+    $('opciones').innerHTML = `<div class="ex-opciones">${orden.map((l, k) => {
+      const o = ops.find(x => x.letra === l); if (!o) return '';
+      const revelada = yaBien || !!fb;
+      const cls = revelada && l === q.correcta ? ' ex-op--correcta' : fb && !fb.ok && l === elegida ? ' ex-op--incorrecta' : '';
+      return `<button class="ex-op${cls}" data-l="${l}" ${bloqueada ? 'disabled' : ''}>
+        <span class="ex-op-letra">${LETRAS[k]}</span><span>${esc(o.texto)}</span></button>`; }).join('')}</div>`;
+  } else {
+    /* Ejes del cuerpo: la clave oficial sigue las letras A/B/C de la figura,
+       no la columna impresa a la derecha (errata del instrumento). Se ofrecen
+       las letras de la figura para no marcar mal una respuesta razonable. */
+    const porFigura = q.imagen?.tipo === 'ejes_cuerpo';
+    const ops = porFigura ? opcionesDe(q).map(o => ({ letra: o.letra, texto: `Letra ${o.letra[0].toUpperCase()} de la figura` })) : opcionesDe(q), multi = esMultiple(q);
+    const valores = yaBien ? (multi ? st.respuestas[q.n].split('|') : st.respuestas[q.n].split(',')) : (fb ? (multi ? fb.resp.split('|') : fb.resp.split(',')) : (borrador[q.n] || []));
+    $('opciones').innerHTML = `${porFigura ? '<div class="ex-der">Elige, para cada eje, la letra con la que aparece en la figura.</div>' : `<div class="ex-der">${ops.map(o => `<div><b>${esc(o.letra)}</b> ${esc(o.texto)}</div>`).join('')}</div>`}
+      <div class="ex-rel">${q.izquierda.map((it, i) => {
+        const estado = yaBien ? ' ok' : fb ? (fb.renglones[i] ? ' ok' : ' bad') : '';
+        const v = String(valores[i] || '').trim();
+        const control = multi
+          ? `<div class="chks">${ops.map(o => `<label><input type="checkbox" data-i="${i}" value="${o.letra}" ${v.split(',').map(x => x.trim()).includes(o.letra) ? 'checked' : ''} ${bloqueada ? 'disabled' : ''}>${esc(o.letra)}</label>`).join('')}</div>`
+          : `<select data-i="${i}" aria-label="Respuesta para ${esc(String(it).replace(/^\(\s*\)\s*/, ''))}" ${bloqueada ? 'disabled' : ''}><option value="">— elige —</option>${ops.map(o => `<option value="${o.letra}" ${v === o.letra ? 'selected' : ''}>${esc(o.letra)} ${esc(o.texto).slice(0, 60)}</option>`).join('')}</select>`;
+        return `<div class="fila${estado}"><span>${esc(String(it).replace(/^\(\s*\)\s*/, ''))}</span>${control}</div>`; }).join('')}</div>
+      ${bloqueada ? '' : '<div class="acciones" style="justify-content:flex-start"><button class="btn-plat btn-plat--primario" id="btnComprobar">Comprobar</button></div>'}`;
+  }
+  pintarFeedback(q, yaBien);
+  pintarMapa();
+}
+function correctaTexto(q) {
+  if (q.tipo !== 'relacionar_columnas') { const o = opcionesDe(q).find(x => x.letra === q.correcta); return `${q.correcta} ${o ? o.texto : ''}`; }
+  const fig = q.imagen?.tipo === 'ejes_cuerpo';
+  return q.correcta.map(c => `${String(c.item).replace(/^\(\s*\)\s*/, '')} → ${c.letras ? c.letras.join(', ') : fig ? 'letra ' + c.letra[0].toUpperCase() + ' de la figura' : c.letra}`).join(' · ');
+}
+function pintarFeedback(q, yaBien) {
+  const ultimo = st.actual === TOTAL - 1, sig = todas(st) ? 'Ver resultados' : 'Siguiente pregunta';
+  if (yaBien || fb?.ok) {
+    $('feedback').innerHTML = `<div class="ex-fb ok"><div class="h">¡Correcto!</div>
+      <div class="acc"><button class="btn-plat btn-plat--primario" id="btnSig">${ultimo || todas(st) ? sig : 'Siguiente pregunta'} →</button></div></div>`;
+  } else if (fb) {
+    $('feedback').innerHTML = `<div class="ex-fb bad"><div class="h">No es la correcta</div>
+      La respuesta correcta es: <b>${esc(correctaTexto(q))}</b>.
+      <div class="acc">${linksRepaso(q.reactivo)}<button class="btn-plat btn-plat--primario" id="btnOtraVez">Intentar otra vez</button></div></div>`;
+  } else $('feedback').innerHTML = '';
+}
+function pintarMapa() {
+  const primeraPend = PREGUNTAS.findIndex(q => !contestada(st, q));
+  $('mapa').innerHTML = PREGUNTAS.map((q, k) => {
+    const hecha = contestada(st, q), puede = hecha || k === primeraPend;
+    return `<button data-k="${k}" class="${hecha ? 'hecho' : ''} ${k === st.actual ? 'actual' : ''}" ${puede ? '' : 'disabled'} title="Pregunta ${k + 1}${hecha ? ' · correcta' : ''}">${k + 1}</button>`; }).join('');
+}
+function ir(k) { st.actual = k; fb = null; guardar(); pintar(); scrollTo({ top: 0 }); }
+function leerRelacion(q) {
+  if (esMultiple(q)) return q.izquierda.map((_, i) => [...$('opciones').querySelectorAll(`input[data-i="${i}"]:checked`)].map(x => x.value).join(','));
+  return q.izquierda.map((_, i) => $('opciones').querySelector(`select[data-i="${i}"]`).value);
+}
+function contestar(resp) {
+  const q = PREGUNTAS[st.actual];
+  const r = responder(st, q, resp);
+  fb = { ...r, resp }; delete borrador[q.n];
+  guardar(); pintar();
+}
+
+$('opciones').addEventListener('click', e => {
+  const b = e.target.closest('.ex-op[data-l]'); if (b && !b.disabled) return contestar(b.dataset.l);
+  if (e.target.id === 'btnComprobar') {
+    const q = PREGUNTAS[st.actual], vals = leerRelacion(q);
+    if (vals.some(v => !v)) { $('feedback').innerHTML = '<div class="aviso aviso--warn" style="margin-top:12px">Contesta todos los renglones antes de comprobar.</div>'; return; }
+    contestar(esMultiple(q) ? vals.join(' | ') : vals.join(','));
+  }
+});
+$('opciones').addEventListener('change', e => { const q = PREGUNTAS[st.actual]; if (q.tipo === 'relacionar_columnas') borrador[q.n] = leerRelacion(q); });
+$('feedback').addEventListener('click', e => {
+  if (e.target.id === 'btnSig') {
+    if (todas(st)) return terminar();
+    const sig = PREGUNTAS.findIndex((q, k) => k > st.actual && !contestada(st, q));
+    return ir(sig >= 0 ? sig : PREGUNTAS.findIndex(q => !contestada(st, q)));
+  }
+  if (e.target.id === 'btnOtraVez') {
+    const q = PREGUNTAS[st.actual]; const buenos = reintentar(st, q);
+    if (buenos) borrador[q.n] = buenos;
+    fb = null; guardar(); pintar();
+  }
+});
+$('mapa').addEventListener('click', e => { const b = e.target.closest('button[data-k]'); if (b && !b.disabled) ir(+b.dataset.k); });
+
+/* ── Final ───────────────────────────────────────────────────────────── */
+function terminar() {
+  st.submitted = true; st.enCurso = false; st.fecha = st.fecha || new Date().toISOString();
+  const previo = Store.get(MODULO, {});
+  const r = resumen(st);
+  const intentos = [...(Array.isArray(previo.intentosGuiados) ? previo.intentosGuiados : []), { pctPrimerIntento: r.pctPrimer, fecha: st.fecha }];
+  /* El primer intento que cuenta es el de la PRIMERA vez que lo presentó:
+     al repetirlo ya vio las respuestas correctas. */
+  const fin = datosFinales(st);
+  if (previo.banco === BANCO_IEC && previo.primerIntento && Object.keys(previo.primerIntento).length)
+    Object.assign(fin, { primerIntento: previo.primerIntento, primerOk: previo.primerOk, pctPrimerIntento: previo.pctPrimerIntento, fecha: previo.fecha || fin.fecha });
+  if (!Store.soloLectura) completar(MODULO, { ...fin, guiado: st, intentosGuiados: intentos });
+  pintarBarraFlujo($('pasos'), MODULO);
+  pintarResultado();
+}
+function siguientePaso() {
+  const f = CONFIG.flujo.filter(m => m.listo), i = f.findIndex(m => m.id === MODULO);
+  return f[i + 1] || null;
+}
+function pintarResultado() {
+  const r = resumen(st);
+  $('pct').textContent = '100%';
+  $('pctSub').innerHTML = `Respondiste correctamente las <b>${TOTAL} / ${TOTAL}</b> preguntas. Al primer intento: <b>${r.primerOk}</b> (${r.pctPrimer}%).<br>
+    <span style="font-size:.84rem">Es una autoevaluación de práctica: no determina si eres competente. Ese resultado lo emite tu Centro Evaluador con tu Plan de Evaluación, tus respuestas y el resto de tu expediente.</span>`;
+  $('porArea').innerHTML = r.porTema.map(t => `<div class="desglose-fila"><div class="desglose-nom">${esc(t.tema)}</div>
+    <div class="desglose-val">${t.primerOk}/${t.total} <span style="color:var(--muted);font-weight:500">al primer intento</span></div></div>`).join('');
+  $('cardTemas').innerHTML = r.repasados.length
+    ? `<h2>Temas que repasaste</h2><p style="color:var(--mid);font-size:.9rem">Vale la pena repasarlos una vez más antes de tu evaluación real.</p>
+       ${r.repasados.map(n => { const g = temaDe({ reactivo: n }); return `<div class="t"><b>${esc(g?.tema || n)}</b><span style="display:flex;gap:6px;flex-wrap:wrap">${linksRepaso(n)}</span></div>`; }).join('')}`
+    : '<h2>Temas que repasaste</h2><p style="color:var(--spoke-deep);font-weight:600;margin:0">Ninguno: acertaste todas al primer intento.</p>';
+  const sp = siguientePaso();
+  if (sp) { $('btnSigPaso').href = sp.archivo; $('btnSigPaso').textContent = `Siguiente paso: ${sp.nombre} →`; }
+  mostrar('resultado');
+}
+$('btnRepetir').onclick = () => {
+  if (!confirm('Vas a reiniciar el examen desde la primera pregunta. Tu resultado y tu primer intento anterior se conservan. ¿Continuar?')) return;
+  st = nuevo({ barajarOpciones: CONFIG.reglas.barajarExamen !== false }); fb = null; borrador = {}; guardar();
+  mostrar('reactivo'); pintar();
+};
+$('btnImprimir').onclick = () => {
+  const r = resumen(st), c = Store.get('candidato', {}) || {};
+  const w = window.open('', '_blank'); if (!w) return;
+  w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Comprobante · Examen de Conocimientos</title>
+    <style>body{font-family:Arial,sans-serif;margin:24mm;color:#0f172a}h1{font-size:18pt;margin:0 0 4mm}table{border-collapse:collapse;width:100%;margin-top:6mm}td,th{border:1px solid #999;padding:2mm 3mm;text-align:left;font-size:10pt}</style></head><body>
+    <h1>Comprobante · Examen de Conocimientos EC1375</h1>
+    <p><b>Candidato:</b> ${esc(c.nombre || '')}<br><b>Fecha:</b> ${new Date(st.fecha || Date.now()).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}<br>
+      <b>Resultado:</b> ${TOTAL} / ${TOTAL} correctas (100 %) · al primer intento: ${r.primerOk} (${r.pctPrimer} %)</p>
+    <table><tr><th>Tema</th><th>Al primer intento</th></tr>${r.porTema.map(t => `<tr><td>${esc(t.tema)}</td><td>${t.primerOk} / ${t.total}</td></tr>`).join('')}</table>
+    <p style="font-size:9pt;margin-top:8mm">Autoevaluación de práctica con las 37 preguntas oficiales del cuestionario del IEC1375. No determina la competencia: el juicio lo emite el Centro Evaluador.</p>
+    <script>onload=()=>print()<\/script></body></html>`);
+  w.document.close();
+};
+
+/* ── Arranque ────────────────────────────────────────────────────────── */
+pintarBarraFlujo($('pasos'), MODULO);
+if (st?.submitted) pintarResultado(); else mostrar('intro');
+</script>
+</body>
+</html>

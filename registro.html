@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regístrate — Certificación EC1375 · POSTURALIA</title>
+<meta name="theme-color" content="#0d2a6e">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  body { min-height:100vh; background:var(--bg); margin:0; padding:6vh 16px 40px }
+  .rg { max-width:640px; margin:0 auto }
+  .rg-marca { font-weight:800; letter-spacing:.06em; color:#0d2a6e; text-align:center }
+  :root[data-tema="oscuro"] .rg-marca { color:#dbe4ff }
+  .rg-sub { text-align:center; color:var(--muted); font-size:.85rem; margin:2px 0 18px }
+  .rg-pasos { display:flex; gap:6px; margin:0 0 16px; padding:0; list-style:none }
+  .rg-pasos li { flex:1; text-align:center; font-size:.78rem; font-weight:700; color:var(--muted); padding:8px 4px; border-bottom:3px solid var(--border) }
+  .rg-pasos li.on { color:#0d2a6e; border-color:#0d2a6e }
+  .rg-pasos li.ok { color:#047857; border-color:#10B981 }
+  :root[data-tema="oscuro"] .rg-pasos li.on { color:#dbe4ff; border-color:#8aa4ff }
+  .rg .card { background:var(--white); border-radius:16px; padding:22px 20px; box-shadow:0 12px 32px rgba(13,42,110,.08); margin-bottom:14px }
+  .rg h2 { font-size:1.08rem; margin:0 0 6px }
+  .rg label.rg-lbl { display:block; font-weight:600; font-size:.86rem; margin:14px 0 5px }
+  .rg input.rg-in { width:100%; padding:11px 13px; border:1.5px solid var(--border); border-radius:10px; font:inherit; background:var(--white); color:var(--dark) }
+  .rg-pista { color:var(--muted); font-size:.8rem; line-height:1.5; margin:6px 0 0 }
+  .rg-err { color:#B91C1C; font-size:.86rem; margin:10px 0 0 }
+  .nda-texto { max-height:300px; overflow:auto; border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin:10px 0 14px; font-size:.86rem; line-height:1.6 }
+  .rg-acc { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px }
+  .rg-acc .btn-plat { flex:1; justify-content:center }
+  .rg-listo li { margin:4px 0 }
+</style>
+</head>
+<body>
+<main class="rg">
+  <div class="rg-marca">POSTURALIA</div>
+  <div class="rg-sub" id="sub">Registro · Certificación SEP-CONOCER EC1375</div>
+  <ol class="rg-pasos" id="pasos"></ol>
+  <div id="app"><div class="card"><p>Cargando…</p></div></div>
+</main>
+<script type="module">
+/* ============================================================================
+   registro.html — Liga pública de registro (como la de Paideia, 20 sep 2026)
+
+   La liga que el equipo le manda a una persona interesada ANTES de que
+   pague nada: nombre, correo, firma del Acuerdo de Confidencialidad y su
+   contraseña. Con eso queda registrada y el Centro la ve como prospecto
+   («Sin dar de alta») hasta que le asigne lote y montos.
+
+   · El acuerdo se guarda donde lo guarda el Autodiagnóstico
+     (autodiagnostico.nda, mismo texto de js/nda.js): llega al
+     Autodiagnóstico con el paso ya firmado y no lo firma dos veces.
+   · Sin sesión de nadie: el correo se escribe; si ese correo ya tiene
+     cuenta, en vez de crearla se entra.
+   · Si en este dispositivo ya hay una sesión de OTRA persona, se cierra al
+     continuar (igual que Paideia). Pero si este navegador ya guarda el
+     avance de otra persona, no se registra encima: sin la nube, el avance
+     vive en el navegador y se mezclaría.
+   ========================================================================== */
+import { aplicarTema } from './js/tema.js';
+import { CONFIG } from './js/config.js';
+import { Store } from './js/store.js';
+import { montarFirma, firmaGuardada, sellar } from './js/firma.js';
+import { NDA_HTML, ACUERDO, ndaVigente } from './js/nda.js';
+import { sesion, montarGate, cerrarSesion, correoValido } from './js/cuenta.js';
+import { esc } from './js/seguro.js';
+
+aplicarTema();
+const $ = id => document.getElementById(id);
+const norm = c => String(c || '').trim().toLowerCase();
+const BORRADOR = 'posturalia.registro.borrador';
+
+let paso = 'datos';
+let datos = { nombre: '', correo: '' };
+let aceptado = false;
+try { const b = JSON.parse(sessionStorage.getItem(BORRADOR)); if (b) { datos = { ...datos, ...b.datos }; aceptado = !!b.aceptado; } } catch {}
+const guardarBorrador = () => { try { sessionStorage.setItem(BORRADOR, JSON.stringify({ datos, aceptado })); } catch {} };
+
+const PASOS = [['datos', 'Quién eres'], ['nda', 'Acuerdo'], ['cuenta', 'Tu cuenta'], ['listo', 'Listo']];
+function pintarPasos() {
+  const i = PASOS.findIndex(p => p[0] === paso);
+  $('pasos').innerHTML = PASOS.map(([id, t], k) => `<li class="${k < i ? 'ok' : k === i ? 'on' : ''}">${k < i ? '✓ ' : ''}${t}</li>`).join('');
+}
+
+/* ¿Este navegador ya guarda el proceso de otra persona? */
+function avanceDeOtro(correo) {
+  const c = Store.get('candidato', {}) || {};
+  const previo = norm(c.email);
+  if (!previo || previo === norm(correo)) return '';
+  const auto = Store.get('autodiagnostico', {}) || {};
+  const hay = Object.keys(auto.respuestas || {}).length || auto.nda || c.curp || Store.get('examen', {})?.intentos?.length;
+  return hay ? previo : '';
+}
+
+function vistaDatos(err = '') {
+  const s = sesion();
+  const pista = s?.correo
+    ? `En este dispositivo está abierta la sesión de <strong>${esc(s.correo)}</strong>. Si vas a registrar a alguien más, escribe su correo: al continuar se cierra esa sesión.`
+    : 'Con este correo entras a la plataforma y recibes los avisos de tu proceso. Cambiarlo después implica volver a empezar tu cuenta.';
+  $('app').innerHTML = `<div class="card">
+    <h2>Quién eres</h2>
+    <p class="pn-nota" style="margin:0">Escribe tu nombre <strong>como aparece en tu identificación oficial</strong>: es el que va a llevar tu expediente de certificación y el Acuerdo que firmas en el siguiente paso.</p>
+    <label class="rg-lbl" for="fNombre">Nombre completo</label>
+    <input class="rg-in" id="fNombre" autocomplete="name" placeholder="Nombre(s) y apellidos" value="${esc(datos.nombre)}">
+    <label class="rg-lbl" for="fCorreo">Correo electrónico</label>
+    <input class="rg-in" id="fCorreo" type="email" autocomplete="email" placeholder="tu@email.com" value="${esc(datos.correo || s?.correo || '')}">
+    <p class="rg-pista">${pista}</p>
+    ${err ? `<p class="rg-err" role="alert">${err}</p>` : ''}
+    <div class="rg-acc"><button class="btn-plat" id="btnDatos">Continuar</button></div>
+  </div>`;
+  $('fNombre').focus();
+  $('btnDatos').onclick = async () => {
+    const nombre = $('fNombre').value.replace(/\s+/g, ' ').trim();
+    const correo = norm($('fCorreo').value);
+    datos = { nombre, correo };          // un error re-pinta: que no se borre lo tecleado
+    if (nombre.split(' ').length < 2) return vistaDatos('Escribe tu nombre completo (nombre y apellidos).');
+    if (!correoValido(correo)) return vistaDatos('Escribe un correo válido.');
+    const otro = avanceDeOtro(correo);
+    if (otro) return vistaDatos(`Este navegador ya guarda el proceso de <strong>${esc(otro)}</strong>. Para no mezclar los dos, regístrate desde tu propio celular o computadora.`);
+    const s = sesion();
+    if (s?.correo && norm(s.correo) !== correo) await cerrarSesion();
+    datos = { nombre, correo };
+    guardarBorrador();
+    ir('nda');
+  };
+}
+
+function vistaNda(err = '') {
+  $('app').innerHTML = `<div class="card">
+      <h2>Acuerdo de Confidencialidad</h2>
+      <p class="pn-nota" style="margin:0">Antes de darte acceso a cualquier material necesitamos tu firma: protege el contenido de evaluación del EC1375, el material de ${esc(CONFIG.marca.nombre)} y los datos de otros candidatos y pacientes que llegues a conocer.</p>
+      <div class="nda-texto">${NDA_HTML.replace('<b class="nda-parte">el/la candidato/a</b>', `<b>${esc(datos.nombre)}</b>`)}</div>
+      <label class="ev-check"><input type="checkbox" id="chk" ${aceptado ? 'checked' : ''}>
+        <span>He leído y acepto los términos de este Acuerdo de Confidencialidad.</span></label>
+    </div>
+    <div class="card">
+      <h2>Tu firma</h2>
+      <div id="firma"></div>
+      ${err ? `<p class="rg-err" role="alert">${err}</p>` : ''}
+      <div class="rg-acc">
+        <button class="btn-plat btn-plat--secundario" id="btnAtras">Regresar</button>
+        <button class="btn-plat" id="btnNda">Firmar y continuar</button>
+      </div>
+    </div>`;
+  montarFirma($('firma'), { nombreSugerido: datos.nombre, onCambio: () => vistaNda() });
+  $('chk').onchange = e => { aceptado = e.target.checked; guardarBorrador(); vistaNda(); };
+  $('btnAtras').onclick = () => ir('datos');
+  $('btnNda').onclick = () => {
+    if (!aceptado) return vistaNda('Marca la casilla de que aceptas el acuerdo.');
+    if (!firmaGuardada()) return vistaNda('Falta tu firma: dibújala o escribe tu nombre y dale «Guardar firma».');
+    ir(sesion()?.correo && norm(sesion().correo) === datos.correo ? 'guardar' : 'cuenta');
+  };
+}
+
+function vistaCuenta() {
+  $('app').innerHTML = `<div class="card">
+    <h2>Tu cuenta</h2>
+    <p class="pn-nota" style="margin:0 0 12px">Con esta contraseña entras a tu proceso desde cualquier dispositivo.${CONFIG.supabase?.url ? '' : ' <em>Mientras la plataforma esté en modo local, tu cuenta vive en este navegador.</em>'}</p>
+    <div id="gate"></div>
+    <div class="rg-acc"><button class="btn-plat btn-plat--secundario" id="btnAtras">Regresar al acuerdo</button></div>
+  </div>`;
+  montarGate($('gate'), { correoInicial: datos.correo, onListo: () => ir('guardar') });
+  $('btnAtras').onclick = () => ir('nda');
+}
+
+/* El acuerdo y el nombre se escriben cuando ya hay sesión: en la nube,
+   así quedan en SU expediente y no en uno anónimo. */
+function guardar() {
+  const sello = sellar(ACUERDO);
+  const auto = Store.get('autodiagnostico', {}) || {};
+  const reRegistro = ndaVigente(auto);
+  Store.merge('candidato', { nombre: datos.nombre, email: datos.correo, registradoEl: new Date().toISOString(), origenRegistro: 'liga' });
+  if (!reRegistro && sello) Store.merge('autodiagnostico', { ndaMarcado: true, nda: sello });
+  try { sessionStorage.removeItem(BORRADOR); } catch {}
+  ir('listo', reRegistro);
+}
+
+function vistaListo(reRegistro) {
+  const wa = CONFIG.marca.whatsapp;
+  const msj = encodeURIComponent(`Hola, me acabo de registrar a la certificación ${CONFIG.marca.estandar}: ${datos.nombre} (${datos.correo}).`);
+  $('app').innerHTML = `<div class="card">
+    <h2>¡Listo, ${esc(datos.nombre.split(' ')[0])}!</h2>
+    <p class="ev-sellada">${reRegistro ? 'Tu Acuerdo de Confidencialidad ya estaba firmado; se conservó el original.' : 'Tu registro y tu Acuerdo de Confidencialidad quedaron guardados.'}</p>
+    <p class="pn-nota">Lo que sigue:</p>
+    <ol class="rg-listo pn-nota">
+      <li>Contesta tu <strong>Autodiagnóstico</strong> (gratis): te dice qué tan cerca estás del estándar.</li>
+      <li>El equipo de ${esc(CONFIG.marca.nombre)} te contacta para tu <strong>apartado</strong> y te asigna tu grupo.</li>
+      <li>Con cada pago se abre la siguiente fase de tu proceso.</li>
+    </ol>
+    <div class="rg-acc">
+      <a class="btn-plat" href="autodiagnostico.html">Empezar mi Autodiagnóstico</a>
+      <a class="btn-plat btn-plat--secundario" href="index.html">Ir a mi panel</a>
+    </div>
+    ${wa ? `<p class="rg-pista" style="margin-top:14px"><a href="https://wa.me/${wa}?text=${msj}" target="_blank" rel="noopener">Avisar al equipo por WhatsApp</a></p>` : ''}
+  </div>`;
+}
+
+function ir(p, extra) {
+  paso = p === 'guardar' ? 'listo' : p;
+  pintarPasos();
+  if (p === 'datos') vistaDatos();
+  else if (p === 'nda') vistaNda();
+  else if (p === 'cuenta') vistaCuenta();
+  else if (p === 'guardar') guardar();
+  else if (p === 'listo') vistaListo(extra);
+  window.scrollTo(0, 0);
+}
+ir('datos');
+</script>
+</body>
+</html>

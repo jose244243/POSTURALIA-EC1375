@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Evaluación — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  .pl-tabla { width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px }
+  .pl-tabla th {
+    background:var(--bg); color:var(--dark); font-weight:700; text-align:left;
+    padding:10px; border-bottom:2px solid var(--border); font-size:.78rem;
+    text-transform:uppercase; letter-spacing:.04em
+  }
+  .pl-tabla td { padding:10px; border-bottom:1px solid var(--border); color:var(--mid) }
+  .pl-tabla td:first-child { color:var(--dark); font-weight:600 }
+  .pl-tabla tfoot td { font-weight:700; color:var(--dark); background:var(--bg); border-bottom:none }
+  .pl-num { text-align:center; font-variant-numeric:tabular-nums }
+
+  .inst-card {
+    display:flex; gap:12px; align-items:flex-start; padding:13px;
+    border:1px solid var(--border); border-radius:8px; margin-bottom:9px; background:var(--white)
+  }
+  .inst-ico { flex:0 0 36px; font-size:1.5rem; text-align:center }
+  .inst-cuerpo { flex:1 }
+  .inst-t { font-weight:700; color:var(--dark); font-size:.93rem; margin-bottom:3px }
+  .inst-d { color:var(--mid); font-size:.85rem; line-height:1.55 }
+
+  .campo { margin-bottom:16px }
+  .campo label {
+    display:block; font-weight:600; color:var(--dark);
+    font-size:.86rem; margin-bottom:5px
+  }
+  .campo input, .campo textarea, .campo select { width:100%; font:inherit }
+  .campo .ayuda { color:var(--muted); font-size:.79rem; margin-top:4px }
+
+  .acuerdo {
+    display:flex; gap:11px; align-items:flex-start; padding:15px;
+    background:var(--bg); border-radius:8px; margin-top:8px
+  }
+  .acuerdo input { flex:0 0 18px; width:18px; height:18px; margin-top:2px; accent-color:var(--spoke) }
+  .acuerdo span { flex:1; color:var(--mid); font-size:.87rem; line-height:1.6 }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <div class="plat-head">
+    <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 4.5h14a2 2 0 0 1 2 2V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z"/><path d="M16 2.5v4"/><path d="M8 2.5v4"/><path d="M3 10.5h18"/></svg></div>
+    <h1>Plan de Evaluación</h1>
+    <p>Qué se te va a evaluar, con qué instrumento y cuándo. Se acuerda contigo antes de empezar.</p>
+  </div>
+
+  <div class="card card--acento">
+    <h2>Por qué existe este documento</h2>
+    <p style="color:var(--mid);font-size:.92rem;line-height:1.7;margin:0">
+      El CONOCER exige que el Plan de Evaluación se te <strong>presente y se acuerde contigo</strong>
+      antes de evaluarte — de hecho es una de las preguntas de la encuesta de satisfacción al final
+      del proceso. Aquí lo revisas, lo completas con tus fechas y lo dejas registrado.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Qué se evalúa en el EC1375</h2>
+    <p style="color:var(--mid);font-size:.9rem;line-height:1.7">
+      El estándar se divide en 4 elementos. Cada uno agrupa criterios de cuatro tipos, y cada
+      tipo se evalúa con un instrumento distinto:
+    </p>
+    <table class="pl-tabla">
+      <thead>
+        <tr>
+          <th>Elemento</th>
+          <th class="pl-num">Desemp.</th>
+          <th class="pl-num">Produc.</th>
+          <th class="pl-num">Conoc.</th>
+          <th class="pl-num">Actit.</th>
+          <th class="pl-num">Total</th>
+        </tr>
+      </thead>
+      <tbody id="tblCriterios"></tbody>
+      <tfoot id="tblTotales"></tfoot>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Con qué instrumento se evalúa cada tipo</h2>
+    <div id="instrumentos"></div>
+  </div>
+
+  <div class="card">
+    <h2>Tus datos y fechas</h2>
+    <div class="campo">
+      <label for="fCandidato">Nombre del candidato</label>
+      <input type="text" id="fCandidato" placeholder="Nombre completo como aparece en tu identificación">
+    </div>
+    <div class="campo">
+      <label for="fEvaluador">Evaluador asignado</label>
+      <input type="text" id="fEvaluador" placeholder="Nombre del evaluador del Centro">
+    </div>
+    <div class="campo" id="agenda" hidden>
+      <label>Tu horario en la sala de evidencias</label>
+      <div class="ayuda" style="margin-bottom:8px">Tu sesión con el usuario se graba en la sala de Zoom del Centro. Cada horario es para una sola persona: al reservarlo, la fecha y el horario de tu evaluación se llenan solos.</div>
+      <div id="salaAgenda"></div>
+    </div>
+    <div class="campo">
+      <label for="fFecha">Fecha acordada de la evaluación</label>
+      <input type="date" id="fFecha">
+      <div class="ayuda">La sesión práctica se graba: revisa el módulo de Evidencias para saber qué entregar.</div>
+    </div>
+    <div class="campo">
+      <label for="fLugar">Lugar o modalidad</label>
+      <input type="text" id="fLugar" placeholder="Ej. Centro Posturalia, Monterrey · o sesión en línea">
+    </div>
+    <div class="campo">
+      <label for="fHorario">Horario de la evaluación</label>
+      <input type="text" id="fHorario" placeholder="Ej. 10:00 a 13:00 h">
+    </div>
+
+    <details class="campo" id="detOficial" style="border:1px solid var(--border);border-radius:10px;padding:10px 12px">
+      <summary style="cursor:pointer;font-weight:700">Datos del formato oficial (los llena o revisa tu evaluador)</summary>
+      <div class="campo" style="margin-top:10px">
+        <label for="fEvaluadora">Evaluadora / evaluador (como va en el formato)</label>
+        <input type="text" id="fEvaluadora" placeholder="Nombre completo">
+      </div>
+      <div class="campo">
+        <label for="fCentro">Centro de Evaluación</label>
+        <input type="text" id="fCentro">
+      </div>
+      <div class="campo">
+        <label for="fFechaPlan">Fecha del Plan</label>
+        <input type="date" id="fFechaPlan">
+      </div>
+      <div class="campo">
+        <label for="fResultadoDiag">Resultado del Diagnóstico</label>
+        <input type="text" id="fResultadoDiag">
+      </div>
+      <div class="campo" style="display:flex;gap:18px;flex-wrap:wrap">
+        <label>Se sugirió capacitación
+          <select id="fSugirio"><option value="no">No</option><option value="si">Sí</option></select></label>
+        <label>Procede a evaluación
+          <select id="fProcede"><option value="si">Sí</option><option value="no">No</option></select></label>
+      </div>
+      <div class="campo">
+        <label for="fProporciona">Proporciona el material</label>
+        <input type="text" id="fProporciona" placeholder="Ej. El candidato">
+      </div>
+      <div class="campo">
+        <label>Presentación de resultados — lugar, fecha y horario</label>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px">
+          <input type="text" id="fLugarRes" placeholder="Lugar" aria-label="Lugar de presentación de resultados">
+          <input type="date" id="fFechaRes" aria-label="Fecha de presentación de resultados">
+          <input type="text" id="fHorarioRes" placeholder="Horario" aria-label="Horario de presentación de resultados">
+        </div>
+      </div>
+    </details>
+    <div class="campo">
+      <label for="fNotas">Acuerdos o notas</label>
+      <textarea id="fNotas" rows="3"
+        placeholder="Cualquier ajuste acordado con tu evaluador: horarios, materiales, apoyos requeridos…"></textarea>
+    </div>
+
+    <label class="acuerdo">
+      <input type="checkbox" id="fAcuerdo">
+      <span>
+        Confirmo que se me presentó el Plan de Evaluación, que entiendo qué se me va a evaluar
+        y con qué instrumentos, y que <strong>acordé</strong> la fecha y las condiciones anotadas
+        arriba con mi evaluador.
+      </span>
+    </label>
+
+    <div class="acciones" style="justify-content:flex-start">
+      <button class="btn-plat btn-plat--primario"  id="btnGuardar">Guardar plan</button>
+      <button class="btn-plat btn-plat--secundario" id="btnImprimir"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.5 9V3.5h11V9"/><path d="M6.5 17.5H5A2 2 0 0 1 3 15.5v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1.5"/><path d="M6.5 14h11v6.5h-11z"/></svg> Imprimir / PDF</button>
+      <button class="btn-plat btn-plat--primario" id="btnOficial" style="background:#0d2a6e">Plan de Evaluación — formato oficial SEP-CONOCER</button>
+    </div>
+    <p id="estadoGuardado" style="color:var(--spoke-deep);font-size:.85rem;margin-top:10px"></p>
+  </div>
+
+  <div class="card" id="cardAcuse"></div>
+
+  <div class="acciones">
+    <a class="btn-plat btn-plat--secundario" href="documentos.html">Ver el Guión de la sesión</a>
+    <a class="btn-plat btn-plat--primario" href="index.html">Volver al tablero →</a>
+  </div>
+
+</main>
+
+<script type="module">
+import './js/shell.js';
+import { montarFirma, firmaGuardada, sellar } from './js/firma.js';
+import { registrarDocumento } from './js/flow.js';
+import { icono, icono as ico } from './js/iconos.js';
+import { Store } from './js/store.js';
+import { esc } from './js/seguro.js';
+import { pintarBarraFlujo, completar } from './js/flow.js';
+import { PLAN } from './js/data-portafolio.js';
+import { CONFIG } from './js/config.js';
+import { htmlPlanOficial, abrirDocumento } from './js/doc-plan-oficial.js';
+import { puntajeDelAutodiagnostico, PUNTAJE_MAXIMO } from './js/brechas.js';
+
+const MODULO = 'plan';
+const $ = id => document.getElementById(id);
+const CAMPOS = ['fCandidato','fEvaluador','fFecha','fLugar','fNotas','fHorario','fEvaluadora','fCentro','fFechaPlan',
+                'fResultadoDiag','fSugirio','fProcede','fProporciona','fLugarRes','fFechaRes','fHorarioRes'];
+
+/* ── Tabla de criterios ───────────────────────────────────────────────── */
+const suma = k => PLAN.criterios.reduce((n, c) => n + c[k], 0);
+
+$('tblCriterios').innerHTML = PLAN.criterios.map(c => {
+  const total = c.desempenos + c.productos + c.conocimientos + c.actitudes;
+  return `<tr>
+    <td>${c.elemento}. ${c.titulo}</td>
+    <td class="pl-num">${c.desempenos}</td>
+    <td class="pl-num">${c.productos}</td>
+    <td class="pl-num">${c.conocimientos}</td>
+    <td class="pl-num">${c.actitudes}</td>
+    <td class="pl-num"><strong>${total}</strong></td>
+  </tr>`;
+}).join('');
+
+const totalGeneral = suma('desempenos') + suma('productos') + suma('conocimientos') + suma('actitudes');
+$('tblTotales').innerHTML = `<tr>
+  <td>Total</td>
+  <td class="pl-num">${suma('desempenos')}</td>
+  <td class="pl-num">${suma('productos')}</td>
+  <td class="pl-num">${suma('conocimientos')}</td>
+  <td class="pl-num">${suma('actitudes')}</td>
+  <td class="pl-num">${totalGeneral}</td>
+</tr>`;
+
+/* ── Instrumentos ─────────────────────────────────────────────────────── */
+const ICONO = {
+  'Guía de Observación': 'ojo',
+  'Lista de Cotejo':     'chequeCaja',
+  'Cuestionario':        'portapapeles',
+};
+const DESC = {
+  'Guía de Observación': 'El evaluador observa cómo lo haces, en vivo o en el video de tu sesión.',
+  'Lista de Cotejo':     'Se revisan los documentos y productos que entregas (fichas, consentimientos, registros).',
+  'Cuestionario':        'Preguntas escritas sobre lo que debes saber. Es el examen de conocimientos.',
+};
+
+$('instrumentos').innerHTML = Object.entries(PLAN.instrumentoPorTipo).map(([tipo, inst]) => `
+  <div class="inst-card">
+    <div class="inst-ico">${icono(ICONO[inst] || 'portapapeles', 24)}</div>
+    <div class="inst-cuerpo">
+      <div class="inst-t">${tipo} → ${inst}</div>
+      <div class="inst-d">${DESC[inst] || ''}</div>
+    </div>
+  </div>`).join('');
+
+/* ── Formulario ───────────────────────────────────────────────────────── */
+const datos = Store.get(MODULO, {});
+CAMPOS.forEach(id => { if (datos[id] != null) $(id).value = datos[id]; });
+/* El nombre ya se capturó en el registro (autodiagnóstico): se propone
+   aquí para no pedirlo dos veces. Sigue siendo editable. */
+if (!$('fCandidato').value && Store.get('candidato', {}).nombre) $('fCandidato').value = Store.get('candidato', {}).nombre;
+$('fAcuerdo').checked = !!datos.acuerdo;
+
+/* ── Qué cierra este módulo ───────────────────────────────────────────────
+   El Plan aporta DOS documentos al expediente: el plan en sí y el acuse de
+   que se le presentó. Eso lo declara config.js, y flow.js cierra el módulo
+   contra esos dos documentos.
+
+   Aquí había una contradicción silenciosa: esta pantalla llamaba a
+   completar() y anunciaba "✓ Plan guardado y marcado como acordado", pero no
+   registraba ninguno de los dos documentos. flow.js, que para los módulos
+   documentales ignora el `completado` y cuenta archivos, seguía diciendo
+   "en curso" — con el avance global en 0% y sin un motivo que enseñar. El
+   candidato hacía todo bien y la plataforma se contradecía consigo misma.
+
+   Ahora cada documento corresponde a un acto real:
+     planEvaluacion       queda cuando los datos del plan están completos,
+                          porque es entonces cuando el documento existe.
+     acusePlanEvaluacion  queda cuando lo firma, aquí mismo. Antes había que
+                          imprimirlo, firmarlo, escanearlo y subirlo — cuatro
+                          pasos fuera de la plataforma para capturar una firma
+                          que la plataforma ya sabe capturar.               */
+const datosCompletos = pl =>
+  !!(pl.acuerdo && pl.fCandidato?.trim() && pl.fFecha);
+
+function guardar(avisar = false) {
+  const payload = Object.fromEntries(CAMPOS.map(id => [id, $(id).value]));
+  payload.acuerdo = $('fAcuerdo').checked;
+  Store.merge(MODULO, payload);
+
+  const listo = datosCompletos(payload);
+  revisarAcuse(Store.get(MODULO));
+
+  /* El plan existe como documento en cuanto tiene sus datos */
+  registrarDocumento(MODULO, 'planEvaluacion',
+    listo ? { nombre: 'Plan de Evaluación', generado: true,
+              fecha: new Date().toISOString() } : false);
+
+  pintarAcuse();
+  pintarBarraFlujo($('pasos'), MODULO);
+
+  if (avisar) {
+    const falta = [];
+    if (!payload.fCandidato?.trim()) falta.push('tu nombre');
+    if (!payload.fFecha)             falta.push('la fecha');
+    if (!payload.acuerdo)            falta.push('la casilla de confirmación');
+
+    $('estadoGuardado').textContent = !listo
+      ? `Guardado. Para dar el plan por acordado falta ${falta.join(', ')}.`
+      : acuseFirmado()
+        ? 'Plan guardado, acordado y firmado. Este módulo queda cerrado.'
+        : 'Plan guardado y acordado. Falta firmar el acuse, aquí abajo.';
+    setTimeout(() => { $('estadoGuardado').textContent = ''; }, 5000);
+  }
+}
+
+/* ── Acuse firmado ───────────────────────────────────────────────────── */
+const ACUSE =
+  'Acuso de recibido el Plan de Evaluación del estándar EC1375. Se me presentó ' +
+  'qué se me va a evaluar, con qué instrumentos y en qué fecha y lugar, y tuve ' +
+  'oportunidad de preguntar lo que no me quedó claro.';
+
+/* Lo que se firma lleva los datos del plan. El texto dice "en qué fecha y
+   lugar", pero el sello guardaba solo esa frase: si después se movía la
+   evaluación, el acuse seguía "firmado" sin decir de cuál fecha. Ahora la
+   fecha, el lugar y el evaluador van dentro de lo firmado, y si cambian el
+   acuse deja de valer y hay que firmarlo otra vez. Las notas no cuentan:
+   son del candidato, no del acuerdo. */
+const textoAcuse = pl => ACUSE + '\n' + [
+  `Candidato: ${(pl.fCandidato || '').trim()}`,
+  `Evaluador: ${(pl.fEvaluador || '').trim() || '—'}`,
+  `Fecha de evaluación: ${pl.fFecha || '—'}`,
+  `Lugar: ${(pl.fLugar || '').trim() || '—'}`,
+].join('\n');
+
+const acuseFirmado = () =>
+  !!(Store.get(MODULO).documentos || {}).acusePlanEvaluacion;
+
+/* Un acuse sellado con otros datos del plan ya no corresponde */
+function revisarAcuse(pl) {
+  const s = (pl.documentos || {}).acusePlanEvaluacion;
+  if (!s?.acepto) return false;
+  if (s.acepto === textoAcuse(pl) || s.acepto === ACUSE && !pl.acuseConDatos) {
+    return false;
+  }
+  registrarDocumento(MODULO, 'acusePlanEvaluacion', false);
+  Store.merge(MODULO, { acuseAnterior: { fecha: s.fecha, acepto: s.acepto } });
+  return true;
+}
+
+function pintarAcuse() {
+  const pl = Store.get(MODULO);
+  const listo = datosCompletos(pl);
+  const sello = (pl.documentos || {}).acusePlanEvaluacion;
+  const f = firmaGuardada();
+  const cambio = !sello && pl.acuseAnterior
+    ? `<p class="ev-pendiente">${ico('alerta', 15)} Cambiaron los datos del plan desde que
+         firmaste el acuse el ${new Date(pl.acuseAnterior.fecha).toLocaleDateString('es-MX',
+         { day: 'numeric', month: 'long' })}. Fírmalo otra vez para que diga lo que acordaste.</p>`
+    : '';
+
+  if (!listo) {
+    $('cardAcuse').innerHTML = `
+      <h2>Acuse de recibido</h2>
+      <p class="pn-nota" style="margin-bottom:0">
+        Se firma cuando el plan de arriba esté completo: nombre, fecha y la
+        casilla de que lo acordaste con tu evaluador.
+      </p>`;
+    return;
+  }
+
+  if (sello?.firma) {
+    $('cardAcuse').innerHTML = `
+      <h2>Acuse de recibido</h2>
+      <p class="ev-sellada">${ico('cheque', 15)}
+         Acuse firmado el ${new Date(sello.fecha).toLocaleDateString('es-MX',
+           { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+      <p class="pn-nota" style="margin-bottom:0">
+        Ya no hay que imprimir ni escanear nada: el acuse va firmado dentro de
+        tu expediente.
+      </p>`;
+    return;
+  }
+
+  $('cardAcuse').innerHTML = `
+    <h2>Acuse de recibido</h2>
+    ${cambio}
+    <p class="pn-nota" style="margin-top:0;white-space:pre-line">${esc(textoAcuse(pl))}</p>
+    <h3 style="margin:18px 0 4px;font-size:.95rem">Tu firma</h3>
+    <div id="firmaAcuse"></div>
+    <div class="acciones" style="margin-top:14px">
+      <button class="btn-plat btn-plat--primario" id="btnFirmarAcuse" ${f ? '' : 'hidden'}>
+        Firmar el acuse</button>
+    </div>`;
+
+  /* Con una firma ya guardada (la del NDA, casi siempre) el recuadro solo
+     decía "se usará aquí" y no había nada que oprimir: el acuse se quedaba
+     sin firmar y el Plan abierto para siempre, salvo que el candidato
+     adivinara que tenía que "Cambiar" su firma para que contara. Firmar es
+     un acto: aquí es un botón explícito. */
+  const firmarAcuse = () => {
+    const sel = sellar(textoAcuse(Store.get(MODULO)));
+    if (!sel) return;
+    registrarDocumento(MODULO, 'acusePlanEvaluacion',
+      { nombre: 'Acuse — Plan de Evaluación', ...sel });
+    Store.merge(MODULO, { acuseAnterior: null, acuseConDatos: true });
+    pintarAcuse();
+    pintarBarraFlujo($('pasos'), MODULO);
+  };
+  $('btnFirmarAcuse').onclick = firmarAcuse;
+
+  montarFirma($('firmaAcuse'), {
+    nombreSugerido: pl.fCandidato || '',
+    /* Guardar una firma nueva en este recuadro ya es firmar el acuse */
+    onCambio: () => { if (firmaGuardada()) firmarAcuse(); else pintarAcuse(); },
+  });
+}
+
+CAMPOS.forEach(id => $(id).addEventListener('input', () => guardar()));
+
+/* Sala de evidencias (como Paideia): si el Centro publicó horarios, el
+   candidato reserva uno y la fecha, el horario y el lugar se llenan solos. */
+import('./js/sala-ui.js').then(async ({ montarAgenda }) => {
+  const LUGAR_SALA = 'En línea — Sala Zoom POSTURALIA · Grabación de evidencias';
+  const aplicar = r => {
+    if (!r) return;
+    $('fFecha').value = r.fecha; $('fHorario').value = r.horario;
+    if (!$('fLugar').value.trim() || $('fLugar').value === LUGAR_SALA) $('fLugar').value = LUGAR_SALA;
+    guardar();
+  };
+  const res = await montarAgenda($('salaAgenda'), { onCambio: aplicar });
+  $('agenda').hidden = !res.activa;
+  if (res.activa && res.reserva && $('fFecha').value !== res.reserva.fecha) aplicar(res.reserva);
+  if (location.hash === '#agenda' && res.activa) $('agenda').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}).catch(() => {});
+$('fAcuerdo').addEventListener('change', () => guardar());
+$('btnGuardar').onclick  = () => guardar(true);
+$('btnImprimir').onclick = () => window.print();
+
+/* ── Formato oficial ──────────────────────────────────────────────────────
+   Valores por omisión que el candidato no tiene por qué saber: el Centro,
+   la fecha de hoy, el resultado del autodiagnóstico y si se sugiere
+   capacitación (puntaje bajo la referencia o algún eliminatorio en NO). */
+(function defaultsOficiales() {
+  const ce = CONFIG.centroEvaluacion || {};
+  const auto = Store.get('autodiagnostico', {});
+  const pts = puntajeDelAutodiagnostico(auto);
+  const def = {
+    fCentro: ce.clave || '', fEvaluadora: ce.evaluadora || $('fEvaluador').value || '',
+    fFechaPlan: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }),
+    fResultadoDiag: auto.completado ? `${pts.toFixed(2)} de ${PUNTAJE_MAXIMO.toFixed(2)} puntos (referencia ${ce.umbral ?? 97.64})` : '',
+    fSugirio: auto.completado ? ((pts < (ce.umbral ?? 97.64) || (auto.criticosEnNo || 0) > 0) ? 'si' : 'no') : 'no',
+    fProcede: 'si', fLugarRes: $('fLugar').value || '',
+  };
+  Object.entries(def).forEach(([k, v]) => { if (!$(k).value && v) $(k).value = v; });
+})();
+
+$('btnOficial').onclick = () => {
+  guardar();
+  const pl = Store.get(MODULO, {});
+  const acuse = (pl.documentos || {}).acusePlanEvaluacion;
+  abrirDocumento(htmlPlanOficial({
+    evaluadora: pl.fEvaluadora || pl.fEvaluador, centro: pl.fCentro, fechaPlan: pl.fFechaPlan,
+    candidato: pl.fCandidato, resultadoDiagnostico: pl.fResultadoDiag,
+    sugirioCapacitacion: pl.fSugirio === 'si', procede: pl.fProcede !== 'no',
+    fechaEvaluacion: pl.fFecha, lugar: pl.fLugar, horario: pl.fHorario,
+    lugarResultados: pl.fLugarRes, fechaResultados: pl.fFechaRes, horarioResultados: pl.fHorarioRes,
+    proporcionaMaterial: pl.fProporciona,
+    firmaCandidato: acuse?.firma || '', acuse: acuse?.firma ? 'si' : '',
+  }));
+};
+
+pintarAcuse();
+pintarBarraFlujo($('pasos'), MODULO);
+</script>
+</body>
+</html>

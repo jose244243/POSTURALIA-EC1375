@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Llenar con mi usuario — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  .btn-a { font:inherit; font-size:.86rem; font-weight:700; padding:8px 14px; border-radius:9px; cursor:pointer; border:1.5px solid var(--border); background:var(--white); color:var(--dark) }
+  .btn-a--pri { background:#0d2a6e; border-color:#0d2a6e; color:#fff }
+  .ds-top { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:14px }
+  .ds-top label { font-size:.8rem; font-weight:600; color:var(--muted) }
+  .ds-top select { font:inherit; font-size:.88rem; padding:7px 10px; border:1px solid var(--border); border-radius:8px; max-width:100% }
+  .ds-barra { flex:1 1 160px; height:8px; background:var(--bg); border-radius:99px; overflow:hidden; min-width:120px }
+  .ds-barra i { display:block; height:100%; background:var(--spoke); border-radius:99px; transition:width .2s }
+  .ds-cuenta { font-size:.8rem; color:var(--muted); white-space:nowrap }
+  .ds-hero { display:flex; gap:12px; align-items:baseline; margin:4px 0 12px }
+  .ds-hero .n { flex:0 0 34px; height:34px; border-radius:50%; background:var(--spoke-deep); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700 }
+  .ds-hero h2 { margin:0; font-size:1.25rem }
+  .guion { border:1px solid var(--border); border-left:4px solid var(--spoke); border-radius:10px; padding:12px 16px; background:var(--bg); margin-bottom:16px }
+  .guion-l { display:flex; gap:8px; align-items:center; font-size:.72rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-bottom:6px }
+  .guion-l a { margin-left:auto; text-transform:none; letter-spacing:0; font-weight:600 }
+  .g-it { padding:6px 0; font-size:.92rem; line-height:1.6; color:var(--dark) }
+  .g-it .tag { display:inline-block; padding:1px 7px; border-radius:4px; font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; margin-right:6px; vertical-align:1px }
+  .g-dialogo .tag { background:#E0F2FE; color:#075985 } .g-dialogo .tx { font-style:italic }
+  .g-accion .tag { background:#ECFDF5; color:#065F46 } .g-usuario .tag { background:#F1F5F9; color:#475569 } .g-nota .tag { background:#FEF3C7; color:#92400E }
+  .g-sub { font-weight:700; color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:10px 0 0 }
+  .g-campos { background:var(--white); border:1px dashed var(--border); border-radius:8px; padding:10px 12px; margin:4px 0 8px }
+  .g-video { display:flex; gap:8px; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); font-size:.86rem; font-weight:600 }
+  .campo { margin:0 0 12px } .campo label { display:block; font-size:.8rem; font-weight:600; color:var(--mid); margin-bottom:4px }
+  .campo input, .campo textarea, .campo select { width:100%; font:inherit; font-size:.92rem; padding:9px 11px; border:1px solid var(--border); border-radius:8px; background:var(--white); color:var(--dark) }
+  .campo textarea { min-height:62px; resize:vertical }
+  .fila { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0 14px }
+  .sec-l { font-size:.74rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin:14px 0 8px }
+  .legal { background:var(--bg); border-radius:8px; padding:12px 14px; font-size:.86rem; line-height:1.6; margin:8px 0 14px; text-align:justify }
+  .aviso .tt { font-weight:700; margin-bottom:6px } .aviso .hh { font-weight:700; margin:8px 0 2px } .aviso p { margin:0 0 4px } .aviso ul { margin:0 0 2px 18px; padding:0 }
+  .chk { display:flex; gap:10px; align-items:flex-start; padding:7px 0; border-bottom:1px dashed var(--border); font-size:.9rem; line-height:1.5; cursor:pointer }
+  .chk input { margin-top:3px; accent-color:var(--spoke); width:18px; height:18px; flex:0 0 18px }
+  .ses-row { display:grid; grid-template-columns:34px 1fr 1fr; gap:8px; align-items:center; margin-bottom:8px }
+  .ses-row span { font-weight:700; text-align:center }
+  .ses-row input { font:inherit; font-size:.9rem; padding:8px 10px; border:1px solid var(--border); border-radius:8px; width:100% }
+  .nav { display:flex; gap:10px; justify-content:space-between; align-items:center; margin:18px 0 6px; flex-wrap:wrap }
+  .falta { color:#92400E; background:#FFFBEB; border-radius:8px; padding:8px 12px; font-size:.86rem; margin:10px 0 0 }
+  .doc-f { display:flex; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--border); flex-wrap:wrap }
+  .doc-f .d { flex:1 1 220px } .doc-f .d b { display:block } .doc-f .d small { color:var(--muted) }
+  .doc-f .e { font-size:.78rem; font-weight:700; padding:3px 9px; border-radius:99px }
+  .e-ok { background:#ECFDF5; color:#065F46 } .e-no { background:#FFFBEB; color:#92400E }
+  .intro-l li { margin:0 0 6px }
+  [data-solo-lectura] input, [data-solo-lectura] textarea, [data-solo-lectura] select { pointer-events:none; background:var(--bg) }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+  <div class="plat-head">
+    <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+    <h1>Llenar con mi usuario</h1>
+    <p>Los documentos de tu sesión, paso a paso, con el guion de cada momento. Al final salen llenos y firmados por tu usuario.</p>
+  </div>
+
+  <div id="salaTarjeta"></div>
+  <div class="card" id="ds"></div>
+  <p style="text-align:center;margin:10px 0 30px"><a href="documentos.html">← Volver a Documentos de Sesión</a></p>
+</main>
+
+<script type="module">
+/* Réplica de «Documentos de Sesión» de Paideia: 19 pasos, uno por sección
+   del Guion Maestro. El candidato los llena con su usuario durante la sesión
+   grabada y al final salen los productos llenos y firmados (doc-sesion.js),
+   que entran a su expediente y de ahí al portafolio. */
+import './js/shell.js';
+import { Store } from './js/store.js';
+import { pintarBarraFlujo, registrarDocumento } from './js/flow.js';
+import { GUION } from './js/data-guion.js';
+import { montarFirmaSimple } from './js/firma-simple.js';
+import { firmaGuardada } from './js/firma.js';
+import { domicilioCompleto } from './js/registro.js';
+import { PASOS, PREP_ITEMS, PREP_MATERIALES, PREP_PROTOCOLO, TOTAL_PREP, FICHA_CAMPOS, FICHA_PREGUNTAS, sesionVacia, pasoValido, pasoMaximo,
+  todoValido, faltantes, QUE_FALTA, prepHechos, precargarSeguimiento, edadDe, NOTA_MEDICO, textoConsentimiento, avisoPrivacidadBloques, datosAviso,
+  DOCS_SESION, tecnicaEfectiva } from './js/data-sesion.js';
+import { documentoSesionSuelto, todosLosDocumentos } from './js/doc-sesion.js';
+import { abrirDocumento } from './js/doc-plan-oficial.js';
+import('./js/sala-ui.js').then(m => m.montarTarjeta(document.getElementById('salaTarjeta'))).catch(() => {});
+
+const MODULO = 'documentos';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const soloLectura = Store.soloLectura;
+
+/* ── Estado ──────────────────────────────────────────────────────────── */
+const base = sesionVacia();
+const guardada = Store.get(MODULO, {}).sesion || {};
+const s = { ...base, ...guardada, campos: { ...base.campos, ...(guardada.campos || {}) }, firmas: { ...base.firmas, ...(guardada.firmas || {}) },
+  prep: { ...(guardada.prep || {}) }, videos: { ...(guardada.videos || {}) }, sesiones: guardada.sesiones?.length ? guardada.sesiones : base.sesiones };
+let paso = 0;          // en pantalla: 0 = inicio · 1…19 = pasos · 20 = Tus documentos. s.paso = el último visitado
+const FIN = PASOS.length + 1;
+
+const cand = (() => {
+  const c = Store.get('candidato', {}) || {};
+  const f = firmaGuardada();
+  return { ...c, domicilioCompleto: domicilioCompleto(c), firma: f?.dato ? { mode: 'draw', dataUrl: f.dato } : null };
+})();
+const huella = () => JSON.stringify({ c: s.campos, f: s.firmas, p: s.prep, x: s.sesiones });
+
+let tGuardar = null;
+function guardar(inmediato = false) {
+  if (soloLectura) return;
+  clearTimeout(tGuardar);
+  const f = () => Store.merge(MODULO, { sesion: { ...s } });
+  inmediato ? f() : (tGuardar = setTimeout(f, 250));
+}
+addEventListener('pagehide', () => guardar(true));
+
+/* ── Guion de la sección ─────────────────────────────────────────────── */
+const TAG = { dialogo: 'Qué dices', accion: 'Qué haces', usuario: 'Responde el usuario', nota: 'Nota del estándar' };
+const resaltar = t => esc(t).replace(/\[([^\]]+)\]/g, '<b style="color:var(--spoke-deep)">[$1]</b>');
+function item(x) {
+  if (x.t === 'subtitulo') return `<div class="g-sub">${esc(x.x)}</div>`;
+  if (x.t === 'lista') return `<ul class="g-it">${(x.items || []).map(i => `<li>${resaltar(i)}</li>`).join('')}</ul>`;
+  return `<div class="g-it g-${x.t}"><span class="tag">${TAG[x.t] || TAG.accion}</span><span class="tx">${resaltar(x.x)}</span></div>`;
+}
+function panelGuion(p, conCampos = null) {
+  const sec = GUION.find(g => g.seccionNum === p.seccion);
+  if (!sec) return '';
+  return `<div class="guion"><div class="guion-l">Guion · Sección ${sec.seccionNum} · ${esc(sec.nombre)} <a href="guion-maestro.html" target="_blank" rel="noopener">Ver guion completo ↗</a></div>
+    ${sec.items.map(x => { const extra = conCampos ? conCampos(x) : ''; return item(x) + extra; }).join('')}
+    <label class="g-video"><input type="checkbox" data-video="${sec.seccionNum}" ${s.videos[sec.seccionNum] ? 'checked' : ''}> Video de esta sección grabado</label></div>`;
+}
+
+/* ── Campos ──────────────────────────────────────────────────────────── */
+const campo = (k, label, { tipo = 'text', ph = '', filas = 2 } = {}) => {
+  const val = esc(s.campos[k]);
+  const input = tipo === 'textarea' ? `<textarea id="c_${k}" data-c="${k}" rows="${filas}" placeholder="${esc(ph)}">${val}</textarea>`
+    : `<input id="c_${k}" data-c="${k}" type="${tipo}" value="${val}" placeholder="${esc(ph)}">`;
+  return `<div class="campo"><label for="c_${k}">${esc(label)}</label>${input}</div>`;
+};
+const fila = (...c) => `<div class="fila">${c.join('')}</div>`;
+const campoFicha = k => { const f = FICHA_CAMPOS[k]; return campo(k, f.label, { tipo: f.tipo || 'text', ph: f.placeholder || '' }); };
+const datosGenerales = () => `<div class="sec-l">Datos generales del usuario</div>${campo('usuarioNombre', 'Nombre completo *')}
+  ${fila(campo('usuarioEdad', 'Edad'), campo('usuarioFechaNacimiento', 'Fecha de nacimiento', { tipo: 'date' }))}${campo('usuarioDomicilio', 'Domicilio')}
+  ${fila(campo('usuarioTelefono', 'Teléfono', { tipo: 'tel' }), campo('usuarioCorreo', 'Correo electrónico', { tipo: 'email' }))}${campo('contactoEmergencia', 'Nombre de familiar o responsable a avisar')}`;
+const firmaCaja = (k, titulo) => `<div class="sec-l">${esc(titulo)}</div><div id="fir_${k}"></div>`;
+const chk = (clave, texto) => `<label class="chk"><input type="checkbox" data-prep="${clave}" ${s.prep[clave] ? 'checked' : ''}><span>${esc(texto)}</span></label>`;
+const avisoHtml = () => `<div class="legal aviso" id="avisoDoc">${avisoPrivacidadBloques(datosAviso(s.campos, cand)).map(b => b.t === 'titulo' ? `<div class="tt">${esc(b.x)}</div>`
+  : b.t === 'h' ? `<div class="hh">${esc(b.x)}</div>` : b.t === 'li' ? `<ul><li>${esc(b.x)}</li></ul>` : `<p>${esc(b.x)}</p>`).join('')}</div>`;
+
+const PANTALLA = {
+  prep: p => panelGuion(p) + `<div class="sec-l">Preparación del espacio</div>${PREP_ITEMS.map((t, i) => chk('prep-' + i, t)).join('')}
+    <div class="sec-l">Equipo y materiales a tener disponibles</div><ul style="margin:0 0 6px 18px;font-size:.9rem;line-height:1.7">${PREP_MATERIALES.map(m => `<li>${esc(m)}</li>`).join('')}</ul>
+    <div class="sec-l">Protocolo sanitario</div>${PREP_PROTOCOLO.map((t, i) => chk('proto-' + i, t)).join('')}
+    <p class="ds-cuenta" id="prepCuenta" style="margin-top:10px">${prepHechos(s.prep)} / ${TOTAL_PREP} completados</p>`,
+  recepcion: p => panelGuion(p) + campo('temperatura', 'Temperatura', { ph: '°C' }),
+  explicacion: p => panelGuion(p),
+  privacidad: p => panelGuion(p) + `<div class="sec-l">Tus datos como responsable</div>
+    <p style="font-size:.86rem;color:var(--muted);margin:0 0 10px">Vienen de tu registro; ajústalos si atiendes en otro domicilio o con otro contacto. El aviso de abajo se actualiza solo.</p>
+    ${campo('avisoResponsable', 'Nombre del responsable', { ph: cand.nombre || '' })}${campo('avisoDomicilio', 'Domicilio donde atiendes', { ph: cand.domicilioCompleto || 'Calle, número, colonia, ciudad' })}
+    ${campo('avisoContacto', 'Contacto para derechos ARCO', { ph: [cand.telefonoCelular, cand.email].filter(Boolean).join(' · ') || 'Correo o teléfono' })}
+    <div class="sec-l">Aviso de Privacidad — preséntalo a tu usuario</div>
+    <p style="font-size:.86rem;color:var(--muted);margin:0 0 6px">Compártelo en pantalla durante tu Zoom o léelo en voz alta. Va completo en la Carta de Consentimiento, y la firma de enterado de tu usuario queda en la Ficha de Registro y en la Carta.</p>${avisoHtml()}`,
+  ficha: p => panelGuion(p, x => {
+    const m = FICHA_PREGUNTAS.find(([t]) => String(x.x || '').includes(t));
+    if (!m) return '';
+    return `<div class="g-campos">${m[1][0] === '@datosGenerales' ? datosGenerales() : m[1].map(campoFicha).join('')}</div>`;
+  }),
+  peso_estatura: p => panelGuion(p) + fila(campo('peso', 'Peso', { ph: 'kg' }), campo('estatura', 'Estatura', { ph: 'cm' })),
+  spo2_pulso: p => panelGuion(p) + fila(campo('oxigenacion', 'Oxigenación (SpO2)', { ph: '%' }), campo('pulso', 'Pulso', { ph: 'lpm' })),
+  postura: p => panelGuion(p) + campo('observacionPostural', 'Hallazgos observados', { tipo: 'textarea', filas: 3, ph: 'Cabeza, cuello, tórax, extremidades, pelvis...' }),
+  frec_resp: p => panelGuion(p) + campo('frecuenciaRespiratoria', 'Frecuencia respiratoria', { ph: 'respiraciones/min' }),
+  presion: p => panelGuion(p) + campo('presionArterial', 'Presión arterial', { ph: '120/80' }),
+  verificar: p => panelGuion(p) + `<div class="sec-l">Motivo de consulta</div>${campo('sintomasNecesidades', 'Síntomas, necesidades o interés para recibir tratamiento', { tipo: 'textarea' })}
+    <div class="legal">${esc(NOTA_MEDICO)}</div>${firmaCaja('usuarioFicha', 'Firma del usuario — cierra su Ficha de Registro')}`,
+  terapia_explicacion: p => {
+    const esp = (cand.certificados || []).map(c => String(c.nombre || '').trim()).filter(Boolean);
+    const t = s.campos.tecnicaAplicar;
+    const opciones = [...new Set([...esp, ...(t && t !== 'Otra' && !esp.includes(t) ? [t] : [])])];
+    return panelGuion(p) + `<div class="campo"><label for="c_tecnicaAplicar">Técnica a aplicar *</label><select id="c_tecnicaAplicar" data-c="tecnicaAplicar" data-repinta>
+      <option value="">Selecciona...</option>${opciones.map(o => `<option ${t === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}
+      <option value="Otra" ${t === 'Otra' ? 'selected' : ''}>Otra (especificar)</option></select></div>
+      ${t === 'Otra' ? campo('otraTecnica', 'Especifica la técnica *', { ph: 'Ej. Reflexología podal' }) : ''}
+      ${campo('zonasCuerpo', 'Puntos y zonas del cuerpo que se abordarán', { tipo: 'textarea', ph: 'Ej. Espalda, cuello y hombros' })}
+      ${campo('vestimentaRecomendada', 'Vestimenta recomendada para la sesión', { ph: 'Ej. Ropa cómoda y ligera' })}
+      ${campo('reaccionesFisicas', 'Reacciones o sensaciones posibles (durante y después)', { tipo: 'textarea', ph: 'Ej. Relajación, ligera somnolencia posterior' })}`;
+  },
+  consentimiento: p => panelGuion(p) + fila(campo('expedienteNo', 'Expediente No.', { ph: 'Ej. 250812' }), campo('fechaConsentimiento', 'Fecha', { tipo: 'date' }))
+    + campo('limitantesServicio', 'Limitantes de aplicación del servicio', { tipo: 'textarea', ph: 'Ej. No aplica en zonas con heridas abiertas o infecciones de piel' })
+    + `<div class="legal" id="textoConsent">${esc(textoConsentimiento(String(s.campos.usuarioNombre || '').trim() || '[nombre del usuario]'))}</div>
+    ${firmaCaja('usuarioConsentimiento', 'Firma del usuario — cierra su Carta de Consentimiento')}`,
+  atencion: p => panelGuion(p),
+  finalizacion: p => panelGuion(p),
+  plan_sesion: p => panelGuion(p) + `<div class="sec-l">Esta sesión (No. 1)</div>
+    ${fila(campo('fechaSesion', 'Fecha', { tipo: 'date' }), campo('horaInicio', 'Hora de inicio', { tipo: 'time' }), campo('horaTermino', 'Hora de término', { tipo: 'time' }))}
+    ${campo('condicionesPreparacion', 'Condiciones de preparación', { tipo: 'textarea', ph: 'Ej. Limpieza de camilla y sábana desechable nueva' })}
+    <div class="sec-l">Plan a futuro</div>${fila(campo('numeroSesionesPlan', 'Número de sesiones planeadas', { ph: 'Ej. 7' }), campo('duracionSesionPlan', 'Duración de cada sesión', { ph: 'Ej. 1 hora' }))}
+    ${campo('objetivosEfectos', 'Objetivos y efectos generales *', { tipo: 'textarea', filas: 3, ph: 'Ej. Armonización, balance, bienestar general' })}`,
+  plan_seguimiento: p => panelGuion(p) + `<div class="sec-l">Sesiones programadas</div><div id="sesiones">${filasSesiones()}</div>
+    <button type="button" class="btn-a" id="addSesion" style="margin:0 0 14px">+ Agregar sesión</button>
+    <div class="sec-l">Notas</div>${campo('notaEvolucion', 'Nota de evolución', { tipo: 'textarea' })}
+    ${campo('pronostico', 'Pronóstico', { ph: 'Ej. Positivo, paciente consciente y con apertura' })}${campo('recomendaciones', 'Recomendaciones / ejercicios para casa', { tipo: 'textarea' })}`,
+  medio_contacto: p => panelGuion(p) + `<p style="font-size:.86rem;color:var(--muted);margin:0 0 10px">Teléfono y correo se precargan de la Ficha de Registro — corrígelos solo si el seguimiento debe hacerse por otro medio.</p>
+    ${fila(campo('telefonoMovilSeguimiento', 'Teléfono móvil', { tipo: 'tel' }), campo('telefonoFijoSeguimiento', 'Teléfono fijo', { tipo: 'tel' }))}
+    ${campo('correoSeguimiento', 'Correo electrónico', { tipo: 'email' })}${campo('medioContacto', 'Medio de contacto para seguimiento', { ph: 'Ej. Celular / WhatsApp' })}`,
+  cierre: p => panelGuion(p) + `<p style="font-size:.9rem">Nombre del usuario: <b>${esc(s.campos.usuarioNombre) || '—'}</b></p>${firmaCaja('usuarioSeguimiento', 'Firma del usuario — cierra su Plan de Seguimiento')}`,
+};
+const filasSesiones = () => s.sesiones.map((r, i) => `<div class="ses-row"><span>${i + 1}</span>
+  <input data-ses="${i}" data-k="frecuencia" value="${esc(r.frecuencia)}" placeholder="Frecuencia (ej. Lunes)" aria-label="Frecuencia de la sesión ${i + 1}">
+  <input data-ses="${i}" data-k="duracion" value="${esc(r.duracion)}" placeholder="Duración (ej. 1 hr)" aria-label="Duración de la sesión ${i + 1}"></div>`).join('');
+
+/* ── Pantallas ───────────────────────────────────────────────────────── */
+function selector() {
+  const max = pasoMaximo(s);
+  return `<div class="ds-top"><label for="irPaso">Ir a otro paso</label><select id="irPaso">
+    ${PASOS.map((p, i) => `<option value="${i + 1}" ${paso === i + 1 ? 'selected' : ''} ${i > max ? 'disabled' : ''}>${i + 1}. ${esc(p.titulo)}${i > max ? ' (completa los pasos anteriores)' : ''}</option>`).join('')}
+    <option value="${FIN}" ${paso === FIN ? 'selected' : ''} ${max < PASOS.length ? 'disabled' : ''}>Tus documentos</option></select>
+    <div class="ds-barra"><i style="width:${Math.round(Math.min(paso, FIN) / FIN * 100)}%"></i></div><span class="ds-cuenta">Paso ${Math.min(paso, PASOS.length)} de ${PASOS.length}</span></div>`;
+}
+function pintarInicio() {
+  const hay = (s.paso || 0) > 0;
+  $('ds').innerHTML = `<h2 style="margin-top:0">¿Qué vas a llenar?</h2>
+    <p style="line-height:1.7">${PASOS.length} pasos, uno por cada sección del Guion Maestro — desde la preparación del espacio (antes de que llegue tu usuario) hasta el cierre.
+      Llénalos <b>junto con tu usuario, durante tu sesión grabada</b>: el guion de cada paso te dice qué decir y qué hacer. Al final se generan los documentos oficiales de tu expediente, con la firma de tu usuario donde se requiere:</p>
+    <ul class="intro-l">${DOCS_SESION.map(d => `<li><b>${esc(d.titulo)}</b> — ${esc(d.desc)}</li>`).join('')}</ul>
+    ${soloLectura ? '<p class="falta">Estás viendo el expediente de un candidato: puedes recorrerlo, pero no se guarda nada.</p>' : ''}
+    <div class="nav"><span></span><button class="btn-plat btn-plat--primario" id="empezar">${hay ? 'Continuar donde me quedé' : 'Comenzar →'}</button></div>`;
+  $('empezar').onclick = () => ir(hay ? Math.max(1, Math.min(s.paso || 1, pasoMaximo(s) + 1, FIN)) : 1);
+}
+function pintarPaso() {
+  const p = PASOS[paso - 1];
+  $('ds').innerHTML = selector() + `<div class="ds-hero"><span class="n">${paso}</span><h2>${esc(p.titulo)}</h2></div>
+    <div id="cuerpo" ${soloLectura ? 'data-solo-lectura' : ''}>${PANTALLA[p.id](p)}</div>
+    <div id="falta"></div>
+    <div class="nav"><button class="btn-plat btn-plat--secundario" id="atras">← Atrás</button>
+      <button class="btn-plat btn-plat--primario" id="sig">${paso === PASOS.length ? 'Ver mis documentos →' : 'Siguiente →'}</button></div>`;
+  ['usuarioFicha', 'usuarioConsentimiento', 'usuarioSeguimiento'].forEach(k => {
+    const el = $('fir_' + k); if (!el) return;
+    if (soloLectura) { el.innerHTML = s.firmas[k] ? '<p>✓ Firmado</p>' : '<p>Sin firma</p>'; return; }
+    montarFirmaSimple(el, { valor: s.firmas[k], nombreSugerido: () => s.campos.usuarioNombre, onCambio: f => { s.firmas[k] = f; guardar(); revisar(); } });
+  });
+  revisar();
+}
+function revisar() {
+  const p = PASOS[paso - 1]; if (!p) return;
+  const ok = pasoValido(p.id, s);
+  $('falta').innerHTML = ok ? '' : `<p class="falta">${esc(QUE_FALTA[p.id])}</p>`;
+}
+function pintarFin() {
+  const falta = faltantes(s), listo = !falta.length, generado = Store.get(MODULO, {}).sesionGenerada;
+  const vigente = generado && generado.huella === huella();
+  $('ds').innerHTML = selector() + `<div class="ds-hero"><span class="n">✓</span><h2>Tus documentos</h2></div>
+    ${listo ? '' : `<div class="falta"><b>Aún falta:</b><ul style="margin:4px 0 0 18px">${falta.map(f => `<li><a href="#" data-ir="${PASOS.findIndex(p => p.id === f.id) + 1}">${esc(f.titulo)}</a> — ${esc(f.que)}</li>`).join('')}</ul></div>`}
+    ${generado && !vigente ? '<p class="falta">Cambiaste datos después de generar tus documentos: vuelve a generarlos para que tu expediente lleve la versión nueva.</p>' : ''}
+    ${DOCS_SESION.map(d => `<div class="doc-f"><div class="d"><b>${esc(d.doc)} · ${esc(d.titulo)}</b><small>${esc(d.desc)}</small></div>
+      <span class="e ${vigente ? 'e-ok' : 'e-no'}">${vigente ? 'En tu expediente' : 'Sin generar'}</span>
+      <button class="btn-a" data-ver="${d.clave}">Ver / imprimir</button></div>`).join('')}
+    <div class="nav"><button class="btn-plat btn-plat--secundario" id="atras">← Atrás</button>
+      <span style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn-plat btn-plat--secundario" id="todos">Todos en un PDF</button>
+      <button class="btn-plat btn-plat--primario" id="generar" ${listo && !soloLectura ? '' : 'disabled'}>${generado ? 'Volver a generar' : 'Generar mis documentos'}</button></span></div>
+    <p style="font-size:.84rem;color:var(--muted);margin:6px 0 0">Al generarlos quedan registrados en tu expediente (los ve tu evaluador y entran a tu portafolio). Puedes abrirlos, imprimirlos o guardarlos como PDF.</p>`;
+}
+function pintar() {
+  if (paso <= 0) pintarInicio(); else if (paso >= FIN) pintarFin(); else pintarPaso();
+}
+function ir(n) {
+  const max = pasoMaximo(s);   // índice del primer paso inválido (0-based); = PASOS.length si todos
+  n = Math.max(0, Math.min(Number(n) || 0, FIN));
+  if (n > max + 1) n = max + 1;
+  paso = n; if (n > 0) s.paso = n; guardar(true); pintar(); scrollTo(0, 0);
+}
+
+/* ── Eventos ─────────────────────────────────────────────────────────── */
+$('ds').addEventListener('input', e => {
+  const c = e.target.closest('[data-c]');
+  if (c) {
+    s.campos[c.dataset.c] = c.value;
+    if (c.dataset.c === 'usuarioFechaNacimiento' && !s.campos.usuarioEdad) { const ed = edadDe(c.value); if (ed) { s.campos.usuarioEdad = ed; const x = $('c_usuarioEdad'); if (x) x.value = ed; } }
+    if (/^aviso/.test(c.dataset.c) && $('avisoDoc')) $('avisoDoc').outerHTML = avisoHtml();
+    guardar(); revisar(); return;
+  }
+  const r = e.target.closest('[data-ses]');
+  if (r) { s.sesiones[+r.dataset.ses][r.dataset.k] = r.value; guardar(); }
+});
+$('ds').addEventListener('change', e => {
+  const c = e.target.closest('[data-c][data-repinta]');
+  if (c) { s.campos[c.dataset.c] = c.value; guardar(); pintar(); return; }
+  const pr = e.target.closest('[data-prep]');
+  if (pr) { s.prep[pr.dataset.prep] = pr.checked; guardar(); const k = $('prepCuenta'); if (k) k.textContent = `${prepHechos(s.prep)} / ${TOTAL_PREP} completados`; revisar(); return; }
+  const v = e.target.closest('[data-video]');
+  if (v) { s.videos[v.dataset.video] = v.checked; guardar(); return; }
+  if (e.target.id === 'irPaso') ir(e.target.value);
+});
+$('ds').addEventListener('click', e => {
+  const t = e.target;
+  if (t.id === 'atras') return ir(paso - 1);
+  if (t.id === 'sig') {
+    const p = PASOS[paso - 1];
+    if (p.id !== 'prep' && !pasoValido(p.id, s)) { revisar(); $('falta').scrollIntoView({ block: 'center' }); return; }
+    if (p.id === 'ficha' || p.id === 'plan_seguimiento') Object.assign(s.campos, precargarSeguimiento(s.campos));
+    return ir(paso + 1);
+  }
+  if (t.id === 'addSesion') { s.sesiones.push({ numero: String(s.sesiones.length + 1), frecuencia: '', duracion: '' }); $('sesiones').innerHTML = filasSesiones(); guardar(); return; }
+  const irA = t.closest('[data-ir]'); if (irA) { e.preventDefault(); return ir(irA.dataset.ir); }
+  const ver = t.closest('[data-ver]'); if (ver) return abrirDocumento(documentoSesionSuelto(ver.dataset.ver, s, cand));
+  if (t.id === 'todos') return abrirDocumento(todosLosDocumentos(s, cand));
+  if (t.id === 'generar') {
+    if (!todoValido(s) || soloLectura) return;
+    const fecha = new Date().toISOString(), usuario = String(s.campos.usuarioNombre || '').trim();
+    DOCS_SESION.forEach(d => registrarDocumento(MODULO, d.clave, { nombre: `${d.titulo}${d.clave !== 'verificacion_espacio' ? ' — ' + usuario : ''}`, generado: true, lleno: true, fecha }));
+    Store.merge(MODULO, { sesion: { ...s }, sesionGenerada: { fecha, huella: huella(), usuario } });
+    pintarBarraFlujo($('pasos'), MODULO);
+    pintar();
+  }
+});
+
+pintarBarraFlujo($('pasos'), MODULO);
+pintar();
+</script>
+</body>
+</html>

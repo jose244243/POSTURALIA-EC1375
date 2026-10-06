@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evidencias — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <div id="avisoLimite"></div>
+
+  <div class="plat-head">
+    <div class="plat-icono" id="icoHead"></div>
+    <h1>Evidencias</h1>
+    <p>Lo que tu evaluador necesita para calificar. Cada archivo se guarda en cuanto lo eliges.</p>
+  </div>
+
+  <!-- ── Quién eres y cuándo te evalúan ─────────────────────────────── -->
+  <section class="card" id="resumen"></section>
+
+  <!-- ── Avance ──────────────────────────────────────────────────────── -->
+  <section class="card">
+    <div class="resumen-barra">
+      <div style="flex:1">
+        <div class="barra"><div class="barra-fill" id="barra" style="width:0%"></div></div>
+      </div>
+      <span id="contador" class="pn-cuenta"></span>
+    </div>
+    <p id="faltantes" style="color:var(--mid);font-size:.87rem;line-height:1.6;margin:12px 0 0"></p>
+  </section>
+
+  <!-- ── Los archivos ────────────────────────────────────────────────── -->
+  <div id="evidencias"></div>
+
+  <!-- ── Declaración y firma ─────────────────────────────────────────── -->
+  <section class="card" id="cardDeclaracion"></section>
+
+  <!-- ── Confirmación ────────────────────────────────────────────────── -->
+  <section class="card" id="cardConfirmar"></section>
+
+  <div id="cierre"></div>
+
+</main>
+
+<script type="module">
+import './js/shell.js';
+import { esc, ligaSegura, imagenSegura } from './js/seguro.js';
+import { deFechaLocal } from './js/fechas.js';
+import { icono, iconoDe } from './js/iconos.js';
+import { CONFIG } from './js/config.js';
+import { Store } from './js/store.js';
+import { pintarBarraFlujo, estaCompleto } from './js/flow.js';
+import { EVIDENCIAS } from './js/data-portafolio.js';
+import { prepararArchivo, guardarArchivo, quitarArchivo, leerArchivo, leerArchivos, archivoCompleto, mandarAlAlmacen,
+         MULTIPLES, pesoDeArchivos, pesoLegible, esImagen } from './js/archivos.js';
+import { montarFirma, firmaGuardada, sellar } from './js/firma.js';
+import { comprobanteEvidencias } from './js/doc-registro.js';
+import { abrirDocumento } from './js/doc-plan-oficial.js';
+import { candidato, limiteEntrega } from './js/panel.js';
+
+const MODULO = 'evidencias';
+const $ = id => document.getElementById(id);
+
+/* Las que cierran el módulo salen de config.js, no de una lista aparte:
+   agregar una evidencia al flujo no debería obligar a editar esta página. */
+const OBLIGATORIAS = CONFIG.flujo.find(m => m.id === MODULO).docs;
+
+const DECLARACION =
+  'Declaro bajo protesta de decir verdad que las evidencias que entrego ' +
+  '—capturas, video, documentos e identificaciones— son auténticas, ' +
+  'corresponden a una atención real realizada por mí y no fueron alteradas. ' +
+  'Cualquier falsificación o alteración es mi exclusiva responsabilidad, y ' +
+  'libero al Centro Evaluador POSTURALIA de toda responsabilidad derivada de ella.';
+
+$('icoHead').innerHTML = icono(iconoDe(MODULO), 30);
+
+/* Entregada = al menos un archivo que de verdad llega al Centro (o la
+   liga). v47: una ficha sin archivo ya no cuenta como entregada. */
+const entregada = clave => {
+  const a = leerArchivo(MODULO, clave);
+  if (!a) return false;
+  if (a.liga || a.marcado) return true;
+  return leerArchivos(MODULO, clave).some(archivoCompleto);
+};
+
+/* ── Cabecera con los datos de quien entrega ─────────────────────────── */
+function pintarResumen() {
+  const c = candidato();
+  const plan = Store.get('plan', {});
+  /* El Plan guarda la fecha en `fFecha` (el id del campo); aquí se leía
+     `plan.fecha`, que nadie escribe, y la cabecera decía "Por acordar"
+     aunque la fecha ya estuviera acordada y firmada. */
+  const f = plan.fFecha || plan.fecha || Store.get('candidato', {}).fecha;
+  const d = f ? deFechaLocal(f) : null;
+  const cita = !f ? '' : isNaN(d) ? f
+    : d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  $('resumen').innerHTML = `
+    <h2>Tu entrega</h2>
+    <div class="ev-resumen">
+      <div><span>Candidato</span><strong>${c.tiene ? esc(c.nombre) : 'Sin capturar todavía'}</strong></div>
+      <div><span>Estándar</span><strong>${CONFIG.marca.estandar}</strong></div>
+      <div><span>Cita de evaluación</span><strong>${esc(cita) || 'Por acordar en el Plan'}</strong></div>
+    </div>`;
+}
+
+/* ── Cinta de fecha límite ───────────────────────────────────────────── */
+function pintarLimite() {
+  const l = limiteEntrega();
+  if (!l) import('./js/sala-ui.js').then(m => m.montarAviso($('avisoLimite'))).catch(() => {});
+  $('avisoLimite').innerHTML = !l ? '' : `
+    <div class="pn-limite ${l.vencido ? 'pn-limite--vencido' : l.urgente ? 'pn-limite--urge' : ''}">
+      ${icono('calendario', 18)}
+      ${l.vencido
+        ? `La fecha para entregar tu evidencia venció el <strong>${l.texto}</strong>.`
+        : `Tienes hasta el <strong>${l.texto}</strong> · faltan ${l.dias} día${l.dias === 1 ? '' : 's'}`}
+    </div>`;
+}
+
+/* ── Una tarjeta por evidencia ───────────────────────────────────────── */
+function tarjeta(ev) {
+  const a = leerArchivo(MODULO, ev.clave);
+  const ok = entregada(ev.clave);
+  const obligatoria = OBLIGATORIAS.includes(ev.clave);
+
+  /* La liga del video es un caso aparte: no es un archivo que se suba */
+  if (ev.isLink) {
+    return `
+      <div class="ev-card ${ok ? 'lista' : ''}">
+        <span class="ev-ico">${icono(ev.icon, 20)}</span>
+        <div class="ev-cuerpo">
+          <div class="ev-t">${ev.titulo}
+            <span class="ev-req ${obligatoria ? 'req-si' : 'req-no'}">
+              ${obligatoria ? 'OBLIGATORIO' : 'OPCIONAL'}</span></div>
+          <div class="ev-d">${ev.desc}</div>
+          <div class="ev-accion">
+            <input type="url" data-liga="${ev.clave}"
+                   aria-label="Liga de ${esc(ev.titulo).toLowerCase()}"
+                   placeholder="https://…  pega aquí la liga de tu video"
+                   value="${esc(a?.liga || '')}">
+          </div>
+          ${a?.liga ? `<div class="ev-puesto">${icono('cheque', 15)}
+            <b>Liga guardada</b> · <a href="${ligaSegura(a.liga)}" target="_blank" rel="noopener">abrirla</a></div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  /* Lo ya entregado: cada archivo con su vista, su peso y lo que dijo la
+     revisión (v47). Uno que no llegó completo se dice con todas sus letras. */
+  const archivos = leerArchivos(MODULO, ev.clave);
+  const multiple = MULTIPLES.has(ev.clave);
+  let entregado = '';
+  if (archivos.length) {
+    entregado = archivos.map((a, n) => {
+      const vista = a.miniatura
+        ? `<img class="ev-mini" src="${imagenSegura(a.miniatura)}" alt="${esc(a.nombre || 'Evidencia')}">`
+        : `<span class="ev-mini ev-mini--sin">${icono('archivo', 20)}</span>`;
+      const completo = archivoCompleto(a);
+      const notas = (a.revision?.notas || []).filter(t => !/^(PDF de|Foto de)/.test(t));
+      const aviso = !completo
+        ? `<span class="ev-tag ev-tag--ojo">${icono('alerta', 13)} De este archivo solo quedó el nombre: quítalo y vuelve a subirlo.</span>`
+        /* Con la nube encendida, un archivo de más de 900 KB se queda en este
+           navegador: al Centro le llega con el respaldo, no solo. */
+        : a.enAlmacen && !Store.esLocal
+          ? `<span class="ev-tag ev-tag--ojo">${icono('alerta', 13)} Es un archivo grande y se quedó en este equipo: descarga tu respaldo (abajo) y mándaselo a tu evaluador.</span>`
+        : a.revision?.nivel === 'aviso'
+          ? `<span class="ev-tag ev-tag--ojo">${icono('alerta', 13)} ${esc(notas.join(' '))}</span>`
+          : `<span class="ev-tag ev-tag--ok">${icono('cheque', 13)} Revisado${notas.length ? ' · ' + esc(notas.join(' ')) : ''}</span>`;
+      return `
+      <div class="ev-puesto ev-puesto--archivo">
+        ${vista}
+        <div class="ev-meta">
+          <strong>${esc(a.nombre || 'Marcado como entregado')}</strong>
+          <small>${a.bytes ? pesoLegible(a.bytes) : ''}${a.paginas ? ` · PDF de ${a.paginas} página${a.paginas === 1 ? '' : 's'}` : ''}</small>
+          ${aviso}
+        </div>
+        <button class="ev-btn ev-btn--quitar" data-quitar="${ev.clave}" data-indice="${n}">Quitar</button>
+      </div>`;
+    }).join('');
+    if (multiple) entregado += `
+      <div class="ev-accion">
+        <label class="ev-btn">${icono('subir', 15)} Agregar otro archivo
+          <input type="file" class="ev-file" data-sube="${ev.clave}" data-agregar="1" accept="image/*,application/pdf" multiple>
+        </label>
+        <span class="ev-hint" data-estado="${ev.clave}"></span>
+      </div>`;
+  }
+
+  /* Verde es "listo y completo". Un archivo que quedó registrado pero NO
+     llega al Centro no está listo. */
+  const aMedias = archivos.length > 0 && !ok;
+
+  return `
+    <div class="ev-card ${aMedias ? 'a-medias' : ok ? 'lista' : ''}">
+      <span class="ev-ico">${icono(ev.icon, 20)}</span>
+      <div class="ev-cuerpo">
+        <div class="ev-t">${ev.titulo}
+          <span class="ev-req ${obligatoria ? 'req-si' : 'req-no'}">
+            ${obligatoria ? 'OBLIGATORIO' : 'OPCIONAL'}</span></div>
+        <div class="ev-d">${ev.desc}</div>
+        ${entregado || `
+          <div class="ev-accion">
+            <label class="ev-btn">
+              ${icono('subir', 15)} Elegir archivo
+              <input type="file" class="ev-file" data-sube="${ev.clave}"
+                     accept="${ev.clave === 'fotoDiploma' ? 'image/jpeg,image/png,image/webp' : 'image/*,application/pdf'}"${multiple ? ' multiple' : ''}>
+            </label>
+            <span class="ev-hint" data-estado="${ev.clave}"></span>
+          </div>`}
+      </div>
+    </div>`;
+}
+
+function pintarEvidencias() {
+  $('evidencias').innerHTML = EVIDENCIAS.map(tarjeta).join('');
+}
+
+/* ── Declaración de autenticidad y firma ─────────────────────────────── */
+function pintarDeclaracion() {
+  const g = Store.get(MODULO);
+  /* La casilla se pinta desde lo que el candidato marcó, NO desde si el sello
+     quedó guardado. Antes se pintaba desde el sello, y como el sello necesita
+     firma, marcar la casilla sin haber firmado la hacía saltar sola a
+     desmarcada, sin una palabra de por qué. Quien lo viera concluiría que la
+     plataforma está rota. */
+  const marcada = g.declaracionMarcada === true;
+  const f = firmaGuardada();
+  const aceptada = !!g.declaracion;
+
+  $('cardDeclaracion').innerHTML = `
+    <h2>Declaración de autenticidad</h2>
+    <p class="pn-nota" style="margin-top:0">
+      El expediente CONOCER la lleva. Sin ella, tu evaluador no puede integrar
+      las evidencias aunque estén todas.
+    </p>
+
+    <label class="ev-check">
+      <input type="checkbox" id="chkDecl" ${marcada ? 'checked' : ''}>
+      <span>${DECLARACION}</span>
+    </label>
+
+    ${marcada && !f ? `
+      <p class="ev-pendiente">${icono('alerta', 15)}
+         Tu declaración queda pendiente hasta que pongas tu firma, aquí abajo.</p>` : ''}
+
+    <h3 style="margin:22px 0 4px;font-size:.95rem">Tu firma</h3>
+    <div id="firma"></div>
+
+    ${f && aceptada && g.declaracion?.fecha ? `
+      <p class="ev-sellada">${icono('cheque', 15)}
+         Firmada el ${new Date(g.declaracion.fecha).toLocaleDateString('es-MX',
+           { day: 'numeric', month: 'long', year: 'numeric' })}</p>` : ''}`;
+
+  montarFirma($('firma'), {
+    nombreSugerido: candidato().nombre,
+    onCambio: () => { sellarSiProcede(); pintarTodo(); },
+  });
+
+  $('chkDecl').addEventListener('change', e => {
+    if (Store.soloLectura) { e.target.checked = marcada; return; }
+    const quiere = e.target.checked;
+    Store.merge(MODULO, { declaracionMarcada: quiere });
+    if (quiere) sellarSiProcede();
+    else Store.merge(MODULO, { declaracion: null });
+    pintarTodo();
+  });
+}
+
+/* Solo se sella cuando están las dos cosas: la casilla y la firma. Guardar
+   una declaración sin firma dejaría en el expediente un consentimiento que
+   nadie respalda. */
+function sellarSiProcede() {
+  /* Se lee del expediente y no del DOM: esta función corre también desde
+     onCambio de la firma, cuando la tarjeta acaba de repintarse y la casilla
+     que hay en pantalla ya no es la que el candidato tocó. */
+  if (Store.get(MODULO).declaracionMarcada !== true) return;
+  if (!firmaGuardada()) return;
+  const sello = sellar(DECLARACION);
+  if (sello) Store.merge(MODULO, { declaracion: sello });
+}
+
+/* ── Qué falta para poder confirmar ──────────────────────────────────── */
+function pendientes() {
+  const faltan = [];
+  EVIDENCIAS.filter(e => OBLIGATORIAS.includes(e.clave))
+    .forEach(e => { if (!entregada(e.clave)) faltan.push(`subir ${e.titulo.toLowerCase()}`); });
+  if (Store.get(MODULO).declaracionMarcada !== true)
+    faltan.push('aceptar la declaración de autenticidad');
+  if (!firmaGuardada()) faltan.push('poner tu firma');
+  return faltan;
+}
+
+function pintarConfirmar() {
+  const faltan = pendientes();
+  const listo = faltan.length === 0;
+
+  $('cardConfirmar').innerHTML = listo
+    ? `<h2>Todo listo</h2>
+       <p class="pn-nota" style="margin-top:0">
+         Tus ${OBLIGATORIAS.length} evidencias obligatorias están puestas, con tu
+         declaración y tu firma. Descarga el respaldo y mándaselo a tu Centro
+         Evaluador: ahí van los archivos que sí cupieron.
+       </p>
+       <div class="acciones" style="justify-content:flex-start;margin-top:0">
+         <button class="btn-plat btn-plat--primario" id="btnRespaldoEv">
+           Descargar mi respaldo</button>
+         <button class="btn-plat btn-plat--secundario" id="btnComprobanteEv">
+           Comprobante de entrega</button>
+         <a class="btn-plat btn-plat--secundario"
+            href="https://wa.me/${CONFIG.marca.whatsapp}" target="_blank" rel="noopener">
+           Avisar por WhatsApp</a>
+       </div>
+       <p class="ev-peso" id="peso"></p>`
+    : `<h2>Falta poco</h2>
+       <p class="pn-nota" style="margin-top:0">
+         Para cerrar tus Evidencias te falta:
+       </p>
+       <ul class="ev-faltan">${faltan.map(f => `<li>${icono('flecha', 14)} ${f}</li>`).join('')}</ul>`;
+
+  if (listo) {
+    const p = pesoDeArchivos(MODULO);
+    $('peso').textContent = p
+      ? `Tu respaldo lleva ${pesoLegible(p)} en archivos.`
+      : 'Ninguno de tus archivos cupo en el respaldo: mándalos aparte.';
+    $('btnRespaldoEv').onclick = () => Store.descargarRespaldo();
+    /* Aviso interno de qué entregó y cuándo (como Paideia); no va al portafolio */
+    $('btnComprobanteEv').onclick = () => abrirDocumento(comprobanteEvidencias({
+      cand: candidato(), firma: firmaGuardada(), declaracion: Store.get(MODULO).declaracion || null,
+      evidencias: EVIDENCIAS.map(e => { const a = leerArchivo(MODULO, e.clave);
+        return { titulo: e.titulo, requerido: OBLIGATORIAS.includes(e.clave), entregada: entregada(e.clave), fecha: a?.fecha || a?.subido || '' }; }),
+    }));
+  }
+}
+
+/* ── Avance ──────────────────────────────────────────────────────────── */
+function pintarAvance() {
+  const hechas = OBLIGATORIAS.filter(entregada).length;
+  const total = OBLIGATORIAS.length;
+  $('barra').style.width = Math.round((hechas / total) * 100) + '%';
+  $('contador').textContent = `${hechas} / ${total}`;
+
+  const faltan = EVIDENCIAS.filter(e => OBLIGATORIAS.includes(e.clave) && !entregada(e.clave));
+  $('faltantes').innerHTML = faltan.length
+    ? `Te falta entregar: <strong>${faltan.map(e => e.titulo).join(', ')}</strong>.`
+    : `<span style="color:var(--spoke-deep);font-weight:600">
+         Ya tienes las ${total} evidencias obligatorias.</span>`;
+
+  $('cierre').innerHTML = estaCompleto(MODULO)
+    ? `<div class="card">
+         <h2>Evidencias completas</h2>
+         <p style="color:var(--mid);font-size:.93rem;line-height:1.7">
+           Tu evaluador ya tiene lo que necesita. El último paso, <strong>Entrega</strong>,
+           lo marca el Centro Evaluador cuando emita tu resultado — no depende de ti.
+         </p>
+         <a class="btn-plat btn-plat--primario" href="index.html">Volver a mi panel</a>
+       </div>`
+    : '';
+
+  pintarBarraFlujo($('pasos'), MODULO);
+}
+
+function pintarTodo() {
+  pintarLimite();
+  pintarResumen();
+  pintarEvidencias();
+  pintarAvance();
+  pintarDeclaracion();
+  pintarConfirmar();
+}
+
+/* ── Subir un archivo ────────────────────────────────────────────────── */
+$('evidencias').addEventListener('change', async e => {
+  const input = e.target.closest('[data-sube]');
+  if (!input || !input.files?.length) return;
+
+  const clave = input.dataset.sube;
+  const hint = document.querySelector(`[data-estado="${clave}"]`);
+  const curp = String(Store.get('candidato', {}).curp || '').toUpperCase();
+  const rechazos = [];
+  let agregar = !!input.dataset.agregar;
+  /* Varios archivos a la vez (INE frente y reverso, varias capturas): se
+     revisan uno por uno y se suman. Uno rechazado no tumba a los demás. */
+  for (const f of [...input.files]) {
+    if (hint) hint.textContent = `Revisando ${f.name}…`;
+    const registro = await prepararArchivo(f, { modulo: MODULO, clave, curp });
+    if (registro.rechazo) { rechazos.push(`${f.name}: ${registro.rechazo}`); continue; }
+    let res = guardarArchivo(MODULO, clave, registro, { agregar: agregar && MULTIPLES.has(clave) });
+    /* Navegador lleno: el archivo se va a IndexedDB y se reintenta con la
+       pura ficha, en vez de quedarse sin entregar. */
+    if (!res.ok && res.motivo === 'sin-espacio') {
+      const ligero = await mandarAlAlmacen(registro, { modulo: MODULO, clave });
+      if (ligero) res = guardarArchivo(MODULO, clave, ligero, { agregar: agregar && MULTIPLES.has(clave) });
+    }
+    if (!res.ok) {
+      rechazos.push(res.motivo === 'solo-lectura'
+        ? 'Estás viendo un expediente ajeno: no se puede subir nada.'
+        : `${f.name}: no hubo espacio en este navegador. Descarga tu respaldo, libera espacio (o usa otro navegador) y vuelve a subirlo.`);
+      continue;
+    }
+    agregar = true;
+  }
+  pintarTodo();
+  if (rechazos.length) {
+    const h = document.querySelector(`[data-estado="${clave}"]`) || $('evidencias');
+    const div = document.createElement('div');
+    div.className = 'ev-rechazo';
+    div.setAttribute('role', 'alert');
+    div.innerHTML = rechazos.map(r => `<p>${icono('alerta', 14)} ${esc(r)}</p>`).join('');
+    (h.closest('.ev-card') || h).appendChild(div);
+  }
+});
+
+$('evidencias').addEventListener('click', e => {
+  const q = e.target.closest('[data-quitar]');
+  if (!q) return;
+  quitarArchivo(MODULO, q.dataset.quitar, q.dataset.indice != null ? +q.dataset.indice : null);
+  pintarTodo();
+});
+
+$('evidencias').addEventListener('input', e => {
+  const liga = e.target.closest('[data-liga]');
+  if (!liga) return;
+  const v = liga.value.trim();
+  if (v) guardarArchivo(MODULO, liga.dataset.liga, { liga: v, fecha: new Date().toISOString() });
+  else quitarArchivo(MODULO, liga.dataset.liga);
+  pintarAvance();
+  pintarConfirmar();
+});
+
+pintarTodo();
+</script>
+</body>
+</html>

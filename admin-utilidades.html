@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Utilidades — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<link rel="stylesheet" href="admin-styles.css">
+<style>
+  .socio-fila { display:flex; gap:12px; align-items:center; padding:13px 0; border-bottom:1px solid var(--border) }
+  .socio-fila:last-of-type { border-bottom:none }
+  .socio-nom { flex:1; font-weight:600; color:var(--dark); font-size:.93rem; min-width:110px }
+  .socio-pct { display:flex; align-items:center; gap:5px }
+  .socio-pct input { font:inherit; font-size:.87rem; width:66px; padding:6px 8px;
+                     border:1px solid var(--border); border-radius:6px; text-align:right }
+  .socio-monto { flex:0 0 110px; text-align:right; font-variant-numeric:tabular-nums; font-size:.9rem }
+  .socio-monto small { display:block; color:var(--muted); font-size:.74rem }
+
+  .alta { display:flex; gap:9px; flex-wrap:wrap; align-items:center; margin-top:16px;
+          padding-top:16px; border-top:2px solid var(--border) }
+  .alta input[type=text] { flex:1; min-width:170px; font:inherit; font-size:.88rem }
+  .alta input[type=number] { width:86px; font:inherit; font-size:.88rem }
+  /* "33.33" no cabía: se leía "33.3:" y parecía un dato corrupto. Las
+     flechas del campo numérico se comen parte del ancho. */
+  input[data-pct] { width: 5.6em; min-width: 5.6em; text-align: right }
+
+  .suma { padding:12px 14px; border-radius:8px; margin-top:16px; font-size:.88rem; line-height:1.6 }
+  .suma--ok   { background:#ECFDF5; color:#065F46; border-left:4px solid #059669 }
+  .suma--bajo { background:#FFFBEB; color:#78350F; border-left:4px solid #D97706 }
+  .suma--alto { background:#FEF2F2; color:#7F1D1D; border-left:4px solid #DC2626 }
+
+  .lote-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px; align-items:center }
+  .lote-tab { padding:8px 16px; border-radius:7px; border:1px solid var(--border);
+              background:var(--white); cursor:pointer; font-size:.86rem; font-weight:600; color:var(--mid) }
+  .lote-tab.activo { background:#0d2a6e; border-color:#0d2a6e; color:#fff }
+  .lote-tab small { font-weight:500; opacity:.75 }
+
+  .notas { width:100%; font:inherit; font-size:.88rem; padding:10px 12px; min-height:62px;
+           border:1px solid var(--border); border-radius:8px; resize:vertical; margin-top:6px }
+
+  .pago-fila { display:flex; gap:10px; align-items:baseline; padding:10px 0;
+               border-bottom:1px solid var(--border); font-size:.87rem }
+  .pago-fila:last-child { border-bottom:none }
+  .pago-fila b { flex:1; color:var(--dark) }
+  .pago-fila time { color:var(--muted); font-size:.8rem }
+  .pago-fila i { color:var(--muted); font-style:normal; font-size:.8rem; flex:0 0 100% ; padding-left:2px }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="ad-top">
+  <div class="ad-top-in">
+    <div>
+      <h1 class="ad-titulo">Utilidades</h1>
+      <div class="ad-sub">Reparto de lo cobrado entre los socios, lote por lote</div>
+    </div>
+  </div>
+</header>
+
+<main class="ad-wrap">
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="card">
+    <h2>Lote</h2>
+    <p style="color:var(--mid);font-size:.89rem;line-height:1.7;margin-bottom:14px">
+      Cada lote lleva su propio reparto. Si en uno entra un socio que en el otro no,
+      los porcentajes cambian — y el lote viejo conserva los suyos, para que lo ya
+      cobrado no se recalcule solo.
+    </p>
+    <div class="lote-tabs" id="lotes"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="tSocios">Socios y reparto</h2>
+    <p style="color:var(--muted);font-size:.84rem;margin-bottom:16px">
+      El reparto se aplica sobre <strong>lo efectivamente cobrado</strong>, no sobre lo
+      proyectado. Los porcentajes no tienen que sumar 100: si repartes menos, lo que
+      sobra queda señalado abajo en vez de desaparecer.
+    </p>
+
+    <div id="socios"></div>
+
+    <div class="alta">
+      <input type="text" id="nuevoNombre" placeholder="Nombre del socio" aria-label="Nombre del socio nuevo">
+      <input type="number" id="nuevoPct" placeholder="%" min="0" max="100" step="0.01" aria-label="Porcentaje de utilidades para el socio nuevo">
+      <button class="btn-a btn-a--pri" id="btnAgregar">+ Agregar socio</button>
+      <button class="btn-a btn-a--sec" id="btnCopiar" hidden>Copiar del lote anterior</button>
+    </div>
+
+    <div id="suma"></div>
+
+    <label style="display:block;margin-top:18px;font-size:.85rem;color:var(--mid);font-weight:600">
+      Notas de este lote
+      <textarea class="notas" id="notas" placeholder="Por ejemplo: por qué cambió el reparto respecto al lote anterior."></textarea>
+    </label>
+  </div>
+
+  <div class="card">
+    <h2 id="tCostos">Costos</h2>
+    <p style="color:var(--muted);font-size:.84rem;margin-bottom:12px">
+      Se descuentan <strong>antes</strong> de repartir. "Por candidato" se multiplica por quienes
+      pagaron la fase elegida (o por los activos del lote si no eliges fase); "Fijo" se cobra una
+      vez. "Aplica a todos los lotes" sirve para costos como el certificado del Centro Evaluador.
+    </p>
+    <div id="costos"></div>
+    <div class="alta" style="flex-wrap:wrap">
+      <input type="text" id="gConcepto" placeholder="Concepto (ej. Certificado Centro Evaluador)" aria-label="Concepto del costo" style="flex:2 1 220px">
+      <select id="gTipo" aria-label="Tipo de costo"><option value="por_certificado">Por candidato</option><option value="fijo">Fijo</option></select>
+      <select id="gFase" aria-label="Fase"><option value="">Sin fase (activos)</option></select>
+      <select id="gPara" aria-label="Para"><option value="real">Costo real</option></select>
+      <select id="gLote" aria-label="Lote"><option value="este">Solo este lote</option><option value="">Todos los lotes</option></select>
+      <input type="number" id="gMonto" placeholder="Monto" min="0" step="1" aria-label="Monto" style="max-width:120px">
+      <button class="btn-a btn-a--pri" id="btnGasto">+ Agregar costo</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 id="tDetalle">Detalle del reparto</h2>
+    <div id="detalleLote"></div>
+  </div>
+
+  <div class="card">
+    <h2>Pagos registrados</h2>
+    <div id="pagos"></div>
+  </div>
+
+</main>
+
+<script type="module">
+import './js/admin-shell.js';
+import { esc } from './js/seguro.js';
+import { cargar, actualizar, agregarSocio, quitarSocio, fijarPorcentaje, fijarNotas,
+         copiarReparto, crearLote, repartoDe, utilidades, utilidadesGlobal,
+         lotes, pesos, agregarGasto, quitarGasto, editarGasto, porFaseLote, candidatos, contables, fijarExterno, FASES, FASE_LABEL } from './js/admin-data.js';
+
+const $ = id => document.getElementById(id);
+
+/* Se recuerda el lote elegido: casi siempre se trabaja sobre el mismo varias
+   veces seguidas, y volver al primero en cada recarga obliga a re-elegirlo. */
+const RECUERDO = 'posturalia.utilidades.lote';
+let loteActivo = Number(localStorage.getItem(RECUERDO)) || null;
+
+const fecha = iso => {
+  const d = new Date(iso);
+  return Number.isNaN(+d) ? '' : d.toLocaleDateString('es-MX',
+    { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+/* ?lote=N: las alertas del panel llegan al lote que tienen que revisar */
+{ const l = Number(new URLSearchParams(location.search).get('lote')); if (l) loteActivo = l; }
+let pagando = null;   // socio con el formulario de pago abierto
+const llavePago = p => [p.lote, p.socio, p.fecha, p.monto].join('|');
+const hoyLocal = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+
+function pintar() {
+  const datos = cargar();
+  const ls = lotes(datos);
+  if (loteActivo == null || !ls.includes(loteActivo)) loteActivo = ls[0];
+  try { localStorage.setItem(RECUERDO, String(loteActivo)); } catch {}
+
+  const g = utilidadesGlobal(datos);
+  const u = utilidades(datos, loteActivo);
+
+  $('kpis').innerHTML = `
+    <div class="kpi kpi--dinero"><b>${pesos(g.ingresos)}</b><span>cobrado en total</span></div>
+    <div class="kpi"><b>${pesos(g.costos)}</b><span>costos</span></div>
+    <div class="kpi"><b>${pesos(g.aRepartir)}</b><span>a repartir</span></div>
+    <div class="kpi kpi--ok"><b>${pesos(g.pagado)}</b><span>ya pagado a socios</span></div>
+    <div class="kpi ${g.pendiente ? 'kpi--warn' : ''}"><b>${pesos(g.pendiente)}</b><span>pendiente de pagar</span></div>
+    ${g.pagadoDeMas ? `<div class="kpi kpi--peligro"><b>${pesos(g.pagadoDeMas)}</b>
+      <span>pagado de más a socios</span></div>` : ''}`;
+
+  $('lotes').innerHTML = ls.map(l => {
+    const r = repartoDe(datos, l);
+    return `<button class="lote-tab ${l === loteActivo ? 'activo' : ''}" data-lote="${l}">
+      Lote ${l} <small>(${r.socios.length})</small></button>`;
+  }).join('') + `<button class="lote-tab" id="btnNuevoLote">+ Nuevo lote</button>`;
+
+  $('tSocios').textContent  = `Socios y reparto — Lote ${loteActivo}`;
+  $('tDetalle').textContent = `Detalle del reparto — Lote ${loteActivo}`;
+  $('notas').value = u.notas;
+
+  /* Copiar del lote anterior solo tiene sentido si este está vacío y hay
+     otro con socios: casi siempre el nuevo arranca igual y cambia uno. */
+  const anterior = ls.filter(l => l < loteActivo).pop();
+  const puedeCopiar = !u.socios.length && anterior != null
+                      && repartoDe(datos, anterior).socios.length;
+  $('btnCopiar').hidden = !puedeCopiar;
+  if (puedeCopiar) $('btnCopiar').textContent = `Copiar reparto del Lote ${anterior}`;
+
+  $('socios').innerHTML = u.socios.length
+    ? u.socios.map(s => `<div class="socio-fila">
+          <span class="socio-nom">${esc(s.label)}</span>
+          <span class="socio-pct">
+            <input type="number" min="0" max="100" step="0.01" value="${s.pct}" data-pct="${s.id}">
+            <span style="color:var(--muted)">%</span>
+          </span>
+          <span class="socio-monto">${pesos(s.aRepartir)}<small>${s.externo ? 'externo: % de lo cobrado menos sus costos' : u.costos ? 'sobre lo cobrado menos costos' : 'sobre lo cobrado'}</small></span>
+          <label style="font-size:.76rem;color:var(--muted);display:flex;gap:4px;align-items:center" title="Socio externo: su % se calcula sobre lo cobrado menos SUS costos, y el resto se reparte entre los demás">
+            <input type="checkbox" data-externo="${s.id}" ${s.externo ? 'checked' : ''}> Externo</label>
+          <button class="btn-a btn-a--peligro" data-quitar="${s.id}" title="Quitar socio">Quitar</button>
+        </div>`).join('')
+    : `<p class="vacio" style="padding:24px 0">
+         Este lote todavía no tiene socios. Agrega el primero abajo.</p>`;
+
+  const suma = u.sumaPct;
+  const cls = !u.socios.length ? 'suma--bajo'
+            : suma > 100 ? 'suma--alto'
+            : Math.round(suma) === 100 ? 'suma--ok' : 'suma--bajo';
+  const txt = !u.socios.length ? 'Sin socios dados de alta en este lote.'
+    : suma > 100
+      ? `Los porcentajes suman <strong>${suma.toFixed(2)}%</strong> — más del 100%. Estarías
+         repartiendo ${pesos(Math.round(u.ingresos * (suma - 100) / 100))} que no existen.`
+    /* Dos cosas que antes se decían igual. Este aviso habla del PLAN —cómo
+       se reparte lo cobrado—, no de los pagos: esos van en el detalle de
+       abajo. Decir "todo queda repartido" a secas se leía como "todo está
+       pagado y cuadra", justo encima de un aviso rojo de que se repartió de
+       más. Y al 99.99% tampoco era cierto: queda un peso. */
+    : Math.round(suma) === 100
+      ? `El reparto suma <strong>${suma.toFixed(2)}%</strong>: el plan asigna todo lo cobrado` +
+        (u.sinRepartir ? ` (queda ${pesos(u.sinRepartir)} por redondeo).` : '.') +
+        ` Lo que ya se pagó está en el detalle de abajo.`
+      : `Los porcentajes suman <strong>${suma.toFixed(2)}%</strong>. Quedan
+         <strong>${pesos(u.sinRepartir)}</strong> sin asignar (${(100 - suma).toFixed(2)}%).`;
+  $('suma').innerHTML = `<div class="suma ${cls}">${txt}</div>`;
+
+  /* Si el lote repartió más de lo que cobró, va arriba y en rojo: es lo
+     primero que tienen que ver los socios, no una cifra más en la tabla. */
+  const avisoExceso = u.excedido
+    ? `<div class="aviso-dinero aviso-dinero--mal">
+         <strong>En este lote se repartieron ${pesos(u.excedido)} más de lo que entró.</strong>
+         Entraron ${pesos(u.ingresos)} y se pagaron ${pesos(u.pagado)} a socios.
+         Si fue un adelanto o un reembolso de gastos, anótalo en las notas del lote
+         para que los tres lo tengan a la vista.
+       </div>`
+    : u.pagadoDeMas
+      ? `<div class="aviso-dinero">
+           A ${u.socios.filter(x => x.pagadoDeMas).map(x => x.label).join(' y ')} se le
+           pagaron ${pesos(u.pagadoDeMas)} por encima de su parte. Anótalo en las notas
+           del lote si fue un adelanto o un reembolso.
+         </div>`
+      : '';
+
+  const avisoPct = u.sobreasignado
+    ? `<div class="aviso-dinero aviso-dinero--mal">
+         Los porcentajes suman <strong>${u.sumaPct.toFixed(2)}%</strong>: se estaría
+         repartiendo dinero que no existe. Ajusta el reparto a 100%.
+       </div>` : '';
+
+  /* ── Costos del lote ── */
+  $('tCostos').textContent = `Costos — Lote ${loteActivo}`;
+  const nomPara = p => p === 'real' ? 'Costo real' : `Base de ${u.socios.find(x => x.id === p)?.label || p}`;
+  $('costos').innerHTML = u.gastos.items.length ? `<table class="tbl">
+    <thead><tr><th>Concepto</th><th>Tipo</th><th>Para</th><th class="num">Monto</th><th class="num">Cantidad</th><th class="num">Total</th><th></th></tr></thead>
+    <tbody>${u.gastos.items.map(g => `<tr>
+      <td>${esc(g.concepto)}${g.lote == null ? ' <small style="color:var(--muted)">(todos los lotes)</small>' : ''}</td>
+      <td>${g.tipo === 'fijo' ? 'Fijo' : `Por candidato${g.fase ? ' · ' + FASE_LABEL[g.fase] : ' · activos'}`}</td>
+      <td>${esc(nomPara(g.para))}</td>
+      <td class="num"><input type="text" inputmode="decimal" data-editar-gasto="${g.id}" value="${g.monto}" style="width:90px;text-align:right" aria-label="Monto de ${esc(g.concepto)}"></td><td class="num">${g.cantidad}</td><td class="num">${pesos(g.total)}</td>
+      <td class="num"><button class="btn-a btn-a--peligro" data-gasto="${g.id}">Eliminar</button></td></tr>`).join('')}
+    <tr style="border-top:2px solid var(--border);font-weight:700"><td colspan="5">Costos reales del lote</td><td class="num">${pesos(u.costos)}</td><td></td></tr>
+    </tbody></table>` : '<p class="vacio">Sin costos en este lote: se reparte todo lo cobrado.</p>';
+  $('gFase').innerHTML = '<option value="">Sin fase (activos)</option>' + FASES.map(f => `<option value="${f}">${FASE_LABEL[f]}</option>`).join('');
+  $('gPara').innerHTML = '<option value="real">Costo real</option>' +
+    u.socios.filter(x => x.externo).map(x => `<option value="${x.id}">Base de ${esc(x.label)}</option>`).join('');
+
+  $('detalleLote').innerHTML = `
+    ${avisoExceso}${avisoPct}
+    <div class="kpis" style="margin-bottom:14px">
+      <div class="kpi kpi--dinero"><b>${pesos(u.ingresos)}</b><span>cobrado en el Lote ${loteActivo}</span></div>
+      <div class="kpi"><b>${pesos(u.costos)}</b><span>costos reales</span></div>
+      <div class="kpi ${u.neto < 0 ? 'kpi--peligro' : 'kpi--ok'}"><b>${pesos(u.neto)}</b><span>utilidad neta</span></div>
+      <div class="kpi"><b>${pesos(u.aRepartir)}</b><span>a repartir</span></div>
+    </div>
+    <table class="tbl" style="margin-bottom:16px" id="porFase">
+      <caption style="text-align:left;font-weight:700;padding:0 0 6px">Por fase — Lote ${loteActivo}</caption>
+      <thead><tr><th>Fase</th><th class="num">Pagaron</th><th class="num">Entró</th><th class="num">Saldo por cobrar</th><th class="num">Costo real</th><th class="num">Costo socio externo</th></tr></thead>
+      <tbody>${porFaseLote(datos, loteActivo).map(r => `<tr><td>${esc(r.label)}</td><td class="num">${r.pagaron}</td><td class="num">${pesos(r.ingresos)}</td>
+        <td class="num">${r.saldo ? pesos(r.saldo) : '—'}</td><td class="num">${r.costoReal ? pesos(r.costoReal) : '—'}</td><td class="num">${r.costoExterno ? pesos(r.costoExterno) : '—'}</td></tr>`).join('')}</tbody></table>
+    <details style="margin-bottom:16px"><summary style="cursor:pointer;font-weight:700">Corte a hoy por candidato — Lote ${loteActivo}</summary>
+      ${(() => { const cs = contables(candidatos(datos)).filter(c => c.lote === loteActivo);
+        return cs.length ? `<div style="overflow-x:auto"><table class="tbl" id="corte"><thead><tr><th>Candidato</th><th>Estado</th>${FASES.map(f => `<th class="num">${FASE_LABEL[f]}</th>`).join('')}<th class="num">Recibido</th><th class="num">Saldo</th></tr></thead>
+        <tbody>${cs.map(c => `<tr><td>${esc(c.nombre)}</td><td>${esc(c.estadoComercial)}</td>${FASES.map(f => `<td class="num">${c.fases[f] ? pesos(c.cobradoPorFase[f]) : '—'}</td>`).join('')}
+          <td class="num"><b>${pesos(c.cobrado)}</b></td><td class="num">${c.estadoComercial === 'activo' && c.porCobrar ? pesos(c.porCobrar) : '—'}</td></tr>`).join('')}
+        <tr style="border-top:2px solid var(--border);font-weight:700"><td colspan="2">Total</td>${FASES.map(f => `<td class="num">${pesos(cs.reduce((a, c) => a + (c.cobradoPorFase[f] || 0), 0))}</td>`).join('')}
+          <td class="num">${pesos(cs.reduce((a, c) => a + c.cobrado, 0))}</td><td class="num">${pesos(cs.filter(c => c.estadoComercial === 'activo').reduce((a, c) => a + c.porCobrar, 0))}</td></tr></tbody></table></div>`
+        : '<p class="vacio">Sin candidatos en este lote.</p>'; })()}
+    </details>
+    ${u.socios.length ? `<table class="tbl">
+      <thead><tr><th>Socio</th><th class="num">%</th><th class="num">Le toca</th>
+      <th class="num">Pagado</th><th class="num">Saldo</th><th></th></tr></thead>
+      <tbody>${u.socios.map(s => `<tr>
+        <td>${esc(s.label)}</td>
+        <td class="num">${s.pct}%</td>
+        <td class="num">${pesos(s.aRepartir)}</td>
+        <td class="num" style="color:var(--spoke-deep)">${pesos(s.pagado)}</td>
+        <td class="num ${s.pagadoDeMas ? 'saldo-mas' : s.pendiente ? 'saldo-falta' : 'saldo-cero'}">
+          ${s.pagadoDeMas ? `−${pesos(s.pagadoDeMas)}<small>de más</small>`
+            : s.pendiente ? `${pesos(s.pendiente)}<small>por pagar</small>`
+            : pesos(0)}</td>
+        <td class="num">${s.pendiente
+          ? `<button class="btn-a btn-a--sec" data-pagar="${s.id}">Registrar pago</button>` : '—'}</td>
+      </tr>${pagando === s.id ? `<tr class="pago-form"><td colspan="6">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding:8px 0">
+          <label style="font-size:.8rem">Monto a ${esc(s.label)}<br><input id="pgMonto" type="text" inputmode="decimal" value="${s.pendiente}" style="width:120px"></label>
+          <label style="font-size:.8rem">Fecha del pago<br><input id="pgFecha" type="date" value="${hoyLocal()}" max="${hoyLocal()}"></label>
+          <label style="font-size:.8rem;flex:1 1 200px">Nota (opcional)<br><input id="pgNota" type="text" placeholder="Referencia, banco…" style="width:100%"></label>
+          <button class="btn-a btn-a--pri" id="pgGuardar" data-socio="${s.id}">Guardar pago</button>
+          <button class="btn-a btn-a--sec" id="pgCancelar">Cancelar</button>
+        </div><p id="pgMsg" style="color:#B91C1C;font-size:.82rem;margin:0" hidden></p></td></tr>` : ''}`).join('')}
+      <tr style="border-top:2px solid var(--border);font-weight:700">
+        <td>Total</td><td class="num">${u.sumaPct.toFixed(2)}%</td>
+        <td class="num">${pesos(u.aRepartir)}</td>
+        <td class="num">${pesos(u.pagado)}</td>
+        <td class="num">${u.pagadoDeMas
+            ? `${pesos(u.pendiente)} por pagar<br><span class="saldo-mas">−${pesos(u.pagadoDeMas)} de más</span>`
+            : pesos(u.pendiente)}</td><td></td>
+      </tr></tbody></table>`
+    : '<p class="vacio">Agrega socios para repartir este lote.</p>'}`;
+
+  $('pagos').innerHTML = u.pagos.length
+    ? [...u.pagos].reverse().map(p => {
+        const s = u.socios.find(x => x.id === p.socio);
+        return `<div class="pago-fila">
+          <b>${esc(s ? s.label : p.socio)}</b>
+          <span style="font-variant-numeric:tabular-nums">${pesos(p.monto)}</span>
+          <time>${fecha(p.fecha)}</time>
+          ${p.nota ? `<i>${esc(p.nota)}</i>` : ''}
+          <button class="btn-a btn-a--peligro" data-borrar-pago="${esc(llavePago(p))}" style="margin-left:auto" title="Eliminar este pago mal capturado">Eliminar</button>
+        </div>`;
+      }).join('')
+    : `<p class="vacio">Todavía no hay pagos registrados en el Lote ${loteActivo}.</p>`;
+}
+
+/* ── Interacción ──────────────────────────────────────────────────────── */
+$('btnAgregar').onclick = () => {
+  const nombre = $('nuevoNombre').value.trim();
+  if (!nombre) { $('nuevoNombre').focus(); return; }
+  agregarSocio(loteActivo, nombre, $('nuevoPct').value);
+  $('nuevoNombre').value = ''; $('nuevoPct').value = '';
+  pintar();
+};
+$('nuevoNombre').addEventListener('keypress', e => { if (e.key === 'Enter') $('btnAgregar').click(); });
+$('nuevoPct').addEventListener('keypress', e => { if (e.key === 'Enter') $('btnAgregar').click(); });
+
+$('btnCopiar').onclick = () => {
+  const anterior = lotes(cargar()).filter(l => l < loteActivo).pop();
+  if (anterior != null) { copiarReparto(anterior, loteActivo); pintar(); }
+};
+
+$('notas').addEventListener('change', e => fijarNotas(loteActivo, e.target.value));
+
+$('socios').addEventListener('input', e => {
+  const pct = e.target.closest('[data-pct]');
+  if (!pct) return;
+  const pos = pct.selectionStart;
+  fijarPorcentaje(loteActivo, pct.dataset.pct, pct.value);
+  pintar();
+  const otra = document.querySelector(`[data-pct="${pct.dataset.pct}"]`);
+  if (otra) { otra.focus(); try { otra.setSelectionRange(pos, pos); } catch {} }
+});
+
+$('socios').addEventListener('change', e => {
+  const x = e.target.closest('[data-externo]');
+  if (!x) return;
+  fijarExterno(loteActivo, x.dataset.externo, x.checked); pintar();
+});
+
+$('btnGasto').onclick = () => {
+  const monto = $('gMonto').value;
+  if (!(Number(monto) > 0)) { $('gMonto').focus(); return; }
+  agregarGasto({ concepto: $('gConcepto').value, tipo: $('gTipo').value,
+    fase: $('gTipo').value === 'fijo' ? null : $('gFase').value || null, para: $('gPara').value,
+    lote: $('gLote').value === 'este' ? loteActivo : null, monto });
+  $('gConcepto').value = ''; $('gMonto').value = '';
+  pintar();
+};
+$('costos').addEventListener('change', e => {
+  const i = e.target.closest('[data-editar-gasto]');
+  if (i) { editarGasto(i.dataset.editarGasto, { monto: i.value }); setTimeout(pintar); }   /* fuera del evento (ver admin-precios) */
+});
+$('costos').addEventListener('click', e => {
+  const b = e.target.closest('[data-gasto]');
+  if (!b || !confirm('¿Eliminar este costo? El reparto del lote se recalcula.')) return;
+  quitarGasto(b.dataset.gasto); pintar();
+});
+
+$('socios').addEventListener('click', e => {
+  const q = e.target.closest('[data-quitar]');
+  if (!q) return;
+  const s = repartoDe(cargar(), loteActivo).socios.find(x => x.id === q.dataset.quitar);
+  if (!confirm(`¿Quitar a ${s?.label} del reparto del Lote ${loteActivo}? `
+             + `Los pagos que ya le registraste se conservan.`)) return;
+  quitarSocio(loteActivo, q.dataset.quitar); pintar();
+});
+
+$('lotes').addEventListener('click', e => {
+  if (e.target.closest('#btnNuevoLote')) { loteActivo = crearLote(cargar()); pintar(); return; }
+  const t = e.target.closest('[data-lote]');
+  if (t) { loteActivo = Number(t.dataset.lote); pintar(); }
+});
+
+/* Registrar el pago a un socio con su fecha real (no siempre es hoy: se
+   captura después) y poder borrar uno mal capturado, como Paideia. Antes
+   era con prompt(), con la fecha de hoy y sin forma de corregirlo: un error
+   se quedaba para siempre como «pagado de más». */
+$('detalleLote').addEventListener('click', e => {
+  if (e.target.id === 'pgCancelar') { pagando = null; pintar(); return; }
+  const b = e.target.closest('[data-pagar]');
+  if (b) { pagando = b.dataset.pagar; pintar(); $('pgMonto')?.focus(); return; }
+  if (e.target.id !== 'pgGuardar') return;
+  const u = utilidades(cargar(), loteActivo);
+  const s = u.socios.find(x => x.id === e.target.dataset.socio);
+  const monto = $('pgMonto').value;
+  const fechaPago = $('pgFecha').value || hoyLocal();
+  const aviso = t => { $('pgMsg').textContent = t; $('pgMsg').hidden = false; };
+  /* Se escribe como se escribe en México: "$1,500" o "1 500.50". Number()
+     rechazaba la coma de miles y respondía "Pon una cantidad válida" a una
+     cantidad perfectamente válida. */
+  const n = Number(String(monto).replace(/[$\s,]/g, ''));
+  if (!Number.isFinite(n) || n <= 0) { aviso('Pon una cantidad válida, por ejemplo 1500 o $1,500.'); return; }
+  if (fechaPago > hoyLocal()) { aviso('La fecha del pago no puede ser futura.'); return; }
+  /* Pagar de más ya se detecta y se marca en rojo después; mejor decirlo
+     antes de registrarlo, cuando todavía se puede corregir. */
+  if (n > s.pendiente &&
+      !confirm(`A ${s.label} le quedan ${pesos(s.pendiente)} por recibir de este lote. ` +
+               `Con ${pesos(n)} quedaría pagado de más por ${pesos(n - s.pendiente)}. ¿Registrarlo así?`)) return;
+  const nota = $('pgNota').value.trim();
+  actualizar(d => d.pagosSocios.push({
+    lote: loteActivo, socio: s.id, monto: n, nota, fecha: new Date(fechaPago + 'T12:00:00').toISOString(),
+  }));
+  pagando = null;
+  pintar();
+});
+$('pagos').addEventListener('click', e => {
+  const b = e.target.closest('[data-borrar-pago]');
+  if (!b || !confirm('¿Eliminar este pago a socio? Úsalo solo si se capturó mal: el saldo del socio se recalcula.')) return;
+  actualizar(d => {
+    const i = d.pagosSocios.findIndex(p => llavePago(p) === b.dataset.borrarPago);
+    if (i >= 0) d.pagosSocios.splice(i, 1);
+  });
+  pintar();
+});
+
+pintar();
+</script>
+</body>
+</html>

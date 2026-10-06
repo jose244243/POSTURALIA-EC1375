@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Práctica EC1375 — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  .px-cab { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap }
+  .px-crit { color:var(--muted); font-size:.76rem; font-weight:700; letter-spacing:.05em }
+  .px-stem { color:var(--dark); font-size:1.02rem; line-height:1.6; margin:12px 0 18px; font-weight:500 }
+
+  .px-op {
+    display:flex; gap:11px; align-items:flex-start; width:100%; text-align:left;
+    padding:13px 15px; border:1.5px solid var(--border); border-radius:8px;
+    background:var(--white); margin-bottom:9px; cursor:pointer; transition:all .15s
+  }
+  .px-op:hover:not(:disabled) { border-color:var(--spoke); background:#F0FDF9 }
+  .px-op:disabled { cursor:default }
+  .px-op-l {
+    flex:0 0 25px; height:25px; display:flex; align-items:center; justify-content:center;
+    border:1.5px solid var(--border); border-radius:50%; font-size:.78rem; font-weight:700; color:var(--muted)
+  }
+  .px-op-t { flex:1; color:var(--dark); font-size:.93rem; line-height:1.5 }
+  .px-op.bien   { border-color:#059669; background:#ECFDF5 }
+  .px-op.bien .px-op-l   { border-color:#059669; background:#059669; color:#fff }
+  .px-op.mal    { border-color:#DC2626; background:#FEF2F2 }
+  .px-op.mal .px-op-l    { border-color:#DC2626; background:#DC2626; color:#fff }
+
+  .px-fb { border-radius:8px; padding:15px; margin-top:16px; font-size:.91rem; line-height:1.65 }
+  .px-fb--bien { background:#ECFDF5; border-left:4px solid #059669; color:#064E3B }
+  .px-fb--mal  { background:#FEF2F2; border-left:4px solid #DC2626; color:#7F1D1D }
+  .px-fb--info { background:#EFF6FF; border-left:4px solid #2563EB; color:#1E3A5F }
+  .px-fb b { display:block; margin-bottom:5px }
+  .px-fb a { color:inherit; text-decoration:underline; font-weight:600 }
+
+  /* Relacionar columnas */
+  .col-par { display:flex; gap:10px; align-items:center; margin-bottom:9px; flex-wrap:wrap }
+  .col-izq {
+    flex:0 0 190px; padding:11px 13px; background:var(--bg); border-radius:7px;
+    font-weight:600; color:var(--dark); font-size:.88rem
+  }
+  .col-sel { flex:1; min-width:180px }
+  .col-par.bien .col-izq { background:#ECFDF5; color:#064E3B }
+  .col-par.mal  .col-izq { background:#FEF2F2; color:#7F1D1D }
+
+  /* Autoevaluado */
+  .auto-nota {
+    background:#FEF3C7; border-left:4px solid #D97706; color:#78350F;
+    padding:12px 14px; border-radius:7px; font-size:.85rem; line-height:1.6; margin-bottom:16px
+  }
+  .auto-btns { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px }
+
+  .px-nav { display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:22px; flex-wrap:wrap }
+  .px-marca { color:var(--muted); font-size:.83rem }
+
+  .res-fila {
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    padding:11px 0; border-bottom:1px solid var(--border)
+  }
+  .res-fila:last-child { border-bottom:none }
+  .res-crit { color:var(--dark); font-size:.89rem }
+  .res-val { font-weight:700; white-space:nowrap }
+
+  /* ── Práctica por temas (modelo Paideia) ── */
+  .pt-guia { border:1.5px solid #93C5FD; background:#F5F9FF; border-radius:12px; padding:16px 18px; margin-bottom:16px }
+  .pt-k { font-size:.72rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#1D4ED8 }
+  .pt-guia h1 { font-size:1.15rem; margin:4px 0 8px; color:var(--dark) }
+  .pt-guia ol { margin:6px 0 0 18px; padding:0; font-size:.88rem; line-height:1.7; color:var(--mid) }
+  .pt-guia details summary { cursor:pointer; color:#1D4ED8; font-weight:700; font-size:.86rem }
+  .pt-temas { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; margin-top:10px }
+  .pt-tema { display:flex; gap:9px; align-items:flex-start; text-align:left; padding:9px 11px; border:1px solid var(--border);
+    border-radius:9px; background:var(--white); cursor:pointer; font:inherit; font-size:.8rem; line-height:1.4; color:var(--dark) }
+  .pt-tema:hover { border-color:var(--spoke) }
+  .pt-tema .i { flex:0 0 22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:.72rem; font-weight:700;
+    border:1.5px solid var(--border); color:var(--muted) }
+  .pt-tema.ok { background:#ECFDF5; border-color:#A7F3D0 } .pt-tema.ok .i { background:#059669; border-color:#059669; color:#fff }
+  .pt-tema.rep .i { border-color:#D97706; color:#D97706 }
+  .pt-tema.act { outline:2px solid #2563EB; outline-offset:1px }
+  .pt-tema small { display:block; color:var(--muted); font-size:.7rem }
+  .pt-acc { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px }
+  .pt-visor { width:100%; height:min(72vh,640px); border:1px solid var(--border); border-radius:10px; background:#0b1b33 }
+  .pt-pant { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 }
+  .pt-pant button { font:inherit; font-size:.76rem; padding:5px 10px; border-radius:999px; border:1px solid var(--border); background:var(--white); cursor:pointer }
+  .pt-pant button.on { background:#1D4ED8; border-color:#1D4ED8; color:#fff }
+  .pt-pant button.visto:not(.on) { background:#ECFDF5; border-color:#A7F3D0 }
+  .pt-big { font-size:2.4rem; font-weight:800; color:var(--spoke-deep); text-align:center; margin:6px 0 }
+
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <section class="pt-guia" id="guia" data-tuto-ancla>
+    <div class="pt-k" id="guiaK">Práctica</div>
+    <h1 id="guiaT">Práctica por temas</h1>
+    <div class="barra-txt"><span id="barraTxt"></span><span id="barraExtra"></span></div>
+    <div class="barra"><div class="barra-fill" id="barra" style="width:0%"></div></div>
+    <details id="guiaDet" style="margin-top:10px">
+      <summary>Cómo funciona</summary>
+      <ol>
+        <li>La Práctica tiene <b>20 temas</b>: los conocimientos del EC1375 que se evalúan en el cuestionario.</li>
+        <li>Cada tema se completa al <b>acertar una pregunta</b>. Se revisa al instante y ves la explicación.</li>
+        <li>Si fallas, toca <b>«Repasar este tema»</b>: recorres sus pantallas y al final te espera una <b>pregunta de verificación</b> distinta.</li>
+        <li>Fallar no penaliza: el tema se completa en cuanto aciertes.</li>
+      </ol>
+    </details>
+  </section>
+
+  <!-- ── PREGUNTA ── -->
+  <section id="vPregunta" hidden>
+    <div class="card">
+      <div class="px-cab">
+        <span class="px-crit" id="etiqueta"></span>
+        <span class="px-crit" id="critTxt"></span>
+      </div>
+      <div class="px-stem" id="stem"></div>
+      <div id="cuerpo"></div>
+      <div id="feedback"></div>
+      <div class="pt-acc" id="acciones"></div>
+    </div>
+  </section>
+
+  <!-- ── REPASO DEL TEMA ── -->
+  <section id="vRepaso" hidden>
+    <div class="card">
+      <div class="pt-k">Repaso del tema</div>
+      <h2 id="repTitulo" style="margin:4px 0 2px"></h2>
+      <p id="repDesc" style="color:var(--muted);font-size:.86rem;margin:0"></p>
+      <div class="pt-pant" id="repPant"></div>
+      <iframe class="pt-visor" id="repVisor" title="Pantalla del tema"></iframe>
+      <div class="px-nav">
+        <button class="btn-plat btn-plat--secundario" id="repVolver">← Volver a la pregunta</button>
+        <span class="px-marca" id="repPos"></span>
+        <button class="btn-plat btn-plat--primario" id="repSig">Siguiente pantalla →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── COMPLETA ── -->
+  <section id="vCompleta" hidden>
+    <div class="card" style="text-align:center">
+      <div class="pt-k">Práctica terminada</div>
+      <h2 style="margin:6px 0">¡Práctica completa!</h2>
+      <div class="pt-big" id="finBig">20 / 20</div>
+      <p style="color:var(--mid);font-size:.92rem;line-height:1.7;max-width:560px;margin:0 auto">
+        Completaste los 20 temas uno por uno. Eso no equivale a un juicio de competencia:
+        lo determina la evaluación oficial.</p>
+      <div class="pt-acc" style="justify-content:center">
+        <a class="btn-plat btn-plat--primario" href="examen.html">Siguiente paso: Examen de Conocimientos →</a>
+        <button class="btn-plat btn-plat--secundario" id="btnVoluntaria">Práctica voluntaria (no cambia tu avance)</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="cardTemas">
+    <h2 style="margin-bottom:2px">Tus 20 temas</h2>
+    <p style="color:var(--muted);font-size:.84rem;margin:0">Toca un tema para contestarlo o repasarlo cuando quieras.</p>
+    <div class="pt-temas" id="temas"></div>
+  </section>
+
+</main>
+
+<script type="module">
+import './js/shell.js';
+import { Store } from './js/store.js';
+import { pintarBarraFlujo, completar } from './js/flow.js';
+import { PRACTICA } from './js/data-practica.js';
+import { OBJETIVOS } from './js/data-objetivos.js';
+import { reactivosPlanos, respuestasVigentes } from './js/data-autodiagnostico.js';
+
+const MODULO = 'practica';
+const $ = id => document.getElementById(id);
+const LETRAS = 'ABCDEF';
+const REQ = OBJETIVOS.length;
+const OBJ = Object.fromEntries(OBJETIVOS.map(o => [o.id, o]));
+const PREG = {};  PRACTICA.forEach(q => (PREG[q.obj] ||= []).push(q));
+
+/* ── Estado ─────────────────────────────────────────────────────────────
+   temas: { [oid]: { ok, intentos, usadas:[ids], fallada, fase } }
+   Migración: quien ya contestaba el banco de 103 conserva como completado
+   todo tema donde acertó alguna pregunta.                                */
+let d = Store.get(MODULO, {}) || {};
+let temas = d.temas || {};
+if (!d.temas && d.respuestas) {
+  Object.entries(d.respuestas).forEach(([id, r]) => {
+    const q = PRACTICA.find(x => x.id === id); if (!q || !q.obj) return;
+    const t = temas[q.obj] ||= { ok: false, intentos: 0, usadas: [] };
+    t.intentos++; t.usadas.push(id); if (r.ok) t.ok = true;
+  });
+}
+const completados = () => OBJETIVOS.filter(o => temas[o.id]?.ok).length;
+/* Orden de Paideia: primero los temas cuyo reactivo marcaste NO en el
+   Autodiagnóstico, luego por peso. */
+const RESP = respuestasVigentes(Store.get('autodiagnostico', {}));
+const CLAVE_DE = Object.fromEntries(reactivosPlanos().map(r => [r.n, r.clave]));
+const enNo = o => RESP[CLAVE_DE[o.rx]] === 'NO' ? 0 : 1;
+const pendientes  = () => OBJETIVOS.filter(o => !temas[o.id]?.ok)
+  .sort((a, b) => enNo(a) - enNo(b) || b.peso - a.peso).map(o => o.id);
+function guardar() {
+  const c = completados();
+  const base = { temas, completados: c, requeridos: REQ, respuestas: null };
+  if (c >= REQ && !Store.get(MODULO, {})?.completado)
+    completar(MODULO, { ...base, porcentaje: 100 });
+  else Store.merge(MODULO, base);
+}
+
+/* Pregunta para un tema: una que no se haya usado; la de verificación nunca
+   es la que se falló. Opciones barajadas (la correcta no siempre es la A). */
+function variante(oid, excluir) {
+  const lista = PREG[oid] || [], t = temas[oid] || {};
+  const usadas = new Set(t.usadas || []);
+  const libres = lista.filter(q => q.id !== excluir && !usadas.has(q.id));
+  const pool = libres.length ? libres : lista.filter(q => q.id !== excluir);
+  return (pool.length ? pool : lista)[Math.floor(Math.random() * (pool.length || lista.length))];
+}
+const barajar = a => { a = [...a]; for (let j = a.length - 1; j > 0; j--) { const x = Math.floor(Math.random() * (j + 1)); [a[j], a[x]] = [a[x], a[j]]; } return a; };
+
+let P = null;   // { oid, q, fase, orden, respondida, ok, elegida, pares }
+
+function mostrar(v) {
+  ['vPregunta', 'vRepaso', 'vCompleta'].forEach(k => $(k).hidden = k !== v);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function pintarGuia(titulo, k) {
+  const c = completados();
+  $('guiaK').textContent = k || 'Práctica · 20 temas';
+  $('guiaT').textContent = titulo;
+  $('barraTxt').textContent = `${c} de ${REQ} temas completados`;
+  $('barraExtra').textContent = P?.fase === 'verificacion' ? 'pregunta de verificación' : '';
+  $('barra').style.width = Math.round(c / REQ * 100) + '%';
+  $('guiaDet').open = c === 0;
+  $('temas').innerHTML = OBJETIVOS.map((o, n) => {
+    const t = temas[o.id] || {};
+    const cls = t.ok ? 'ok' : t.fase === 'repaso' || t.fase === 'verificacion' ? 'rep' : '';
+    return `<button type="button" class="pt-tema ${cls} ${P?.oid === o.id ? 'act' : ''}" data-oid="${o.id}">
+      <span class="i">${t.ok ? '✓' : n + 1}</span>
+      <span>${o.nombre}<small>${o.crit} · ${t.ok ? 'completado' : t.intentos ? `${t.intentos} intento${t.intentos > 1 ? 's' : ''}` : 'pendiente'}</small></span>
+    </button>`;
+  }).join('');
+  $('temas').querySelectorAll('.pt-tema').forEach(b => b.onclick = () => {
+    const oid = b.dataset.oid;
+    siguiente(oid, temas[oid]?.ok);
+  });
+}
+
+function siguiente(oid, voluntaria = false) {
+  const pend = pendientes();
+  if (!oid && !voluntaria && !pend.length) return completa();
+  oid = oid || (voluntaria ? OBJETIVOS[Math.floor(Math.random() * REQ)].id : pend[0]);
+  const t = temas[oid] || {};
+  const fase = voluntaria ? 'voluntaria' : t.fase === 'verificacion' ? 'verificacion' : 'normal';
+  const q = variante(oid, fase === 'verificacion' ? t.fallada : null);
+  P = { oid, q, fase, orden: q.op ? barajar(q.op.map((_, k) => k)) : null,
+        der: q.pares ? barajar(q.pares.map(p => p[1])) : null, respondida: false };
+  pintarPregunta();
+}
+
+function pintarPregunta() {
+  const { q, oid, fase } = P, o = OBJ[oid], t = temas[oid] || {};
+  mostrar('vPregunta');
+  pintarGuia(`Tema: ${o.nombre}`, fase === 'voluntaria' ? 'Práctica voluntaria · no cambia tu avance' : `Práctica · tema ${OBJETIVOS.indexOf(o) + 1} de ${REQ}`);
+  $('etiqueta').textContent = fase === 'verificacion' ? 'Pregunta de verificación' : fase === 'voluntaria' ? 'Práctica voluntaria' : 'Pregunta';
+  $('critTxt').textContent = `${o.crit} · Elemento ${o.elemento}`;
+  $('stem').innerHTML = q.stem;
+  $('feedback').innerHTML = ''; $('acciones').innerHTML = '';
+
+  if (q.pares) {
+    $('cuerpo').innerHTML = q.pares.map((p, k) => {
+      const val = P.pares?.[k] ?? '';
+      const cls = P.respondida ? (val === p[1] ? 'bien' : 'mal') : '';
+      return `<div class="col-par ${cls}"><div class="col-izq">${p[0]}</div>
+        <select class="col-sel" data-k="${k}" ${P.respondida ? 'disabled' : ''}><option value="">— elige —</option>
+        ${P.der.map(x => `<option ${val === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`;
+    }).join('') + (P.respondida ? '' : `<button class="btn-plat btn-plat--primario" id="btnComprobar" style="margin-top:12px">Comprobar mi respuesta</button>`);
+    if (!P.respondida) $('btnComprobar').onclick = () => {
+      const sels = [...$('cuerpo').querySelectorAll('.col-sel')];
+      if (sels.some(s => !s.value)) { $('feedback').innerHTML = `<div class="px-fb px-fb--info">Elige una opción en cada renglón antes de comprobar.</div>`; return; }
+      P.pares = sels.map(s => s.value);
+      responder(P.pares.every((v, k) => v === q.pares[k][1]));
+    };
+  } else {
+    $('cuerpo').innerHTML = P.orden.map((k, pos) => {
+      const cls = P.respondida ? (k === q.resp ? 'bien' : k === P.elegida ? 'mal' : '') : '';
+      return `<button class="px-op ${cls}" data-k="${k}" ${P.respondida ? 'disabled' : ''}>
+        <span class="px-op-l">${LETRAS[pos]}</span><span class="px-op-t">${q.op[k]}</span></button>`;
+    }).join('');
+    if (!P.respondida) $('cuerpo').querySelectorAll('.px-op').forEach(b => b.onclick = () => {
+      P.elegida = +b.dataset.k; responder(P.elegida === q.resp);
+    });
+  }
+  if (P.respondida) pintarFeedback();
+}
+
+function responder(ok) {
+  P.respondida = true; P.ok = ok;
+  if (P.fase !== 'voluntaria') {
+    const t = temas[P.oid] ||= { ok: false, intentos: 0, usadas: [] };
+    t.intentos = (t.intentos || 0) + 1;
+    t.usadas = [...new Set([...(t.usadas || []), P.q.id])];
+    if (ok) { t.ok = true; t.fase = null; }
+    else { t.fallada = P.q.id; if (P.fase === 'verificacion') t.apoyo = true; t.fase = 'repaso'; }
+    guardar();
+  }
+  pintarPregunta();
+}
+
+function pantallasDe(oid) {
+  const set = new Set(OBJ[oid].pantallas || []);
+  (PREG[oid] || []).forEach(q => (q.slides || []).forEach(s => set.add(s)));
+  return [...set];
+}
+
+function pintarFeedback() {
+  const { q, oid, fase, ok } = P, o = OBJ[oid];
+  const nP = pantallasDe(oid).length, mins = Math.max(2, Math.round(nP * 1.6));
+  const acc = [];
+  if (fase === 'voluntaria') {
+    $('feedback').innerHTML = `<div class="px-fb ${ok ? 'px-fb--bien' : 'px-fb--mal'}"><b>${ok ? 'Correcto' : 'No es esa'}</b>${q.expl}</div>`;
+    acc.push(['Otra pregunta', 'primario', () => siguiente(null, true)], ['Terminar práctica voluntaria', 'secundario', completa]);
+  } else if (ok) {
+    const listo = completados() >= REQ;
+    $('feedback').innerHTML = `<div class="px-fb px-fb--bien"><b>¡Correcto! Tema completado</b>${q.expl}
+      <div style="margin-top:8px"><b style="display:inline">${o.nombre}</b> · ${completados()} de ${REQ} temas completados.</div></div>`;
+    acc.push(listo ? ['Ver mi resultado de la Práctica', 'primario', completa] : ['Siguiente tema →', 'primario', () => siguiente()]);
+  } else {
+    const verif = fase === 'verificacion';
+    $('feedback').innerHTML = `<div class="px-fb px-fb--mal"><b>${verif ? 'Todavía no es esa' : 'No es esa'}</b>${q.expl}
+      <div style="margin-top:8px">Repasa <b style="display:inline">${o.nombre}</b>. Al terminar el repaso te espera <b style="display:inline">una</b>
+      pregunta de verificación distinta. Fallar no penaliza: el tema se completa en cuanto aciertes.</div></div>`;
+    acc.push([`Repasar este tema · ${nP} pantalla${nP > 1 ? 's' : ''} · ${mins} min`, 'primario', () => repaso(oid)]);
+    const otro = pendientes().find(x => x !== oid);
+    if (otro) acc.push(['Seguir con otro tema', 'secundario', () => siguiente(otro)]);
+  }
+  $('acciones').innerHTML = acc.map(([t, c], k) => `<button class="btn-plat btn-plat--${c}" data-a="${k}">${t}</button>`).join('');
+  $('acciones').querySelectorAll('[data-a]').forEach(b => b.onclick = acc[+b.dataset.a][2]);
+}
+
+/* ── Repaso: recorre las pantallas del tema en el visor de la Biblioteca ── */
+function repaso(oid) {
+  const o = OBJ[oid], lista = pantallasDe(oid), vistos = new Set();
+  let pos = 0;
+  mostrar('vRepaso');
+  pintarGuia(o.nombre, 'Práctica · repaso del tema');
+  $('repTitulo').textContent = o.nombre;
+  $('repDesc').textContent = o.descripcion;
+  const ir = n => {
+    pos = n; vistos.add(lista[pos]);
+    $('repVisor').src = `biblioteca-deck.html#${lista[pos]}`;
+    $('repPant').innerHTML = lista.map((s, k) => `<button type="button" data-k="${k}" class="${k === pos ? 'on' : ''} ${vistos.has(s) ? 'visto' : ''}">Pantalla ${k + 1}</button>`).join('');
+    $('repPant').querySelectorAll('button').forEach(b => b.onclick = () => ir(+b.dataset.k));
+    $('repPos').textContent = `Repaso · ${pos + 1} de ${lista.length}`;
+    const ultima = pos === lista.length - 1;
+    $('repSig').textContent = ultima ? 'Ir a mi pregunta de verificación →' : 'Siguiente pantalla →';
+  };
+  $('repSig').onclick = () => {
+    if (pos < lista.length - 1) return ir(pos + 1);
+    const t = temas[oid] ||= { ok: false, intentos: 0, usadas: [] };
+    if (!t.ok) { t.fase = 'verificacion'; guardar(); }
+    siguiente(oid, !!t.ok);
+  };
+  $('repVolver').onclick = () => (P && P.oid === oid ? pintarPregunta() : siguiente(oid));
+  ir(0);
+}
+
+function completa() {
+  if (completados() < REQ) return siguiente();
+  P = null; mostrar('vCompleta'); pintarGuia('Práctica terminada', 'Práctica · 20 temas');
+  $('finBig').textContent = `${REQ} / ${REQ}`;
+  pintarBarraFlujo($('pasos'), MODULO);
+}
+$('btnVoluntaria').onclick = () => siguiente(null, true);
+
+/* ── Arranque ── */
+pintarBarraFlujo($('pasos'), MODULO);
+if (!d.temas && d.respuestas) guardar();
+const hash = location.hash.slice(1);
+if (OBJ[hash]) siguiente(hash, temas[hash]?.ok);
+else if (!pendientes().length) completa();
+else {
+  const enCurso = pendientes().find(x => temas[x]?.fase === 'verificacion');
+  siguiente(enCurso);
+}
+</script>
+<script type="module" src="js/protege.js"></script>
+</body>
+</html>

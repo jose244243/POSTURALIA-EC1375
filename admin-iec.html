@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calificar el IEC — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<link rel="stylesheet" href="admin-styles.css">
+<style>
+  .grupo-t { margin:22px 0 8px } .grupo-t h2 { margin:0; font-size:1.05rem; display:flex; gap:8px; align-items:center } .grupo-t p { margin:2px 0 0; color:var(--muted); font-size:.85rem }
+  .etq { display:inline-block; padding:2px 10px; border-radius:999px; font-size:.74rem; font-weight:700 }
+  .etq.listo { background:#DBEAFE; color:#1E3A8A } .etq.empezado { background:#FEF3C7; color:#92400E } .etq.calificado { background:#D1FAE5; color:#065F46 } .etq.sin_video { background:#E2E8F0; color:#334155 }
+  .cand { display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:12px 14px; border:1px solid var(--border); border-radius:10px; background:var(--white); margin-bottom:8px }
+  .cand .quien { flex:1 1 200px } .cand .quien strong { display:block } .cand .quien span { color:var(--muted); font-size:.8rem }
+  .cand .dato { font-size:.84rem; color:var(--mid); flex:1 1 200px }
+  .cifras { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; margin:12px 0 }
+  .cifra { border:1px solid var(--border); border-radius:10px; padding:8px 12px; background:var(--white) } .cifra span { display:block; font-size:.72rem; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.05em }
+  .cifra strong { font-size:1.15rem } .cifra.ok { border-color:#10B981; background:#ECFDF5 } .cifra.mal { border-color:#F59E0B; background:#FFFBEB }
+  .barra-iec { position:sticky; top:0; z-index:6; background:var(--bg,#F8FAFC); padding:8px 0 }
+  .filtros-iec { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 10px } .filtros-iec button { border:1px solid var(--border); background:var(--white); border-radius:999px; padding:5px 12px; font:inherit; font-size:.8rem; cursor:pointer }
+  .filtros-iec button[aria-pressed="true"] { background:#0d2a6e; color:#fff; border-color:#0d2a6e }
+  .elem { margin:18px 0 } .elem > h2 { margin:0 0 2px; font-size:1.05rem } .elem > .sub { margin:0 0 8px; color:var(--muted); font-size:.84rem }
+  .grp { border:1px solid var(--border); border-radius:10px; margin:0 0 10px; background:var(--white); overflow:hidden }
+  .grp > header { display:flex; gap:10px; align-items:center; justify-content:space-between; padding:9px 12px; background:#F1F5F9; flex-wrap:wrap }
+  .grp > header strong { display:block; font-size:.88rem } .grp > header span { font-size:.76rem; color:var(--muted) }
+  .react { display:grid; grid-template-columns:1fr 120px; gap:8px 12px; padding:9px 12px; border-top:1px solid var(--border); font-size:.86rem; line-height:1.5 }
+  .react.pend { background:#FFFDF5 } .react.choca { background:#FEF2F2 }
+  .react code { display:block; font-size:.72rem; color:var(--muted) }
+  .react .fuente { color:#047857; font-size:.78rem; margin-top:2px }
+  .react .obs { grid-column:1 / -1 } .react .obs textarea { width:100%; min-height:44px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; font:inherit; font-size:.82rem }
+  .choca-av { color:#991B1B; font-size:.8rem; margin:0 0 4px }
+  .sn { display:flex; gap:4px; align-items:flex-start } .sn button { flex:1; padding:6px 0; border-radius:6px; border:1px solid var(--border); background:var(--white); cursor:pointer; font-weight:700; font-size:.8rem }
+  .sn button.si[aria-pressed="true"] { background:#059669; border-color:#059669; color:#fff } .sn button.no[aria-pressed="true"] { background:#DC2626; border-color:#DC2626; color:#fff }
+  .aviso-iec { background:#EFF6FF; border:1px solid #BFDBFE; color:#1E3A8A; border-radius:10px; padding:10px 14px; font-size:.86rem; margin:8px 0 }
+  .aviso-iec.rojo { background:#FEF2F2; border-color:#FECACA; color:#991B1B } .aviso-iec.ok { background:#ECFDF5; border-color:#A7F3D0; color:#065F46 }
+  .cq { padding:8px 12px; border-top:1px solid var(--border); font-size:.84rem } .cq-p { margin-bottom:4px } .cq-op { margin:2px 0 6px 18px; padding:0; list-style:none; color:var(--mid); font-size:.8rem }
+  .cq-r { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center } .cq-r select { padding:4px 6px; border:1px solid var(--border); border-radius:6px; font:inherit }
+  .cq-rel { display:flex; gap:8px; align-items:center; width:100%; flex-wrap:wrap } .cq-rel > span { flex:1; min-width:180px } .cq-chk { display:inline-flex; gap:2px; align-items:center; font-size:.8rem }
+  .cq-ok { font-size:.8rem; font-weight:600; color:var(--muted) } .cq .fuente { color:#047857; font-size:.76rem }
+  .pie-iec { position:sticky; bottom:0; background:var(--white); border-top:1px solid var(--border); padding:10px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px }
+  @media (max-width:640px) { .react { grid-template-columns:1fr } }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="ad-top">
+  <div class="ad-top-in">
+    <div>
+      <h1 class="ad-titulo">Calificar el IEC</h1>
+      <div class="ad-sub" id="sub">Instrumento de Evaluación de Competencia · con la grabación a la vista</div>
+      <div id="tutoIec" style="margin-top:8px"></div>
+    </div>
+  </div>
+</header>
+
+<main class="ad-wrap"><div id="app"></div></main>
+
+<script type="module">
+/* Réplica de admin-iec.html de Paideia («Calificar el IEC»).
+   Sin ?email=: la lista de a quién se le puede calificar, por estado; el
+   candado es la grabación. Con ?email=: la tabla de aplicación completa por
+   Elemento, con lo que el expediente ya respalda propuesto (sin guardarse
+   solo), «Todo Sí» por grupo que respeta los No, filtros, y el cuestionario
+   de 37 preguntas que decide el Sí/No de los reactivos 135 a 142. */
+import './js/admin-shell.js';
+import { esc, ligaSegura } from './js/seguro.js';
+import { CONFIG } from './js/config.js';
+
+import { botonTutorial, montarTutoriales } from './js/tutorial-equipo.js';
+montarTutoriales();
+document.getElementById('tutoIec').innerHTML = botonTutorial('evaluador_iec', 'Tutorial: cómo calificar el IEC');
+import { cargar, candidatos, contables, evaluacionDe, guardarEvaluacion, sincronizarEvaluaciones } from './js/admin-data.js';
+import { sesion } from './js/cuenta.js';
+import { calificarIec, guardarIec, validarIec, sugerenciasIec, seccionesIec, CUESTIONARIO_IEC, GRUPOS_CUESTIONARIO, letraDe, normalizarRespuesta,
+  esCorrecta, correctaTexto, calificarCuestionario, ESTADOS_IEC, estadoIec, ligaVideoDe, todoSiGrupo, contradiccionesIec, REACTIVOS_IEC, ELEMENTOS_IEC } from './js/evaluacion.js';
+import { iec as hojaIec } from './js/doc-portafolio.js';
+import { envolverOficial, abrirDocumento } from './js/doc-plan-oficial.js';
+
+const $ = id => document.getElementById(id);
+const email = (new URLSearchParams(location.search).get('email') || '').toLowerCase().trim();
+const enNube = () => !!(CONFIG.supabase?.url && CONFIG.supabase?.anonKey);
+const hoy = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+
+/* ── Lista ───────────────────────────────────────────────────────────── */
+function pintarLista() {
+  const datos = cargar();
+  const lista = contables(candidatos(datos)).filter(c => c.estadoComercial !== 'desistio')
+    .map(c => ({ ...c, est: estadoIec(evaluacionDe(datos, c.email), c) }));
+  const grupos = [['listo', 'Listos para calificar', 'Ya tienen su grabación ligada.'], ['empezado', 'A medias', 'Empezaste a calificarlos y falta terminar.'],
+    ['calificado', 'Ya calificados', 'Su instrumento está completo y entra al portafolio.'], ['sin_video', 'Esperando su grabación', 'No se puede calificar el instrumento hasta que su video esté en el expediente.']]
+    .sort((a, b) => ESTADOS_IEC[a[0]].orden - ESTADOS_IEC[b[0]].orden);
+  const fila = c => {
+    const e = c.est;
+    const dato = e.clave === 'calificado' ? `<b>${e.total.toFixed(2)}</b> pts · ${esc(e.juicio)}`
+      : e.clave === 'empezado' ? `<b>${e.contestados}</b> de ${e.reactivos} reactivos · ${e.cuestionarioHechas} de ${e.cuestionario} del cuestionario`
+      : e.clave === 'sin_video' ? `Liga su grabación en <a href="admin-evaluacion.html?email=${encodeURIComponent(c.email)}">su evaluación</a>` : '142 reactivos y 37 respuestas';
+    return `<div class="cand" data-cand="${esc(c.email)}"><div class="quien"><strong>${esc(c.nombre)}</strong><span>${esc(c.email)}</span></div>
+      <span class="dato">${dato}</span><span class="etq ${e.clave}">${esc(e.etiqueta)}</span>
+      ${e.puedeCalificar ? `<a class="btn-a btn-a--pri" href="admin-iec.html?email=${encodeURIComponent(c.email)}">${e.clave === 'calificado' ? 'Revisar' : e.clave === 'empezado' ? 'Continuar' : 'Calificar'}</a>`
+        : '<button class="btn-a btn-a--sec" disabled title="Sin la grabación no hay nada que calificar">Calificar</button>'}</div>`;
+  };
+  $('app').innerHTML = `<div class="card"><h2 style="margin-top:0">Calificar el Instrumento de Evaluación</h2>
+      <p style="color:var(--muted);margin:0">La tabla de aplicación del IEC se llena viendo la grabación del candidato, así que solo aparece habilitado quien ya la tiene en su expediente.</p></div>
+    ${!lista.length ? '<div class="card"><p>Todavía no hay candidatos activos.</p></div>' : grupos.map(([k, t, sub]) => {
+      const cs = lista.filter(c => c.est.clave === k); if (!cs.length) return '';
+      return `<div class="grupo-t" data-grupo="${k}"><h2>${esc(t)} <span class="etq ${k}">${cs.length}</span></h2><p>${esc(sub)}</p></div>${cs.map(fila).join('')}`;
+    }).join('')}`;
+}
+
+/* ── Calificar ───────────────────────────────────────────────────────── */
+let cand = null, ev = null, respuestas = {}, observaciones = {}, cuestionario = {}, fecha = '', fuentes = {}, fuentesQ = {};
+let filtro = 'todos', sucio = false, mensaje = null;
+const LETRAS = q => q.opciones.map(o => letraDe(o)).filter(Boolean);
+
+function cargarCandidato() {
+  const datos = cargar();
+  cand = candidatos(datos).find(c => c.email === email) || null;
+  ev = evaluacionDe(datos, email);
+  const d = ev.iec || {};
+  respuestas = { ...(d.respuestas || {}) }; observaciones = { ...(d.observaciones || {}) }; cuestionario = { ...(d.cuestionario || {}) };
+  fecha = d.fecha || cand?.fechaEvaluacion || hoy();
+  /* Lo que el expediente ya respalda se propone, pero nunca se guarda solo */
+  const s = sugerenciasIec(cand || {});
+  fuentes = {}; fuentesQ = {};
+  Object.entries(s.respuestas).forEach(([n, v]) => { if (!respuestas[n]) { respuestas[n] = v; fuentes[n] = s.fuentes[n]; } });
+  Object.entries(s.cuestionario || {}).forEach(([n, v]) => { if (!cuestionario[n]) { cuestionario[n] = v; fuentesQ[n] = s.fuentesCuestionario[n]; } });
+  aplicarCuestionario();
+}
+/* El Sí/No de 135–142 sale del cuestionario cuando su grupo está completo */
+function aplicarCuestionario() {
+  Object.entries(calificarCuestionario(cuestionario)).forEach(([n, v]) => { if (v) respuestas[n] = v; });
+}
+const nombreCand = () => cand?.nombre || email;
+const TIPOS_F = [['todos', 'Todos'], ['pendientes', 'Sin contestar'], ['no', 'Marcados No'], ['D', 'Desempeños'], ['P', 'Productos'], ['C', 'Conocimientos'], ['AHV', 'Actitudes']];
+const visible = r => filtro === 'todos' || (filtro === 'pendientes' ? !respuestas[r.n] : filtro === 'no' ? respuestas[r.n] === 'no' : r.tipo === filtro);
+
+function pintarSinVideo() {
+  $('app').innerHTML = `<p><a href="admin-iec.html">← Calificar el IEC</a></p><div class="card"><h2 style="margin-top:0">${esc(nombreCand())} todavía no tiene su grabación</h2>
+    <p style="color:var(--mid);line-height:1.6">Los 81 desempeños y las 5 actitudes se califican viéndola; marcarlos «de memoria» sería inventar la evaluación.
+      Liga su grabación en <a href="admin-evaluacion.html?email=${encodeURIComponent(email)}">su evaluación</a> y vuelve aquí.</p></div>`;
+}
+function cifras() {
+  const c = calificarIec(respuestas), faltaQ = CUESTIONARIO_IEC.filter(q => !String(cuestionario[q.n] || '').trim()).length;
+  const choques = contradiccionesIec(respuestas, observaciones).length;
+  return `<div class="cifras">
+      <div class="cifra"><span>Contestados</span><strong>${c.contestados} / ${c.reactivos}</strong></div>
+      <div class="cifra ${c.total >= c.umbral ? 'ok' : 'mal'}"><span>Puntaje</span><strong>${c.total.toFixed(2)}</strong></div>
+      <div class="cifra"><span>Mínimo</span><strong>${c.umbral}</strong></div>
+      <div class="cifra ${faltaQ ? 'mal' : 'ok'}"><span>Cuestionario</span><strong>${CUESTIONARIO_IEC.length - faltaQ} / ${CUESTIONARIO_IEC.length}</strong></div>
+      <div class="cifra ${c.completo && c.juicio === 'COMPETENTE' ? 'ok' : 'mal'}"><span>Juicio</span><strong style="font-size:.9rem">${c.completo ? c.juicio : 'Incompleto'}</strong></div></div>
+    ${c.penalizacion ? `<p class="aviso-iec">Se restan ${c.penalizacion.toFixed(2)} puntos por actitudes/hábitos/valores que no se presentaron.</p>` : ''}
+    ${c.criteriosSinCumplir.length ? `<p class="aviso-iec rojo">Criterios sin ningún reactivo cumplido: ${c.criteriosSinCumplir.join(', ')}. Con esto el juicio no puede ser COMPETENTE.</p>` : ''}
+    ${choques ? `<p class="aviso-iec rojo">${choques} reactivo${choques > 1 ? 's están' : ' está'} en Sí con observación. En el instrumento la observación es la razón de un No: se imprimiría contradiciéndose.</p>` : ''}`;
+}
+function reactivoHtml(r) {
+  const v = respuestas[r.n], obs = observaciones[r.n] || '', choca = v === 'si' && obs.trim();
+  return `<div class="react ${v ? '' : 'pend'}${choca ? ' choca' : ''}" id="r${r.n}" data-n="${r.n}">
+    <div><code>${esc(r.cod)} · ${r.tipo === 'AHV' ? 'resta ' : ''}${Number(r.peso).toFixed(2)} pts</code>${esc(r.texto)}${fuentes[r.n] ? `<div class="fuente">✓ ${esc(fuentes[r.n])}</div>` : ''}</div>
+    <div class="sn"><button class="si" data-v="si" aria-pressed="${v === 'si'}">Sí</button><button class="no" data-v="no" aria-pressed="${v === 'no'}">No</button></div>
+    ${v === 'no' || obs ? `<div class="obs">${choca ? '<p class="choca-av">Está en <b>Sí</b> y trae observación. En el instrumento la observación es la razón de un <b>No</b>: cambia la marca o borra el texto.</p>' : ''}
+      <textarea data-obs="${r.n}" placeholder="Observaciones (se imprimen en el IEC)" aria-label="Observaciones del reactivo ${r.n}">${esc(obs)}</textarea></div>` : ''}</div>`;
+}
+function preguntaHtml(q) {
+  const v = normalizarRespuesta(q, cuestionario[q.n]);
+  let control;
+  if (q.tipo !== 'relacionar_columnas') control = `<select data-cuest="${q.n}" aria-label="Respuesta a la pregunta ${q.n}"><option value="">—</option>${LETRAS(q).map(l => `<option ${v === l ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+  else if (q.correcta[0]?.letras) {
+    const gs = String(v || '').split('|');
+    control = q.izquierda.map((it, i) => { const m = (gs[i] || '').split(',').map(x => letraDe(x));
+      return `<div class="cq-rel"><span>${esc(it)}</span>${LETRAS(q).map(l => `<label class="cq-chk"><input type="checkbox" data-cq-multi="${q.n}" data-i="${i}" value="${l}" ${m.includes(l) ? 'checked' : ''}>${l}</label>`).join('')}</div>`; }).join('');
+  } else {
+    const ps = String(v || '').split(',').map(x => letraDe(x));
+    control = q.izquierda.map((it, i) => `<div class="cq-rel"><span>${esc(it)}</span><select data-cq-rel="${q.n}" data-i="${i}" aria-label="${esc(it)}"><option value="">—</option>${LETRAS(q).map(l => `<option ${ps[i] === l ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`).join('');
+  }
+  const ok = esCorrecta(q, v);
+  return `<div class="cq" data-q="${q.n}"><div class="cq-p"><b>${esc(q.etiqueta || q.num + '.')}</b> ${esc(q.pregunta)}</div>
+    ${q.tipo !== 'relacionar_columnas' ? `<ol class="cq-op">${q.opciones.filter(o => String(o).trim()).map(o => `<li>${esc(o)}</li>`).join('')}</ol>` : `<ol class="cq-op">${q.opciones.map(o => `<li>${esc(o)}</li>`).join('')}</ol>`}
+    <div class="cq-r">${control}<span class="cq-ok" data-cq-ok="${q.n}">${ok === null ? '' : ok ? '✓ correcta' : '✗ la correcta es ' + esc(correctaTexto(q))}</span></div>
+    ${fuentesQ[q.n] ? `<div class="fuente">✓ ${esc(fuentesQ[q.n])}</div>` : ''}</div>`;
+}
+function pintarCalificar() {
+  if (!cand) { $('app').innerHTML = `<p><a href="admin-iec.html">← Calificar el IEC</a></p><div class="card"><p>No encuentro a ${esc(email)} entre los candidatos.</p></div>`; return; }
+  const video = ligaVideoDe(ev, cand);
+  if (!video) { pintarSinVideo(); return; }
+  const hayFuentes = Object.keys(fuentes).length || Object.keys(fuentesQ).length;
+  const secs = seccionesIec();
+  $('app').innerHTML = `<p><a href="admin-iec.html">← Calificar el IEC</a> · <a href="admin-evaluacion.html?email=${encodeURIComponent(email)}">Su evaluación</a></p>
+    <div class="card"><h2 style="margin-top:0">Instrumento de Evaluación · ${esc(nombreCand())}</h2>
+      <p style="color:var(--muted);margin:0 0 10px">Marca cada reactivo viendo la grabación de la sesión. Son ${REACTIVOS_IEC.length} reactivos y el instrumento no admite «No aplica»: todos se contestan.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <a class="btn-a btn-a--sec" id="abrirVideo" href="${esc(ligaSegura(video) || '#')}" target="_blank" rel="noopener">▶ Abrir la grabación</a>
+        ${ev.video?.clave ? `<span style="font-size:.84rem">Clave: <b>${esc(ev.video.clave)}</b></span>` : ''}
+        <label style="font-size:.84rem;font-weight:600">Fecha de aplicación <input type="date" id="fechaIec" value="${esc(fecha)}" style="margin-left:6px;padding:5px 7px;border:1px solid var(--border);border-radius:6px;font:inherit"></label></div>
+      ${hayFuentes ? `<div class="aviso-iec">Lo que trae <b style="color:#047857">✓ respaldo en el expediente</b> viene propuesto: los reactivos de conocimiento y de producto como Sí, y las 37 respuestas del cuestionario si aprobó el Examen. Revísalo y cámbialo si no corresponde: nada se guarda hasta que oprimas <b>Guardar</b>.</div>` : ''}
+    </div>
+    <div class="barra-iec">${cifras()}<div class="filtros-iec" role="group" aria-label="Filtrar reactivos">${TIPOS_F.map(([k, t]) => `<button data-filtro="${k}" aria-pressed="${filtro === k}">${t}</button>`).join('')}</div></div>
+    ${mensaje ? `<p class="aviso-iec ${mensaje.tipo}">${esc(mensaje.texto)}</p>` : ''}
+    <div id="lista">${secs.map(e => {
+      const gs = e.grupos.map(g => { const rs = g.reactivos.filter(visible); if (!rs.length || g.tipo === 'C') return '';
+        return `<div class="grp"><header><div><strong>${esc(g.titulo)}</strong><span>${esc(g.tipoNombre)} · ${g.reactivos.length} reactivo${g.reactivos.length > 1 ? 's' : ''}</span></div>
+          <button class="btn-a btn-a--sec" data-todo="${e.elem}|${esc(g.tipo)}|${esc(g.titulo)}">Todo Sí</button></header>${rs.map(reactivoHtml).join('')}</div>`; }).join('');
+      return gs ? `<div class="elem"><h2>Elemento ${e.elem} de 4 · ${esc(e.titulo)}</h2>${gs}</div>` : '';
+    }).join('')}
+    ${(filtro === 'todos' || filtro === 'C' || filtro === 'pendientes' || filtro === 'no') ? `<div class="elem"><h2>Cuestionario de conocimientos</h2>
+      <p class="sub" style="color:var(--muted);font-size:.84rem">Anota la opción que eligió el candidato. El Sí/No de cada reactivo de conocimiento sale del Anexo 2 cuando su grupo está completo.</p>
+      ${GRUPOS_CUESTIONARIO.map(g => { const r = REACTIVOS_IEC.find(x => x.n === g.reactivo); if (!visible(r)) return '';
+        return `<div class="grp"><header><div><strong>${esc(g.cod)} · ${esc(g.tema)}</strong><span>${esc(g.instruccion)}</span></div>
+          <span class="etq ${respuestas[g.reactivo] === 'si' ? 'calificado' : respuestas[g.reactivo] === 'no' ? 'sin_video' : 'empezado'}" data-cq-res="${g.reactivo}">${respuestas[g.reactivo] === 'si' ? 'Sí' : respuestas[g.reactivo] === 'no' ? 'No' : 'Faltan respuestas'}</span></header>
+          ${reactivoHtml(r)}${CUESTIONARIO_IEC.filter(q => q.reactivo === g.reactivo).map(preguntaHtml).join('')}</div>`; }).join('')}</div>` : ''}</div>
+    <div class="pie-iec"><button class="btn-a btn-a--pri" id="guardar">Guardar</button><button class="btn-a btn-a--sec" id="imprimir">Imprimir IEC (formato oficial)</button>
+      <span id="msg" style="font-size:.86rem">${sucio ? 'Hay cambios sin guardar.' : ''}</span></div>`;
+}
+function repintar(n) { const y = scrollY; pintarCalificar(); scrollTo(0, y); if (n) $('r' + n)?.scrollIntoView({ block: 'nearest' }); }
+
+function leerPregunta(n) {
+  const q = CUESTIONARIO_IEC.find(x => x.n === Number(n)); const cont = document.querySelector(`.cq[data-q="${n}"]`); if (!q || !cont) return;
+  if (q.tipo !== 'relacionar_columnas') cuestionario[n] = cont.querySelector('[data-cuest]').value;
+  else if (q.correcta[0]?.letras) { const vals = q.izquierda.map((_, i) => [...cont.querySelectorAll(`[data-cq-multi][data-i="${i}"]:checked`)].map(x => x.value).join(','));
+    cuestionario[n] = vals.every(x => !x) ? '' : vals.join(' | '); }
+  else { const vals = [...cont.querySelectorAll('[data-cq-rel]')].map(x => x.value); cuestionario[n] = vals.every(x => !x) ? '' : vals.map(x => x || '?').join(','); }
+  delete fuentesQ[n]; sucio = true; aplicarCuestionario(); repintar();
+}
+
+$('app').addEventListener('click', e => {
+  const t = e.target;
+  const f = t.closest('[data-filtro]'); if (f) { filtro = f.dataset.filtro; mensaje = null; return repintar(); }
+  const b = t.closest('.sn button');
+  if (b) { const n = +b.closest('[data-n]').dataset.n, v = b.dataset.v;
+    respuestas[n] = respuestas[n] === v ? undefined : v; if (!respuestas[n]) delete respuestas[n];
+    delete fuentes[n]; sucio = true; mensaje = null; return repintar(n); }
+  const td = t.closest('[data-todo]');
+  if (td) { const [elem, tipo, ...resto] = td.dataset.todo.split('|');
+    const r = todoSiGrupo(respuestas, observaciones, { elem: Number(elem), tipo, grupo: resto.join('|') });
+    REACTIVOS_IEC.filter(x => x.elem === Number(elem) && x.tipo === tipo && x.grupo === resto.join('|')).forEach(x => delete fuentes[x.n]);
+    sucio = true; mensaje = r.respetados ? { tipo: '', texto: `Se marcaron en Sí los demás. Quedan en No ${r.respetados} reactivo${r.respetados > 1 ? 's' : ''} que ya habías marcado: para cambiarlo, toca su botón.` } : null;
+    return repintar(); }
+  if (t.id === 'guardar') {
+    fecha = $('fechaIec').value;
+    const nuevo = guardarIec(ev.iec || {}, { respuestas, observaciones, cuestionario, fecha }, { por: sesion()?.correo || '' });
+    guardarEvaluacion(email, { iec: nuevo });
+    ev = evaluacionDe(cargar(), email); sucio = false; fuentes = {}; fuentesQ = {};
+    const falta = validarIec(nuevo);
+    mensaje = falta.length ? { tipo: '', texto: 'Guardado. Para cerrarlo falta: ' + falta.join(' · ') } : { tipo: 'ok', texto: `IEC completo y guardado: ${nuevo.total.toFixed(2)} puntos · ${nuevo.juicio}. Ya entra al portafolio.` };
+    return repintar();
+  }
+  if (t.id === 'imprimir') {
+    const d = { ...ev, iec: { ...(ev.iec || {}), respuestas, observaciones, cuestionario, fecha: $('fechaIec').value } };
+    abrirDocumento(envolverOficial('IEC · ' + nombreCand(), hojaIec(d, { candidato: nombreCand(), evaluador: ev.cedula?.evaluadora || CONFIG.centroEvaluacion?.evaluadora || '' })));
+  }
+});
+$('app').addEventListener('input', e => {
+  const o = e.target.closest('[data-obs]');
+  if (o) {
+    const n = o.dataset.obs; observaciones[n] = o.value; if (!o.value.trim()) delete observaciones[n]; sucio = true; $('msg').textContent = 'Hay cambios sin guardar.';
+    /* Solo este renglón: repintar la página al escribir (o al salir del campo) le robaría el clic al siguiente botón */
+    const fila = $('r' + n), choca = respuestas[n] === 'si' && !!o.value.trim();
+    fila.classList.toggle('choca', choca);
+    let av = fila.querySelector('.choca-av');
+    if (choca && !av) { av = document.createElement('p'); av.className = 'choca-av'; av.innerHTML = 'Está en <b>Sí</b> y trae observación. En el instrumento la observación es la razón de un <b>No</b>: cambia la marca o borra el texto.'; o.before(av); }
+    if (!choca && av) av.remove();
+  }
+});
+$('app').addEventListener('change', e => {
+  const q = e.target.closest('.cq[data-q]'); if (q) return leerPregunta(q.dataset.q);
+  if (e.target.id === 'fechaIec') { fecha = e.target.value; sucio = true; }
+});
+addEventListener('beforeunload', e => { if (sucio) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ── Arranque ────────────────────────────────────────────────────────── */
+(async () => {
+  if (enNube()) { try { await sincronizarEvaluaciones(); } catch {} }
+  if (!email) return pintarLista();
+  cargarCandidato();
+  $('sub').textContent = `Instrumento de Evaluación · ${nombreCand()}`;
+  pintarCalificar();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POSTURALIA — Certificación EC1375</title>
+<meta name="description" content="Plataforma de acompañamiento para la certificación SEP-CONOCER EC1375. Centro Evaluador Posturalia, Monterrey N.L.">
+<meta name="theme-color" content="#0d2a6e">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  body.portada {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 28px 18px;
+    background:
+      radial-gradient(1100px 620px at 15% -5%, rgba(13,42,110,.10), transparent 62%),
+      radial-gradient(900px 520px at 105% 108%, rgba(255,215,0,.11), transparent 58%),
+      var(--bg);
+  }
+
+  .pt-caja { width: 100%; max-width: 780px }
+
+  .pt-cab { text-align: center; margin-bottom: 30px }
+  .pt-logo {
+    width: 60px; height: 60px; margin: 0 auto 16px;
+    display: grid; place-items: center;
+    background: linear-gradient(145deg, #0d2a6e, #0a1f52);
+    border-radius: 15px; font-size: 1.7rem;
+    box-shadow: 0 8px 22px rgba(13,42,110,.28);
+  }
+  .pt-cab h1 {
+    margin: 0 0 8px; font-size: clamp(1.45rem, 4.2vw, 1.95rem);
+    letter-spacing: -.015em; color: var(--dark);
+  }
+  .pt-cab p { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.6 }
+  .pt-norma {
+    display: inline-block; margin-top: 12px; padding: 4px 12px;
+    background: rgba(13,42,110,.08); color: #0d2a6e;
+    border-radius: 99px; font-size: .76rem; font-weight: 700; letter-spacing: .03em;
+  }
+  :root[data-tema="oscuro"] .pt-norma { background: rgba(255,255,255,.09); color: var(--dark) }
+
+  .pt-puertas { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px }
+
+  .pt-puerta {
+    display: block; padding: 26px 24px 22px; text-align: left;
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 14px; text-decoration: none;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05);
+    transition: transform .18s, box-shadow .18s, border-color .18s;
+  }
+  .pt-puerta:hover {
+    transform: translateY(-3px);
+    border-color: #0d2a6e;
+    box-shadow: 0 12px 30px rgba(13,42,110,.15);
+  }
+  .pt-puerta:focus-visible { outline: 3px solid #0d2a6e; outline-offset: 3px }
+
+  .pt-ico {
+    width: 46px; height: 46px; margin-bottom: 14px;
+    display: grid; place-items: center; border-radius: 11px; font-size: 1.35rem;
+  }
+  .pt-puerta--cand .pt-ico { background: rgba(13,42,110,.10) }
+  .pt-puerta--eval .pt-ico { background: rgba(255,215,0,.20) }
+
+  .pt-puerta h2 { margin: 0 0 7px; font-size: 1.08rem; color: var(--dark) }
+  .pt-puerta p  { margin: 0 0 16px; color: var(--mid); font-size: .87rem; line-height: 1.6 }
+
+  .pt-lista { margin: 0 0 18px; padding: 0; list-style: none }
+  .pt-lista li {
+    position: relative; padding-left: 19px; margin-bottom: 5px;
+    color: var(--muted); font-size: .82rem; line-height: 1.5;
+  }
+  .pt-lista li::before {
+    content: '·'; position: absolute; left: 6px; top: -1px;
+    color: #0d2a6e; font-weight: 700; font-size: 1.1rem;
+  }
+
+  .pt-cta {
+    display: inline-flex; align-items: center; gap: 7px;
+    color: #0d2a6e; font-weight: 700; font-size: .87rem;
+  }
+  :root[data-tema="oscuro"] .pt-cta { color: var(--primary) }
+  .pt-puerta:hover .pt-cta .pt-flecha { transform: translateX(4px) }
+  .pt-flecha { transition: transform .18s }
+
+  .pt-pie {
+    margin-top: 26px; display: flex; gap: 14px; flex-wrap: wrap;
+    align-items: center; justify-content: center;
+    color: var(--muted); font-size: .8rem;
+  }
+  .pt-pie button, .pt-pie a {
+    background: none; border: none; padding: 0; font: inherit; cursor: pointer;
+    color: var(--muted); text-decoration: underline; text-underline-offset: 3px;
+  }
+  .pt-pie button:hover, .pt-pie a:hover { color: var(--dark) }
+
+  #btnInstalar {
+    display: none; align-items: center; gap: 6px;
+    padding: 7px 14px; background: #0d2a6e; color: #fff;
+    border-radius: 7px; text-decoration: none; font-weight: 600;
+  }
+  #btnInstalar:hover { background: #0a1f52; color: #fff }
+  #btnInstalar[data-visible="si"] { display: inline-flex }
+</style>
+</head>
+<body class="portada">
+
+<div class="pt-caja">
+
+  <div class="pt-cab">
+    <div class="pt-logo" id="ptLogo"></div>
+    <h1>Certificación EC1375</h1>
+    <p>Prestación de servicios auxiliares en la contribución tradicional y complementaria de la recuperación de las condiciones físicas y socioemocionales de las personas<br>
+       Centro Evaluador POSTURALIA · Monterrey, N.L.</p>
+    <span class="pt-norma">SEP · CONOCER</span>
+  </div>
+
+  <div class="pt-puertas">
+
+    <a class="pt-puerta pt-puerta--cand" href="index.html" data-rol="candidato">
+      <div class="pt-ico" data-ico="medalla"></div>
+      <h2>Soy candidato</h2>
+      <p>Vas a certificarte. Aquí llevas tu proceso completo, paso por paso.</p>
+      <ul class="pt-lista">
+        <li>Autodiagnóstico y reforzamiento</li>
+        <li>Material de Alineación y biblioteca</li>
+        <li>Examen de conocimientos y práctica</li>
+        <li>Tus documentos y evidencias</li>
+      </ul>
+      <span class="pt-cta">Entrar a mi proceso <span class="pt-flecha">→</span></span>
+    </a>
+
+    <a class="pt-puerta pt-puerta--eval" href="admin.html" data-rol="evaluador">
+      <div class="pt-ico" data-ico="tablero"></div>
+      <h2>Soy del Centro Evaluador</h2>
+      <p>Supervisas candidatos. Aquí ves en qué va cada quien y qué se cobró.</p>
+      <ul class="pt-lista">
+        <li>Panel del equipo y candidatos</li>
+        <li>Precios, pagos y utilidades por lote</li>
+        <li>Sesiones de Alineación y KPIs</li>
+        <li>Ver el proceso como lo ve cada candidato</li>
+      </ul>
+      <span class="pt-cta">Abrir el panel <span class="pt-flecha">→</span></span>
+    </a>
+
+  </div>
+
+  <div class="pt-pie">
+    <a id="btnInstalar" href="#"><span id="ptInst"></span> Instalar como aplicación</a>
+    <button type="button" id="btnTema">Cambiar tema</button>
+    <a href="https://wa.me/5218136071342" target="_blank" rel="noopener">Dudas por WhatsApp</a>
+  </div>
+
+</div>
+
+<script type="module">
+import { fijarRol } from './js/sesion.js';
+import { alternarTema, etiquetaBoton } from './js/tema.js';
+import { montarInstalador } from './js/instalar.js';
+import { icono } from './js/iconos.js';
+
+document.getElementById('ptLogo').innerHTML = icono('medalla', 30);
+document.getElementById('ptInst').innerHTML = icono('descarga', 16);
+document.querySelectorAll('[data-ico]').forEach(e => {
+  e.innerHTML = icono(e.dataset.ico, 26);
+});
+
+/* Elegir puerta fija el rol: al volver, el conmutador de la barra lateral ya
+   aparece en la vista correcta y no hay que adivinar por dónde se entró. */
+document.querySelectorAll('[data-rol]').forEach(a => {
+  a.addEventListener('click', () => fijarRol(a.dataset.rol));
+});
+
+const btnTema = document.getElementById('btnTema');
+/* innerHTML y no textContent: la etiqueta trae el icono en SVG. */
+const pintarTema = () => { btnTema.innerHTML = etiquetaBoton(); };
+btnTema.onclick = () => { alternarTema(); pintarTema(); };
+pintarTema();
+
+montarInstalador(document.getElementById('btnInstalar'));
+</script>
+</body>
+</html>

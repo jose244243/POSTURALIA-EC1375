@@ -1,0 +1,1372 @@
+/* ============================================================================
+   POSTURALIA · Plataforma de Certificación
+   plataforma-styles.css — Spoke "Plataforma"
+
+   Se carga DESPUÉS de posturalia-styles.css y hereda todo su sistema
+   (tipografía, nav, botones, contenedores). Aquí solo van los componentes
+   propios de la plataforma.
+
+   Los tokens se redeclaran con los MISMOS valores que el sistema base, para
+   que la plataforma se vea correcta aunque posturalia-styles.css no cargue.
+   Si cambias un color en el sistema base, cámbialo también aquí.
+   ========================================================================== */
+
+:root {
+  /* — Tokens heredados (fallback idéntico al sistema base) — */
+  --dark:        #0F172A;   /* texto principal   · 17:1 sobre blanco */
+  --mid:         #334155;   /* texto secundario  · 10:1 */
+  --muted:       #64748B;   /* texto terciario   ·  4.8:1 (AA) */
+  --border:      #E2E8F0;
+  --bg:          #F1F5F9;
+  --white:       #FFFFFF;
+  --radius:      14px;
+  --radius-sm:   8px;
+  --shadow-sm:   0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:   0 4px 16px rgba(0,0,0,.10);
+  --shadow-lg:   0 12px 40px rgba(0,0,0,.12);
+
+  /* — SPOKE PLATAFORMA: Verde (progreso / competencia) — */
+  --spoke:       #059669;
+  --spoke-lt:    #34D399;
+  --spoke-pale:  #ECFDF5;
+  --spoke-deep:  #047857;   /* para texto pequeño sobre blanco · 5.3:1 (AA) */
+
+  /* — Semánticos — */
+  --ok:          #059669;
+  --ok-pale:     #ECFDF5;
+  --warn:        #B45309;
+  --warn-pale:   #FFFBEB;
+  --err:         #B91C1C;
+  --err-pale:    #FEF2F2;
+  --info:        #0369A1;
+  --info-pale:   #EFF6FF;
+}
+
+/* ── Base de la plataforma ─────────────────────────────────────────────── */
+
+body.plataforma {
+  background: var(--bg);
+  color: var(--dark);
+  min-height: 100vh;
+  padding-bottom: 96px;
+}
+
+.plat-wrap { max-width: 860px; margin: 0 auto; padding: 24px 20px 64px; }
+
+/* ── Barra superior de flujo ───────────────────────────────────────────── */
+
+.plat-top {
+  position: sticky; top: 0; z-index: 90;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.plat-top-inner {
+  max-width: 1100px; margin: 0 auto;
+  padding: 10px 20px;
+  display: flex; align-items: center; gap: 16px;
+}
+.plat-marca {
+  font-weight: 800; letter-spacing: -.02em; font-size: .95rem;
+  color: var(--dark); text-decoration: none; white-space: nowrap;
+}
+.plat-marca span { color: var(--spoke); font-weight: 600; }
+
+/* Pasos del flujo, scroll horizontal en móvil */
+.plat-pasos {
+  display: flex; gap: 6px; overflow-x: auto; flex: 1;
+  scrollbar-width: thin; padding-bottom: 2px;
+}
+.plat-pasos::-webkit-scrollbar { height: 4px; }
+.plat-pasos::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.paso {
+  flex: 0 0 auto;
+  font-size: .76rem; font-weight: 600;
+  padding: 6px 12px; border-radius: 999px;
+  text-decoration: none; white-space: nowrap;
+  border: 1px solid transparent;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.paso--disponible { color: var(--mid);       background: var(--bg);        border-color: var(--border); }
+.paso--disponible:hover { color: var(--spoke-deep); background: var(--spoke-pale); border-color: var(--spoke-lt); }
+.paso--en_curso   { color: var(--spoke-deep); background: var(--spoke-pale); border-color: var(--spoke-lt); }
+.paso--completado { color: var(--spoke-deep); background: var(--spoke-pale); border-color: transparent; }
+.paso--completado:hover { border-color: var(--spoke-lt); }
+.paso--bloqueado,
+.paso--pendiente  { color: #94A3B8; background: var(--bg); cursor: not-allowed; }
+.paso--activo     { color: var(--white) !important; background: var(--spoke) !important; border-color: var(--spoke) !important; }
+
+/* ── Encabezado de módulo ──────────────────────────────────────────────── */
+
+.plat-head { text-align: center; padding: 36px 0 28px; }
+.plat-icono {
+  width: 60px; height: 60px; margin: 0 auto 16px;
+  display: grid; place-items: center;
+  background: var(--spoke-pale); border-radius: 18px;
+  font-size: 1.7rem;
+}
+.plat-head h1 {
+  font-size: clamp(1.5rem, 4vw, 2.1rem);
+  letter-spacing: -.03em; color: var(--dark); margin-bottom: 8px;
+}
+.plat-head p { color: var(--muted); max-width: 54ch; margin: 0 auto; }
+
+/* ── Tarjetas ──────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 18px;
+}
+.card h2 { font-size: 1.05rem; color: var(--dark); margin-bottom: 12px; letter-spacing: -.01em; }
+.card h3 { font-size: .95rem; color: var(--mid); margin-bottom: 8px; }
+
+.card--acento { border-left: 4px solid var(--spoke); }
+.card--aviso  { background: var(--warn-pale); border-color: #FDE68A; }
+.card--aviso h2, .card--aviso strong { color: #92400E; }
+
+/* ── Barra de progreso ─────────────────────────────────────────────────── */
+
+.barra {
+  height: 8px; background: var(--border);
+  border-radius: 999px; overflow: hidden; margin: 10px 0;
+}
+.barra-fill {
+  height: 100%; background: linear-gradient(90deg, var(--spoke), var(--spoke-lt));
+  border-radius: 999px; transition: width .35s ease;
+}
+.barra-txt {
+  display: flex; justify-content: space-between;
+  font-size: .78rem; color: var(--muted); font-weight: 600;
+}
+
+/* ── Reactivos del autodiagnóstico ─────────────────────────────────────── */
+
+.grupo-titulo {
+  font-size: .72rem; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--spoke-deep);
+  background: var(--spoke-pale);
+  padding: 8px 14px; border-radius: var(--radius-sm);
+  margin: 22px 0 12px;
+}
+
+.reactivo {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.reactivo:last-child { border-bottom: 0; }
+.reactivo-txt { flex: 1; font-size: .93rem; color: var(--mid); line-height: 1.55; }
+.reactivo-num {
+  flex: 0 0 auto; width: 26px; height: 26px;
+  display: grid; place-items: center;
+  font-size: .7rem; font-weight: 700; color: var(--muted);
+  background: var(--bg); border-radius: 7px;
+}
+.reactivo--resp .reactivo-num { background: var(--spoke-pale); color: var(--spoke-deep); }
+
+.si-no { display: flex; gap: 8px; flex: 0 0 auto; }
+.si-no button {
+  min-width: 52px; padding: 8px 14px;
+  font: inherit; font-size: .8rem; font-weight: 700;
+  border: 1.5px solid var(--border); background: var(--white);
+  color: var(--muted); border-radius: var(--radius-sm);
+  cursor: pointer; transition: all .15s;
+}
+.si-no button:hover { border-color: var(--muted); color: var(--mid); }
+.si-no button[aria-pressed="true"][data-v="SI"] {
+  background: var(--spoke); border-color: var(--spoke); color: var(--white);
+}
+.si-no button[aria-pressed="true"][data-v="NO"] {
+  background: var(--err); border-color: var(--err); color: var(--white);
+}
+
+/* ── Examen ────────────────────────────────────────────────────────────── */
+
+.ex-categoria {
+  font-size: .68rem; font-weight: 800; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--spoke-deep); margin-bottom: 10px;
+}
+.ex-pregunta {
+  font-size: 1.05rem; font-weight: 600; color: var(--dark);
+  line-height: 1.5; margin-bottom: 20px;
+}
+.ex-opciones { display: grid; gap: 10px; }
+.ex-op {
+  display: flex; align-items: flex-start; gap: 12px;
+  width: 100%; text-align: left;
+  padding: 14px 16px; font: inherit; font-size: .93rem;
+  background: var(--white); color: var(--mid);
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  cursor: pointer; transition: all .15s;
+}
+.ex-op:hover:not(:disabled) { border-color: var(--spoke-lt); background: var(--spoke-pale); }
+.ex-op:disabled { cursor: default; }
+.ex-op-letra {
+  flex: 0 0 auto; width: 24px; height: 24px;
+  display: grid; place-items: center;
+  font-size: .75rem; font-weight: 800;
+  background: var(--bg); color: var(--muted); border-radius: 6px;
+}
+.ex-op--correcta {
+  background: var(--ok-pale); border-color: var(--ok); color: #065F46;
+}
+.ex-op--correcta .ex-op-letra { background: var(--ok); color: var(--white); }
+.ex-op--incorrecta {
+  background: var(--err-pale); border-color: var(--err); color: #7F1D1D;
+}
+.ex-op--incorrecta .ex-op-letra { background: var(--err); color: var(--white); }
+
+.ex-feedback {
+  margin-top: 18px; padding: 16px;
+  border-radius: var(--radius-sm); font-size: .9rem; line-height: 1.55;
+}
+.ex-feedback--ok  { background: var(--ok-pale);  color: #065F46; border-left: 3px solid var(--ok); }
+.ex-feedback--err { background: var(--err-pale); color: #7F1D1D; border-left: 3px solid var(--err); }
+
+/* ── Resultado ─────────────────────────────────────────────────────────── */
+
+.resultado { text-align: center; padding: 20px 0; }
+.resultado-pct {
+  font-size: clamp(3rem, 12vw, 4.5rem); font-weight: 800;
+  letter-spacing: -.04em; line-height: 1; color: var(--spoke);
+}
+.resultado-sub { color: var(--muted); font-size: .9rem; margin-top: 6px; }
+.resultado--bajo .resultado-pct { color: var(--warn); }
+
+.desglose { display: grid; gap: 10px; margin-top: 8px; }
+.desglose-fila {
+  display: grid; grid-template-columns: 1fr auto; gap: 12px;
+  align-items: center; padding: 10px 0;
+  border-bottom: 1px solid var(--border); font-size: .88rem;
+}
+.desglose-fila:last-child { border-bottom: 0; }
+.desglose-nom { color: var(--mid); }
+.desglose-val { font-weight: 700; color: var(--dark); font-variant-numeric: tabular-nums; }
+
+/* ── Botones ───────────────────────────────────────────────────────────── */
+
+.btn-plat {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 26px; font: inherit; font-size: .92rem; font-weight: 700;
+  border-radius: var(--radius-sm); border: 1.5px solid transparent;
+  cursor: pointer; text-decoration: none; transition: all .15s;
+}
+.btn-plat--primario { background: var(--spoke); color: var(--white); }
+.btn-plat--primario:hover:not(:disabled) { background: var(--spoke-deep); }
+.btn-plat--secundario { background: var(--white); color: var(--mid); border-color: var(--border); }
+.btn-plat--secundario:hover { border-color: var(--muted); color: var(--dark); }
+.btn-plat:disabled { opacity: .45; cursor: not-allowed; }
+
+.acciones { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 24px; }
+
+/* ── Hub: rejilla de módulos ───────────────────────────────────────────── */
+
+.modulos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 760px) { .modulos { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 460px) { .modulos { grid-template-columns: 1fr; } }
+
+.modulo {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 18px;
+  text-decoration: none; display: block;
+  transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.modulo:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--spoke-lt); }
+.modulo--bloqueado, .modulo--pendiente { opacity: .55; pointer-events: none; }
+.modulo--completado { border-color: var(--spoke-lt); background: var(--spoke-pale); }
+.modulo-ico { font-size: 1.6rem; margin-bottom: 10px; }
+.modulo-nom { font-weight: 700; color: var(--dark); font-size: .92rem; margin-bottom: 4px; }
+.modulo-est { font-size: .74rem; font-weight: 600; color: var(--muted); }
+.modulo--completado .modulo-est { color: var(--spoke-deep); }
+
+/* ── Avisos ────────────────────────────────────────────────────────────── */
+
+.aviso {
+  padding: 14px 16px; border-radius: var(--radius-sm);
+  font-size: .87rem; line-height: 1.55; margin-bottom: 18px;
+}
+.aviso--info { background: var(--info-pale); color: #075985; border-left: 3px solid var(--info); }
+.aviso--warn { background: var(--warn-pale); color: #92400E; border-left: 3px solid var(--warn); }
+
+/* ── Barra inferior de navegación ──────────────────────────────────────── */
+
+.nav-inferior {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 95;
+  background: var(--white); border-top: 1px solid var(--border);
+  padding: 12px 20px; box-shadow: 0 -2px 12px rgba(0,0,0,.06);
+}
+.nav-inferior-inner {
+  max-width: 860px; margin: 0 auto;
+  display: flex; gap: 12px; align-items: center; justify-content: space-between;
+}
+
+/* ── Accesibilidad ─────────────────────────────────────────────────────── */
+
+:focus-visible { outline: 3px solid var(--spoke-lt); outline-offset: 2px; border-radius: 4px; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+@media print {
+  .plat-top, .nav-inferior, .acciones { display: none !important; }
+  body.plataforma { background: var(--white); padding: 0; }
+  .card { box-shadow: none; break-inside: avoid; }
+}
+
+/* ============================================================================
+   MENÚ LATERAL (shell.js)
+   ========================================================================== */
+
+:root {
+  /* Tokens tomados del CRM de Paideia (crm-shell.css) para que las dos
+     plataformas se vean iguales. */
+  --sh-w:        260px;   /* --crm-sidebar-w */
+  --sh-rail:     64px;    /* --crm-rail-w   */
+  --sh-header:   56px;    /* --crm-header-h */
+  --sh-bg:       linear-gradient(180deg, #0d2a6e 0%, #0a1f52 100%);
+  --sh-text:     rgba(255,255,255,0.85);
+  --sh-line:     rgba(255,255,255,0.14);
+  --sh-cta:      #FFD700;
+  --sh-cta-text: #050a1a;
+  --sh-hover:    rgba(255,255,255,0.10);
+  --sh-activo:   rgba(255,255,255,0.18);
+}
+
+.shell {
+  position: fixed; top: 0; left: 0; z-index: 120;
+  width: var(--sh-w); height: 100vh;
+  display: flex; flex-direction: column;
+  background: var(--sh-bg); color: var(--sh-text);
+  border-right: 1px solid var(--sh-line);
+  overflow-y: auto; overscroll-behavior: contain;
+}
+
+/* ── Marca ── */
+.sh-marca { padding: 18px 18px 14px; border-bottom: 1px solid var(--sh-line) }
+.sh-marca a { display: block; text-decoration: none }
+.sh-marca strong {
+  display: block; color: #fff; font-size: .98rem;
+  letter-spacing: .09em; font-weight: 800
+}
+.sh-marca span { display: block; color: rgba(255,255,255,.55); font-size: .74rem; margin-top: 2px }
+
+/* ── Avance ── */
+.sh-avance { padding: 15px 18px; border-bottom: 1px solid var(--sh-line) }
+.sh-avance-txt {
+  display: flex; justify-content: space-between; align-items: baseline;
+  color: rgba(255,255,255,.62); font-size: .76rem; margin-bottom: 7px
+}
+.sh-avance-txt strong { color: var(--sh-cta); font-size: .95rem }
+.sh-barra { height: 5px; background: rgba(255,255,255,.14); border-radius: 3px; overflow: hidden }
+.sh-barra-fill { height: 100%; background: var(--sh-cta); border-radius: 3px; transition: width .35s }
+.sh-avance-sub { color: rgba(255,255,255,.5); font-size: .72rem; margin-top: 6px }
+
+/* Desglose por fase: el avance ponderado necesita mostrarse, si no el
+   número global parece arbitrario. */
+.sh-fases { padding: 4px 18px 14px; border-bottom: 1px solid var(--sh-line) }
+.sh-fase { display: flex; align-items: center; gap: 8px; padding: 3px 0 }
+.sh-fase-n { flex: 1; color: rgba(255,255,255,.62); font-size: .72rem }
+.sh-fase-b { flex: 0 0 46px; height: 4px; background: rgba(255,255,255,.14); border-radius: 99px; overflow: hidden }
+.sh-fase-b i { display: block; height: 100%; background: var(--sh-cta) }
+.sh-fase-p { flex: 0 0 30px; text-align: right; color: rgba(255,255,255,.75); font-size: .68rem; font-variant-numeric: tabular-nums }
+
+/* ── Navegación ── */
+.sh-nav { flex: 1; padding: 10px 10px 16px }
+.sh-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px; margin-bottom: 2px; border-radius: 7px;
+  color: var(--sh-text); font-size: .855rem; text-decoration: none;
+  transition: background .15s, color .15s;
+}
+.sh-item:hover { background: var(--sh-hover); color: #fff; text-decoration: none }
+.sh-ico {
+  flex: 0 0 20px; display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.62);
+}
+.sh-item--activo .sh-ico, .sh-item--completado .sh-ico { color: rgba(255,255,255,.92) }
+.sh-recurso--activo .sh-ico { color: #FFD700 }
+.sh-nom { flex: 1; line-height: 1.35 }
+.sh-est { flex: 0 0 auto; display: flex; align-items: center; color: rgba(255,255,255,.4) }
+.sh-pend { flex: 0 0 auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--sh-cta, #F59E0B); color: #111; font-size: .7rem; font-weight: 700; line-height: 18px; text-align: center }
+
+.sh-item--activo {
+  background: var(--sh-activo); color: #fff; font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--sh-cta);
+}
+.sh-item--activo:hover { background: var(--sh-activo) }
+.sh-item--activo .sh-est { color: rgba(255,255,255,.75) }
+
+.sh-item--completado .sh-est { color: #4ADE80; font-weight: 700 }
+.sh-item--en_curso   .sh-est { color: var(--sh-cta) }
+.sh-item--esperando  .sh-est { color: #93C5FD }
+.sh-item--sin_pago   .sh-est { color: #FCA5A5 }
+
+.sh-item--bloqueado,
+.sh-item--pendiente,
+.sh-item--esperando { color: rgba(255,255,255,.35); cursor: not-allowed }
+.sh-item--bloqueado:hover,
+.sh-item--pendiente:hover,
+.sh-item--esperando:hover { background: none; color: rgba(255,255,255,.35) }
+/* sin_pago sí se puede abrir: ahí se explica cómo habilitarla */
+.sh-item--sin_pago { color: rgba(255,255,255,.62) }
+
+/* ── Pie ── */
+.sh-pie { padding: 14px 18px 18px; border-top: 1px solid var(--sh-line) }
+.sh-sig { color: rgba(255,255,255,.62); font-size: .75rem; margin-bottom: 10px; line-height: 1.45 }
+.sh-sig strong { color: #fff; display: block; margin-top: 1px }
+.sh-wa { display:flex; align-items:center; gap:8px;
+  display: block; padding: 9px 11px; border-radius: 7px; text-align: center;
+  background: var(--sh-cta); color: var(--sh-cta-text);
+  font-size: .79rem; font-weight: 700; text-decoration: none
+}
+.sh-wa:hover { filter: brightness(1.08); color: var(--sh-cta-text); text-decoration: none }
+.sh-ciudad { color: rgba(255,255,255,.4); font-size: .7rem; margin-top: 10px; text-align: center }
+
+/* ── Desplazamiento del contenido ── */
+body.con-shell .plat-top { margin-left: var(--sh-w) }
+body.con-shell .plat-wrap { margin-left: var(--sh-w) }
+
+/* ── Botón hamburguesa (solo en angosto) ── */
+.shell-toggle { display: none; flex-direction: column; gap: 4px; padding: 8px; margin-right: 4px }
+.shell-toggle span {
+  display: block; width: 19px; height: 2px;
+  background: var(--dark); border-radius: 2px; transition: .2s
+}
+.shell-velo {
+  position: fixed; inset: 0; z-index: 110;
+  background: rgba(15,23,42,.5); border: none
+}
+
+/* ── Angosto ── */
+@media (max-width: 900px) {
+  .shell { transform: translateX(-100%); transition: transform .25s ease; box-shadow: none }
+  .shell.abierto { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.3) }
+
+  body.con-shell .plat-top,
+  body.con-shell .plat-wrap { margin-left: 0 }
+
+  .shell-toggle { display: flex }
+}
+
+@media (min-width: 901px) {
+  .shell-velo { display: none }
+}
+
+@media print {
+  .shell, .shell-toggle, .shell-velo { display: none !important }
+  body.con-shell .plat-top,
+  body.con-shell .plat-wrap { margin-left: 0 }
+}
+
+/* Con el menú lateral montado, la barra de pasos de arriba es redundante:
+   dice lo mismo y además se desborda a lo ancho. Se oculta y la barra
+   superior queda solo con la marca. En angosto sigue oculta porque ahí
+   el menú se abre con el botón hamburguesa. */
+body.con-shell .plat-pasos { display: none }
+
+
+/* ============================================================================
+   CONMUTADOR DE VISTA · Candidato ↔ Evaluador
+
+   La plataforma tiene dos caras y antes se cruzaba de una a otra por un enlace
+   al pie. Quien entraba por primera vez no sabía que la otra existía. Este
+   control va arriba, en las dos barras laterales, siempre en el mismo lugar.
+   ========================================================================== */
+
+.rol-sw {
+  display: flex;
+  gap: 3px;
+  margin: 0 14px 14px;
+  padding: 3px;
+  background: rgba(255,255,255,.08);
+  border-radius: 9px;
+}
+
+.rol-op {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 6px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  color: rgba(255,255,255,.62);
+  font-size: .78rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .18s, color .18s;
+}
+
+.rol-op:hover { color: #fff; background: rgba(255,255,255,.07) }
+
+.rol-op--on {
+  background: #FFD700;
+  color: #0a1f52;
+  box-shadow: 0 1px 3px rgba(0,0,0,.28);
+}
+.rol-op--on:hover { background: #FFD700; color: #0a1f52 }
+
+.rol-ico { font-size: .95rem; line-height: 1 }
+
+@media (max-width: 380px) {
+  .rol-op span:not(.rol-ico) { display: none }
+}
+
+/* Aviso en la barra del candidato de a quién estamos mirando */
+.sh-espejo {
+  margin: 0 14px 12px;
+  padding: 8px 10px;
+  background: rgba(255,215,0,.13);
+  border-left: 3px solid #FFD700;
+  border-radius: 5px;
+  color: rgba(255,255,255,.88);
+  font-size: .76rem;
+  line-height: 1.5;
+}
+.sh-espejo strong { color: #FFD700 }
+
+
+/* ============================================================================
+   CINTA DE ESPEJO
+
+   Cuando el evaluador está recorriendo el proceso de un candidato, tiene que
+   saberlo en todo momento. Por eso la cinta es fija, ocupa el ancho completo y
+   no se puede cerrar: solo se sale de ella con el botón, que apaga el espejo.
+   ========================================================================== */
+
+.cinta-espejo {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 16px;
+  background: linear-gradient(90deg, #7C2D12, #9A3412);
+  color: #FFEDD5;
+  font-size: .84rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,.25);
+}
+
+.ce-ico { font-size: 1.05rem; flex: 0 0 auto }
+.ce-txt { flex: 1; line-height: 1.45 }
+.ce-txt strong { color: #FFF }
+
+.ce-mail {
+  opacity: .8;
+  font-size: .8rem;
+  margin-left: 4px;
+}
+
+.ce-ro {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: rgba(255,255,255,.18);
+  border-radius: 4px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.ce-salir {
+  flex: 0 0 auto;
+  padding: 7px 14px;
+  background: #FFEDD5;
+  color: #7C2D12;
+  border: none;
+  border-radius: 6px;
+  font-size: .8rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.ce-salir:hover { background: #fff }
+
+/* La cinta empuja todo hacia abajo: si no, tapa la barra superior */
+body.con-cinta { padding-top: 42px }
+body.con-cinta .plat-top,
+body.con-cinta .ad-top { top: 42px }
+body.con-cinta .shell,
+body.con-cinta .ashell { padding-top: 42px }
+
+@media (max-width: 620px) {
+  .cinta-espejo { font-size: .78rem; padding: 8px 12px; gap: 8px }
+  .ce-mail, .ce-ro { display: none }
+  body.con-cinta { padding-top: 38px }
+}
+
+/* Botón de tema en la barra del candidato — mismo aspecto que el del panel,
+   porque es el mismo control y hace lo mismo */
+.sh-tema {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 6px;
+  color: rgba(255,255,255,.75);
+  font-size: .78rem;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .18s, color .18s;
+}
+.sh-tema:hover { background: rgba(255,255,255,.14); color: #fff }
+
+/* Instalar como app — solo aparece cuando de verdad se puede ofrecer */
+.sh-instalar, .ash-tema[data-visible] {
+  display: none;
+}
+.sh-instalar[data-visible="si"], .ash-tema[data-visible="si"] {
+  display: block;
+}
+.sh-instalar { display:flex; align-items:center; gap:8px;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: rgba(255,215,0,.15);
+  border: 1px solid rgba(255,215,0,.32);
+  border-radius: 6px;
+  color: #FFD700;
+  font-size: .78rem;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+}
+.sh-instalar:hover { background: rgba(255,215,0,.26); color: #FFD700 }
+
+/* Aviso de versión nueva. Abajo, no arriba: arriba compite con la cinta de
+   espejo y con la barra superior de cada módulo. */
+.aviso-act {
+  position: fixed;
+  left: 50%; bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 400;
+  display: flex; align-items: center; gap: 12px;
+  max-width: calc(100vw - 32px);
+  padding: 11px 14px;
+  background: #0F172A;
+  color: #E2E8F0;
+  border-radius: 10px;
+  font-size: .86rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,.3);
+}
+.aviso-act button {
+  background: #FFD700; color: #0a1f52; border: none;
+  padding: 6px 13px; border-radius: 6px;
+  font: inherit; font-size: .82rem; font-weight: 700; cursor: pointer;
+}
+.aviso-act button:hover { background: #FFE44D }
+.aviso-act button:last-child {
+  background: none; color: #94A3B8; padding: 6px 8px; font-weight: 400;
+}
+.aviso-act button:last-child:hover { background: rgba(255,255,255,.1); color: #fff }
+
+/* Material de consulta en el menú lateral — no son pasos del proceso, así que
+   se separan visualmente de la fila de módulos y no llevan marca de estado */
+.sh-nav-label {
+  padding: 0 16px;
+  margin-bottom: 6px;
+  color: rgba(255,255,255,.38);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.sh-nav--consulta {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+
+.sh-item--consulta { color: rgba(255,255,255,.66) }
+.sh-item--consulta:hover { color: #fff }
+
+/* Recursos de consulta: se ven como los módulos pero NO son módulos del
+   proceso. Se distinguen en el marcado para que nada los cuente como pasos —
+   ni el código, ni las pruebas, ni quien lea la página. */
+.recurso {
+  display: block; padding: 18px 16px; text-align: center;
+  background: var(--white); border: 1px solid var(--border);
+  border-left: 3px solid var(--muted);
+  border-radius: 10px; text-decoration: none;
+  transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.recurso:hover {
+  transform: translateY(-2px);
+  border-left-color: #0d2a6e;
+  box-shadow: 0 6px 18px rgba(15,23,42,.09);
+}
+
+.sh-recurso {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; color: rgba(255,255,255,.66);
+  font-size: .85rem; text-decoration: none;
+}
+.sh-recurso:hover { color: #fff; background: rgba(255,255,255,.06) }
+.sh-recurso--activo { color: #FFD700; background: rgba(255,255,255,.08) }
+
+/* ============================================================================
+   PANEL DE CONTROL DEL CANDIDATO
+   ----------------------------------------------------------------------------
+   Todo se construye sobre los tokens (--bg, --white, --dark, --border…) que
+   posturalia-styles.css redefine en modo oscuro. Así el panel cambia de tema
+   solo, sin una segunda hoja de reglas que mantener en paralelo — que es
+   justamente como se desincronizó el tema la vez pasada.
+   ========================================================================== */
+
+/* ── Iconos ───────────────────────────────────────────────────────────────
+   Heredan el color del texto y se alinean con él. `flex-shrink:0` porque
+   dentro de un flex con texto largo el navegador aplasta el SVG antes que
+   cortar la palabra, y el icono queda como una rayita.                     */
+.ico {
+  display: inline-block; vertical-align: -.18em;
+  flex-shrink: 0; stroke: currentColor;
+}
+
+/* ── Cinta de fecha límite ────────────────────────────────────────────── */
+.pn-limite {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; margin-bottom: 18px;
+  border-radius: var(--radius-sm);
+  background: var(--warn-pale, #FFFBEB);
+  border: 1px solid #FDE68A;
+  color: #92400E; font-size: .9rem; line-height: 1.5;
+}
+.pn-limite--urge    { background:#FEF2F2; border-color:#FECACA; color:#991B1B }
+.pn-limite--vencido { background:#FEF2F2; border-color:#F87171; color:#7F1D1D; font-weight:600 }
+:root[data-tema="oscuro"] .pn-limite         { background:#2A210E; border-color:#78350F; color:#FCD34D }
+:root[data-tema="oscuro"] .pn-limite--urge,
+:root[data-tema="oscuro"] .pn-limite--vencido{ background:#2A1315; border-color:#7F1D1D; color:#FCA5A5 }
+
+/* ── Tarjeta de saludo ────────────────────────────────────────────────── */
+.pn-hero {
+  background: linear-gradient(160deg, #0d2a6e 0%, #0a1f52 100%);
+  color: #fff; border-radius: var(--radius);
+  padding: 26px 28px 28px; margin-bottom: 20px;
+  box-shadow: var(--shadow-md);
+}
+.pn-hero-top { display:flex; justify-content:space-between; align-items:center; gap:12px }
+
+.pn-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 13px; border-radius: 99px;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+  font-size: .76rem; font-weight: 600; letter-spacing: .02em;
+}
+.pn-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: #FFD700; color: #0a1f52;
+  font-weight: 800; font-size: .92rem; letter-spacing: .02em;
+}
+
+.pn-saludo {
+  margin: 18px 0 4px; font-size: 1.85rem; line-height: 1.18;
+  font-weight: 800; color: #fff; letter-spacing: -.02em;
+}
+.pn-sub { margin: 0; color: rgba(255,255,255,.72); font-size: .95rem }
+
+.pn-meta {
+  display: flex; flex-wrap: wrap; gap: 8px 20px;
+  margin: 18px 0 22px; font-size: .82rem; color: rgba(255,255,255,.66);
+}
+.pn-meta span { display: inline-flex; align-items: center; gap: 6px }
+
+.pn-hero-btns { display: flex; flex-wrap: wrap; gap: 10px }
+
+.pn-cta {
+  display: inline-flex; align-items: center; justify-content: space-between;
+  gap: 16px; min-width: 260px; padding: 14px 20px;
+  background: #FFD700; color: #050a1a; border-radius: 10px;
+  font-weight: 700; font-size: .95rem; text-decoration: none;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.pn-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.28) }
+.pn-cta--off  { background: rgba(255,255,255,.14); color: rgba(255,255,255,.8); cursor: default }
+.pn-cta--off:hover { transform: none; box-shadow: none }
+
+.pn-cta2 {
+  display: inline-flex; align-items: center; gap: 9px; padding: 14px 20px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22);
+  color: #fff; border-radius: 10px; font-weight: 600; font-size: .9rem;
+  text-decoration: none;
+}
+.pn-cta2:hover { background: rgba(255,255,255,.18) }
+
+/* ── Las cuatro cifras ────────────────────────────────────────────────── */
+.pn-kpis {
+  display: grid; gap: 12px; margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+.pn-kpi {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.pn-kpi-ico { color: var(--muted); margin-bottom: 4px }
+.pn-kpi-val { font-size: 1.5rem; font-weight: 800; color: var(--dark); line-height: 1.15 }
+.pn-kpi-eti {
+  font-size: .71rem; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted);
+}
+
+/* ── Cabecera de tarjeta con contador ─────────────────────────────────── */
+.pn-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px }
+.pn-cab h2 { margin: 0 }
+.pn-cuenta {
+  font-weight: 800; font-size: .95rem; color: var(--mid);
+  background: var(--bg); border: 1px solid var(--border);
+  padding: 3px 11px; border-radius: 99px;
+}
+.pn-nota { color: var(--muted); font-size: .85rem; line-height: 1.6; margin: 10px 0 16px }
+.pn-vacio {
+  color: var(--muted); font-size: .88rem; line-height: 1.6;
+  background: var(--bg); border: 1px dashed var(--border);
+  border-radius: var(--radius-sm); padding: 16px; margin: 0 0 14px;
+}
+
+/* ── Dona de avance ───────────────────────────────────────────────────── */
+.pn-avance { display: flex; gap: 28px; align-items: center; flex-wrap: wrap }
+.pn-dona { position: relative; width: 140px; height: 140px; flex-shrink: 0 }
+.pn-dona-svg { width: 100%; height: 100%; transform: rotate(-90deg) }
+.pn-dona-fondo { fill: none; stroke: var(--border); stroke-width: 11 }
+.pn-dona-arco {
+  fill: none; stroke: var(--spoke); stroke-width: 11; stroke-linecap: round;
+  transition: stroke-dashoffset .6s cubic-bezier(.4,0,.2,1);
+}
+.pn-dona-txt {
+  position: absolute; inset: 0; display: grid; place-content: center;
+  text-align: center; line-height: 1.1;
+}
+.pn-dona-txt strong { display: block; font-size: 1.9rem; font-weight: 800; color: var(--dark) }
+.pn-dona-txt span   { font-size: .74rem; color: var(--muted) }
+
+.pn-avance-detalle { flex: 1; min-width: 240px }
+.pn-leyenda { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 4px }
+.pn-leyenda-it {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: .84rem; color: var(--mid);
+}
+.pn-leyenda-it strong { color: var(--dark); font-weight: 700 }
+.pn-punto { width: 9px; height: 9px; border-radius: 50%; display: inline-block }
+.pn-punto--ok  { background: var(--spoke) }
+.pn-punto--cur { background: #F59E0B }
+.pn-punto--off { background: var(--border) }
+
+.pn-fase { display: flex; gap: 10px; align-items: center; padding: 4px 0 }
+.pn-fase-n { flex: 0 0 92px; color: var(--mid); font-size: .84rem }
+.pn-fase-b {
+  flex: 1; height: 6px; background: var(--border);
+  border-radius: 99px; overflow: hidden;
+}
+.pn-fase-b i { display: block; height: 100%; background: var(--spoke); transition: width .5s ease }
+.pn-fase-p { flex: 0 0 116px; text-align: right; color: var(--muted); font-size: .76rem }
+
+/* ── Ruta de certificación ────────────────────────────────────────────── */
+.pn-ruta { display: flex; flex-direction: column; gap: 2px }
+.pn-paso {
+  display: flex; align-items: center; gap: 13px;
+  padding: 11px 13px; border-radius: var(--radius-sm);
+  text-decoration: none; color: var(--dark);
+  border: 1px solid transparent; transition: background .12s ease;
+}
+a.pn-paso:hover { background: var(--bg); border-color: var(--border) }
+.pn-paso-n {
+  flex: 0 0 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; font-size: .74rem; font-weight: 700;
+  background: var(--bg); color: var(--muted); border: 1px solid var(--border);
+}
+.pn-paso-ico { color: var(--muted); display: flex }
+.pn-paso-txt { flex: 1; min-width: 0; display: flex; flex-direction: column }
+.pn-paso-txt strong { font-size: .93rem; font-weight: 600 }
+.pn-paso-txt small  { font-size: .76rem; color: var(--muted) }
+.pn-paso-est { color: var(--muted); display: flex }
+
+.pn-paso--completado .pn-paso-n   { background: var(--spoke); color: #fff; border-color: var(--spoke) }
+.pn-paso--completado .pn-paso-est,
+.pn-paso--completado .pn-paso-ico { color: var(--spoke) }
+.pn-paso--en_curso .pn-paso-n,
+.pn-paso--disponible .pn-paso-n   { background: #FEF3C7; color: #92400E; border-color: #FCD34D }
+.pn-paso--en_curso .pn-paso-est,
+.pn-paso--disponible .pn-paso-est { color: #D97706 }
+.pn-paso--bloqueado, .pn-paso--pendiente,
+.pn-paso--esperando, .pn-paso--sin_pago { opacity: .6; cursor: not-allowed }
+
+/* ── Documentos del expediente ────────────────────────────────────────── */
+.pn-docgrupo { margin-bottom: 18px }
+.pn-docgrupo:last-child { margin-bottom: 0 }
+.pn-docfase {
+  font-size: .69rem; font-weight: 800; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--muted);
+  padding: 0 0 7px; border-bottom: 1px solid var(--border); margin-bottom: 4px;
+}
+.pn-doc {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  text-decoration: none; color: var(--dark); font-size: .89rem;
+}
+.pn-doc:hover { background: var(--bg) }
+.pn-doc-ico { color: var(--muted); display: flex }
+.pn-doc-nom { flex: 1; min-width: 0 }
+.pn-doc-est {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .74rem; font-weight: 700; color: var(--muted);
+  background: var(--bg); border: 1px solid var(--border);
+  padding: 3px 10px; border-radius: 99px; white-space: nowrap;
+}
+.pn-doc--ok .pn-doc-ico { color: var(--spoke) }
+.pn-doc--ok .pn-doc-est {
+  color: var(--spoke-deep); background: var(--spoke-pale); border-color: #A7F3D0;
+}
+:root[data-tema="oscuro"] .pn-doc--ok .pn-doc-est {
+  background:#0E2A21; border-color:#065F46; color:#86EFAC;
+}
+
+/* ── Pagos por fase ───────────────────────────────────────────────────── */
+.pn-pagos { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) }
+.pn-pago {
+  display: flex; align-items: center; gap: 11px;
+  padding: 13px 15px; border-radius: var(--radius-sm);
+  background: var(--bg); border: 1px solid var(--border);
+}
+.pn-pago-ico { color: var(--muted); display: flex }
+.pn-pago-n { flex: 1; display: flex; flex-direction: column; font-size: .89rem; font-weight: 600 }
+.pn-pago-n small { font-size: .73rem; font-weight: 400; color: var(--muted) }
+.pn-pago-est { font-size: .72rem; font-weight: 700; color: var(--muted) }
+.pn-pago--ok { background: var(--spoke-pale); border-color: #A7F3D0 }
+.pn-pago--ok .pn-pago-ico, .pn-pago--ok .pn-pago-est { color: var(--spoke-deep) }
+:root[data-tema="oscuro"] .pn-pago--ok { background:#0E2A21; border-color:#065F46 }
+:root[data-tema="oscuro"] .pn-pago--ok .pn-pago-ico,
+:root[data-tema="oscuro"] .pn-pago--ok .pn-pago-est { color:#86EFAC }
+
+/* ── Sesión ───────────────────────────────────────────────────────────── */
+.pn-sesion {
+  display: flex; align-items: center; gap: 15px;
+  padding: 16px; border-radius: var(--radius-sm);
+  background: var(--bg); border: 1px solid var(--border); margin-bottom: 12px;
+}
+.pn-sesion-ico { color: var(--spoke); display: flex }
+.pn-sesion strong { display: block; font-size: .96rem; text-transform: capitalize }
+.pn-sesion small  { color: var(--muted); font-size: .8rem }
+
+/* ── Avisos ───────────────────────────────────────────────────────────── */
+.pn-aviso {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 13px 15px; border-radius: var(--radius-sm);
+  border-left: 3px solid var(--border); background: var(--bg);
+  margin-bottom: 8px; font-size: .88rem; line-height: 1.55;
+}
+.pn-aviso:last-child { margin-bottom: 0 }
+.pn-aviso-ico { display: flex; color: var(--muted) }
+.pn-aviso-txt { flex: 1; min-width: 200px; color: var(--mid) }
+.pn-aviso-cta {
+  font-size: .79rem; font-weight: 700; text-decoration: none;
+  color: var(--dark); background: var(--white);
+  border: 1px solid var(--border); border-radius: 99px; padding: 6px 14px;
+  white-space: nowrap;
+}
+.pn-aviso-cta:hover { border-color: var(--mid) }
+
+.pn-aviso--alto  { background:#FEF2F2; border-left-color:#DC2626 }
+.pn-aviso--alto  .pn-aviso-ico { color:#DC2626 }
+.pn-aviso--medio { background:#FFFBEB; border-left-color:#D97706 }
+.pn-aviso--medio .pn-aviso-ico { color:#B45309 }
+.pn-aviso--info  { background:#EFF6FF; border-left-color:#2563EB }
+.pn-aviso--info  .pn-aviso-ico { color:#2563EB }
+:root[data-tema="oscuro"] .pn-aviso--alto  { background:#2A1315 }
+:root[data-tema="oscuro"] .pn-aviso--medio { background:#2A210E }
+:root[data-tema="oscuro"] .pn-aviso--info  { background:#13203A }
+
+.pn-todobien {
+  display: flex; align-items: center; gap: 9px; margin: 0;
+  padding: 15px; border-radius: var(--radius-sm);
+  background: var(--spoke-pale); border: 1px solid #A7F3D0;
+  color: var(--spoke-deep); font-size: .89rem; font-weight: 600;
+}
+:root[data-tema="oscuro"] .pn-todobien { background:#0E2A21; border-color:#065F46; color:#86EFAC }
+
+/* ── Pie ──────────────────────────────────────────────────────────────── */
+.pn-pie { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 28px }
+
+/* ── Los iconos SVG dentro de las tarjetas de consulta ────────────────── */
+.recurso .modulo-ico, .modulo .modulo-ico { color: var(--spoke); display: flex; justify-content: center }
+
+/* ── Angosto ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .pn-hero   { padding: 22px 18px 24px }
+  .pn-saludo { font-size: 1.45rem }
+  .pn-cta    { min-width: 0; width: 100% }
+  .pn-cta2   { width: 100%; justify-content: center }
+  .pn-avance { gap: 18px; justify-content: center }
+  .pn-fase-p { flex-basis: 84px }
+  .pn-doc-nom{ font-size: .85rem }
+}
+
+/* El botón de tema y el de instalar traen icono + texto */
+.sh-tema, .ash-tema { display: flex; align-items: center; gap: 8px }
+.rol-ico, .ce-ico { display: inline-flex; align-items: center }
+.ash-ico { display: flex; align-items: center; justify-content: center }
+.pt-logo, .pt-ico { display: grid; place-items: center }
+#btnInstalar { display: inline-flex; align-items: center; gap: 8px }
+.inst-ico, .ev-ico, .chk-ico, .zona-ico { display: flex; align-items: center; justify-content: center }
+
+/* ============================================================================
+   EVIDENCIAS: archivos reales, declaración y firma
+   ========================================================================== */
+
+.ev-resumen { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) }
+.ev-resumen > div { display: flex; flex-direction: column; gap: 2px }
+.ev-resumen span {
+  font-size: .69rem; font-weight: 800; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--muted);
+}
+.ev-resumen strong { font-size: .93rem; color: var(--dark) }
+
+.ev-card {
+  display: flex; gap: 13px; align-items: flex-start; padding: 16px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  margin-bottom: 11px; background: var(--white);
+}
+.ev-card.lista { border-color: var(--spoke); background: var(--spoke-pale) }
+:root[data-tema="oscuro"] .ev-card.lista { background: #0E2A21; border-color: #065F46 }
+
+.ev-ico { flex: 0 0 32px; display: flex; justify-content: center; color: var(--muted) }
+.ev-card.lista .ev-ico { color: var(--spoke) }
+.ev-cuerpo { flex: 1; min-width: 0 }
+.ev-t { font-weight: 700; color: var(--dark); font-size: .95rem; margin-bottom: 4px }
+.ev-d { color: var(--mid); font-size: .86rem; line-height: 1.6 }
+
+.ev-req {
+  display: inline-block; padding: 2px 8px; border-radius: 4px; margin-left: 8px;
+  font-size: .66rem; font-weight: 800; letter-spacing: .04em; vertical-align: middle;
+}
+.req-si { background: #FEE2E2; color: #991B1B }
+.req-no { background: var(--bg); color: var(--mid) }
+:root[data-tema="oscuro"] .req-si { background: #2A1315; color: #FCA5A5 }
+
+.ev-accion { margin-top: 12px; display: flex; gap: 9px; align-items: center; flex-wrap: wrap }
+.ev-accion input[type=url] { flex: 1; min-width: 210px; font: inherit; font-size: .87rem }
+.ev-file { display: none }
+.ev-hint { font-size: .8rem; color: var(--muted) }
+
+.ev-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px; border-radius: 7px; font-size: .85rem; font-weight: 600;
+  background: var(--spoke); color: #fff; cursor: pointer; border: 0;
+}
+.ev-btn:hover { background: var(--spoke-deep) }
+.ev-btn--quitar { background: var(--border); color: var(--dark) }
+.ev-btn--quitar:hover { background: #CBD5E1 }
+:root[data-tema="oscuro"] .ev-btn--quitar:hover { background: #33415A }
+
+/* Lo ya entregado, con su miniatura */
+.ev-puesto {
+  display: flex; gap: 12px; align-items: center; margin-top: 12px;
+  padding: 11px; background: var(--white); border: 1px solid var(--border);
+  border-radius: 9px; font-size: .85rem;
+}
+.ev-mini {
+  width: 54px; height: 54px; border-radius: 7px; object-fit: cover;
+  flex-shrink: 0; border: 1px solid var(--border); background: var(--bg);
+}
+.ev-mini--sin { display: grid; place-items: center; color: var(--muted) }
+.ev-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px }
+.ev-meta strong {
+  font-size: .87rem; color: var(--dark); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.ev-meta small { color: var(--muted); font-size: .77rem }
+
+.ev-tag {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 2px;
+  font-size: .73rem; font-weight: 600; line-height: 1.4;
+}
+.ev-tag--ok  { color: var(--spoke-deep) }
+.ev-tag--ojo { color: #B45309 }
+:root[data-tema="oscuro"] .ev-tag--ok  { color: #86EFAC }
+:root[data-tema="oscuro"] .ev-tag--ojo { color: #FCD34D }
+
+/* Declaración */
+.ev-check {
+  display: flex; gap: 12px; align-items: flex-start; padding: 14px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 9px;
+  font-size: .85rem; line-height: 1.65; color: var(--mid); cursor: pointer;
+}
+.ev-check input { margin-top: 3px; flex-shrink: 0; width: 17px; height: 17px }
+
+.ev-sellada {
+  display: flex; align-items: center; gap: 8px; margin: 16px 0 0;
+  padding: 11px 14px; border-radius: 8px;
+  background: var(--spoke-pale); border: 1px solid #A7F3D0;
+  color: var(--spoke-deep); font-size: .85rem; font-weight: 600;
+}
+:root[data-tema="oscuro"] .ev-sellada { background: #0E2A21; border-color: #065F46; color: #86EFAC }
+
+.ev-faltan { list-style: none; padding: 0; margin: 4px 0 0 }
+.ev-faltan li {
+  display: flex; align-items: center; gap: 9px; padding: 8px 0;
+  font-size: .87rem; color: var(--mid); border-bottom: 1px solid var(--border);
+}
+.ev-faltan li:last-child { border-bottom: 0 }
+.ev-faltan svg { color: var(--muted) }
+.ev-peso { margin: 14px 0 0; font-size: .8rem; color: var(--muted) }
+
+.resumen-barra { display: flex; gap: 11px; align-items: center; flex-wrap: wrap }
+
+/* ── Firma ─────────────────────────────────────────────────────────────── */
+.fm-guardada {
+  display: flex; align-items: center; gap: 14px; padding: 13px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 9px;
+}
+.fm-guardada img { height: 46px; max-width: 190px; object-fit: contain }
+:root[data-tema="oscuro"] .fm-guardada img { filter: invert(1) brightness(1.6) }
+.fm-guardada-txt { flex: 1; display: flex; flex-direction: column; gap: 2px }
+.fm-guardada-txt strong { font-size: .88rem; color: var(--dark) }
+.fm-guardada-txt small { font-size: .78rem; color: var(--muted) }
+
+.fm-tabs { display: flex; gap: 6px; margin-bottom: 12px }
+.fm-tab {
+  padding: 7px 14px; border-radius: 99px; font-size: .82rem; font-weight: 600;
+  background: var(--bg); border: 1px solid var(--border); color: var(--mid); cursor: pointer;
+}
+.fm-tab--on { background: var(--dark); color: var(--white); border-color: var(--dark) }
+
+.fm-lienzo {
+  width: 100%; height: 180px; display: block;
+  background: var(--white); border: 2px dashed var(--border); border-radius: 9px;
+  /* Sin esto, firmar con el dedo desplaza la página en vez de dibujar. */
+  touch-action: none; cursor: crosshair;
+}
+.fm-nombre { width: 100%; font: inherit; font-size: .95rem; padding: 11px }
+.fm-vista { min-height: 60px; display: flex; align-items: center; margin-top: 8px }
+.fm-vista img { height: 52px; max-width: 100% ; object-fit: contain }
+:root[data-tema="oscuro"] .fm-vista img { filter: invert(1) brightness(1.6) }
+
+.fm-ayuda { color: var(--muted); font-size: .78rem; margin: 8px 0 0 }
+.fm-acciones { display: flex; gap: 9px; margin-top: 12px; flex-wrap: wrap }
+.fm-btn {
+  padding: 8px 16px; border-radius: 7px; font-size: .84rem; font-weight: 600;
+  background: var(--bg); border: 1px solid var(--border); color: var(--dark); cursor: pointer;
+}
+.fm-btn:hover { border-color: var(--mid) }
+.fm-btn--ok { background: var(--spoke); border-color: var(--spoke); color: #fff }
+.fm-btn--ok:hover { background: var(--spoke-deep); border-color: var(--spoke-deep) }
+.fm-aviso { color: #B91C1C; font-size: .82rem; margin: 10px 0 0 }
+:root[data-tema="oscuro"] .fm-aviso { color: #FCA5A5 }
+
+@media (max-width: 640px) {
+  .ev-card   { flex-direction: column; gap: 10px }
+  .ev-puesto { flex-wrap: wrap }
+  .fm-lienzo { height: 150px }
+}
+.ev-pendiente {
+  display: flex; align-items: center; gap: 8px; margin: 10px 0 0;
+  padding: 10px 13px; border-radius: 8px;
+  background: #FFFBEB; border: 1px solid #FDE68A;
+  color: #92400E; font-size: .83rem; line-height: 1.5;
+}
+:root[data-tema="oscuro"] .ev-pendiente { background:#2A210E; border-color:#78350F; color:#FCD34D }
+
+/* Un botón deshabilitado tiene que verse deshabilitado: sin esto, el de
+   "Comenzar autodiagnóstico" seguía viéndose pulsable mientras el acuerdo
+   estaba sin firmar, y la gente le daba clic tres veces antes de buscar por
+   qué no pasaba nada. */
+.btn-plat:disabled {
+  opacity: .5; cursor: not-allowed; filter: grayscale(.4);
+}
+.btn-plat:disabled:hover { transform: none; box-shadow: none }
+
+/* ============================================================================
+   LOS CUATRO FORMATOS DE LA SESIÓN
+   ========================================================================== */
+.fmt-card {
+  display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+  padding: 16px; margin-bottom: 10px;
+  background: var(--white); border: 1.5px solid var(--border); border-radius: 10px;
+}
+.fmt-card--ok { border-color: var(--spoke); background: var(--spoke-pale) }
+:root[data-tema="oscuro"] .fmt-card--ok { background:#0E2A21; border-color:#065F46 }
+
+.fmt-ico { flex: 0 0 26px; display: flex; justify-content: center; color: var(--muted) }
+.fmt-card--ok .fmt-ico { color: var(--spoke) }
+.fmt-cuerpo { flex: 1; min-width: 190px }
+.fmt-t { font-weight: 700; font-size: .95rem; color: var(--dark) }
+.fmt-d { color: var(--mid); font-size: .85rem; line-height: 1.55; margin-top: 3px }
+.fmt-meta {
+  margin-top: 5px; font-size: .72rem; font-weight: 600;
+  letter-spacing: .03em; color: var(--muted);
+}
+.fmt-acciones { display: flex; gap: 8px; flex-wrap: wrap }
+.fmt-acciones .btn-plat { padding: 8px 15px; font-size: .84rem }
+
+/* El visor */
+.fmt-visor {
+  border: 0; border-radius: 14px; padding: 0;
+  width: min(760px, 94vw); max-height: 92vh;
+  background: var(--white); box-shadow: var(--shadow-lg);
+}
+.fmt-visor::backdrop { background: rgba(2,6,23,.72) }
+.fmt-top {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 13px 18px; border-bottom: 1px solid var(--border); background: var(--white);
+}
+.fmt-top strong { font-size: .95rem; color: var(--dark) }
+#fmtCuerpo { padding: 22px; overflow: auto; max-height: calc(92vh - 62px) }
+
+/* La hoja, dentro del visor (en el archivo descargado va su propia hoja) */
+.fmt-hoja { color: var(--dark) }
+.fmt-hoja-top {
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 18px;
+  padding-bottom: 11px; margin-bottom: 16px; border-bottom: 2px solid #0d2a6e;
+}
+.fmt-hoja-top strong { display: block; font-size: .95rem; letter-spacing: .06em; color: #0d2a6e }
+:root[data-tema="oscuro"] .fmt-hoja-top strong { color: #93C5FD }
+.fmt-hoja-top small { color: var(--muted); font-size: .72rem }
+.fmt-hoja-top h2 { margin: 0; font-size: 1.05rem; text-align: right }
+
+.fmt-grupo {
+  margin: 18px 0 8px; font-size: .69rem; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--muted);
+  border-bottom: 1px solid var(--border); padding-bottom: 4px;
+}
+.fmt-campo { margin-bottom: 11px }
+.fmt-campo--corto { display: inline-block; width: 31%; margin-right: 2%; vertical-align: top }
+.fmt-campo label { display: block; font-size: .72rem; color: var(--mid); margin-bottom: 3px }
+.fmt-lineas span { display: block; border-bottom: 1px solid var(--muted); height: 19px }
+
+.fmt-leyenda {
+  margin: 14px 0; padding: 10px 13px; background: var(--bg);
+  border-left: 3px solid #0d2a6e; font-size: .78rem; line-height: 1.6; color: var(--mid);
+}
+.fmt-firma { display: inline-block; width: 45%; margin: 24px 4% 0 0; vertical-align: top }
+.fmt-raya { display: block; border-bottom: 1px solid var(--dark); height: 32px }
+.fmt-firma small { display: block; font-size: .7rem; color: var(--mid); margin-top: 5px }
+.fmt-nota { margin-top: 20px; font-size: .75rem; color: var(--mid); font-style: italic }
+.fmt-pie { margin-top: 8px; font-size: .68rem; color: var(--muted) }
+
+@media (max-width: 560px) {
+  .fmt-campo--corto { width: 100%; margin-right: 0 }
+  .fmt-firma { width: 100% }
+  .fmt-acciones { width: 100% }
+  .fmt-acciones .btn-plat { flex: 1 }
+}
+
+/* Entregado pero incompleto: ni verde ni gris. El archivo quedó registrado
+   pero no viaja en el respaldo, así que el Centro no lo va a recibir. */
+.ev-card.a-medias { border-color: #D97706; background: #FFFBEB }
+.ev-card.a-medias .ev-ico { color: #B45309 }
+:root[data-tema="oscuro"] .ev-card.a-medias { background:#2A210E; border-color:#78350F }
+:root[data-tema="oscuro"] .ev-card.a-medias .ev-ico { color:#FCD34D }
+
+/* La tarjeta de la firma guardada era una fila de tres cosas que en 390px no
+   caben: la firma, el texto y el botón. El botón quedaba cortado por el borde
+   derecho — "Ca" en vez de "Cambiar" — y el texto se exprimía en una columna
+   de cuatro letras. En angosto se apila. */
+@media (max-width: 560px) {
+  .fm-guardada { flex-wrap: wrap; gap: 10px }
+  .fm-guardada img { height: 40px; max-width: 140px }
+  .fm-guardada-txt { flex: 1 1 100%; order: 3 }
+  .fm-guardada .fm-btn { margin-left: auto }
+  .ev-puesto--archivo { flex-wrap: wrap }
+  .ev-meta { flex: 1 1 130px }
+  .ev-puesto--archivo .ev-btn { margin-left: auto }
+}
+
+/* ── Foco visible en los campos ───────────────────────────────────────────
+   posturalia-styles.css quita el contorno de los campos al enfocarlos y lo
+   cambia por un halo verde al 10% de opacidad: sobre blanco, un contraste de
+   1.05 a 1, o sea invisible. Y como `input:focus` pesa más que la regla
+   global `:focus-visible`, también la anulaba. Quien llena el Plan o la
+   declaración con el teclado —o con un lector de pantalla— no veía en qué
+   campo estaba escribiendo.
+
+   `:focus-visible` solo aplica cuando se llega con el teclado, así que al
+   dar clic con el mouse se sigue viendo el halo suave de siempre. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--spoke);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 4px rgba(5, 150, 105, .22);
+}
+:root[data-tema="oscuro"] input:focus-visible,
+:root[data-tema="oscuro"] textarea:focus-visible,
+:root[data-tema="oscuro"] select:focus-visible {
+  outline-color: #34D399;
+}
+
+/* Historial de intentos del examen */
+.ex-hist { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 12px }
+.ex-int {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  min-width: 84px; padding: 9px 12px; border-radius: 9px;
+  background: var(--bg); border: 1px solid var(--border);
+}
+.ex-int span  { font-size: .68rem; font-weight: 700; letter-spacing: .04em; color: var(--muted); text-transform: uppercase }
+.ex-int strong{ font-size: 1.15rem; color: var(--dark) }
+.ex-int small { font-size: .7rem; color: var(--muted) }
+.ex-int--ok   { background: var(--spoke-pale); border-color: #A7F3D0 }
+.ex-int--ok strong { color: var(--spoke-deep) }
+:root[data-tema="oscuro"] .ex-int--ok { background:#0E2A21; border-color:#065F46 }
+:root[data-tema="oscuro"] .ex-int--ok strong { color:#86EFAC }
+
+/* ── Panel (casita) y regreso al panel de administrador, como Paideia ── */
+.sh-nav--panel { padding-bottom: 0 }
+.sh-item--panel { font-weight: 700 }
+.sh-admin { display:flex; align-items:center; gap:9px; margin-top:8px; padding:10px 11px; border-radius:8px;
+  border:1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.06); color:#fff; font-size:.8rem; font-weight:700;
+  line-height:1.3; text-decoration:none }
+.sh-admin:hover { background: rgba(255,255,255,.14); color:#fff; text-decoration:none }
+
+/* ── Usuario y cerrar sesión (como Paideia) ── */
+.sh-usuario { display:flex; gap:10px; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--sh-line) }
+.sh-avatar { flex:0 0 34px; height:34px; border-radius:50%; display:grid; place-items:center; background:#1D4ED8; color:#fff; font-weight:800; font-size:.8rem }
+.sh-u-txt { min-width:0; display:flex; flex-direction:column; line-height:1.3 }
+.sh-u-txt b { color:#fff; font-size:.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.sh-u-txt small { color:rgba(255,255,255,.55); font-size:.7rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.sh-salir { margin-top:8px }
+
+/* ── Etapas del Centro Evaluador (panel del candidato, v26) ────────────── */
+.pn-etapas { display: flex; flex-direction: column; gap: 2px }
+.pn-etapa { display: flex; align-items: center; gap: 13px; padding: 9px 13px; border-radius: var(--radius-sm) }
+.pn-etapa-n { flex: 0 0 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: .74rem; font-weight: 700;
+  background: var(--bg); color: var(--muted); border: 1px solid var(--border) }
+.pn-etapa-txt { flex: 1; min-width: 0; display: flex; flex-direction: column }
+.pn-etapa-txt strong { font-size: .92rem; font-weight: 600 } .pn-etapa-txt small { font-size: .76rem; color: var(--muted) }
+.pn-etapa--ok .pn-etapa-n { background: var(--spoke); color: #fff; border-color: var(--spoke) }
+.pn-etapa--actual .pn-etapa-n { background: #FEF3C7; color: #92400E; border-color: #FCD34D }
+.pn-etapa--bloq { opacity: .4 }
+
+/* El regreso al panel del equipo va arriba del menú, a la vista (antes al
+   pie, donde no se veía sin bajar). */
+.shell > .sh-admin { margin: 12px 16px 2px; background: #FFD700; border-color: #FFD700; color: #0a1f52 }
+.shell > .sh-admin:hover { background: #ffe34d; color: #0a1f52 }
+
+/* v47 · archivo rechazado al subirlo (con la razón) */
+.ev-rechazo { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: #FEF2F2; color: #991B1B; font-size: .86rem; border: 1px solid #FECACA }
+.ev-rechazo p { margin: 0 0 4px; display: flex; gap: 6px; align-items: flex-start }
+.ev-rechazo p:last-child { margin: 0 }
+:root[data-tema="oscuro"] .ev-rechazo { background: #3B1212; color: #FECACA; border-color: #7F1D1D }
+.ev-puesto--archivo + .ev-puesto--archivo { margin-top: 8px }
+
+/* v47 · formatos firmados que sube el candidato (Documentos de Sesión) */
+.fmt-firmados { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
+.fmt-firmado { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--spoke); border-radius: 8px; font-size: .8rem; background: var(--white) }
+.fmt-firmado.ojo { border-color: #F59E0B }
+.fmt-firmado img { width: 28px; height: 28px; object-fit: cover; border-radius: 4px }
+.fmt-firmado button { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: .9rem }
+.fmt-firmado-nota { color: var(--spoke-deep); font-weight: 600 }

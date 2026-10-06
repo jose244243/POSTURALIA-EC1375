@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sesión de Alineación — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  .ses-card {
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; background: var(--white); margin-bottom: 12px;
+  }
+  .ses-fecha {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
+  }
+  .ses-dia { font-size: 1.15rem; font-weight: 700; color: var(--dark) }
+  .ses-hora { color: var(--mid); font-size: .92rem }
+  .ses-datos { display: grid; gap: 7px; margin-bottom: 16px }
+  .ses-dato { display: flex; gap: 9px; font-size: .88rem; color: var(--mid) }
+  .ses-dato b { flex: 0 0 96px; color: var(--muted); font-weight: 600 }
+
+  .cuenta {
+    display: inline-block; padding: 4px 12px; border-radius: 99px;
+    background: rgba(37,99,235,.10); color: #2563EB;
+    font-size: .78rem; font-weight: 700;
+  }
+  .cuenta--hoy { background: rgba(5,150,105,.12); color: #059669 }
+  .cuenta--paso { background: var(--bg); color: var(--muted) }
+
+  .paso-lista { counter-reset: p; margin: 0; padding: 0; list-style: none }
+  .paso-lista li {
+    position: relative; padding: 0 0 14px 38px;
+    color: var(--mid); font-size: .9rem; line-height: 1.6;
+  }
+  .paso-lista li::before {
+    counter-increment: p; content: counter(p);
+    position: absolute; left: 0; top: 0;
+    width: 25px; height: 25px; display: grid; place-items: center;
+    background: var(--bg); color: var(--muted);
+    border-radius: 50%; font-size: .76rem; font-weight: 700;
+  }
+  .paso-lista li.hecho::before { background: #059669; color: #fff; content: '✓' }
+  .paso-lista li.hecho { color: var(--muted) }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <div class="plat-head">
+    <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 10.5 22 7v10l-7-3.5"/><path d="M4 5h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg></div>
+    <h1>Sesión de Alineación</h1>
+    <p>La sesión en vivo con instructor donde se recorre el estándar completo
+       antes de tu evaluación.</p>
+  </div>
+
+  <div id="estadoFase"></div>
+
+  <div id="cierreAlineacion"></div>
+
+  <!-- Grabación de la sesión (como el bloque alineacion:video de Paideia) -->
+  <section class="card" id="grabacionCard" hidden>
+    <h2>Grabación de tu sesión de Alineación</h2>
+    <p style="color:var(--mid);font-size:.9rem;line-height:1.7;margin:0 0 14px">Para repasar lo que se vio en la sesión, las veces que quieras, antes de tu evaluación.</p>
+    <div id="grabacion"></div>
+  </section>
+
+  <section class="card">
+    <h2>Tu sesión</h2>
+    <div id="sesiones"></div>
+  </section>
+
+  <section class="card">
+    <h2>Cómo llegas preparado</h2>
+    <ul class="paso-lista" id="preparacion"></ul>
+  </section>
+
+  <section class="card">
+    <h2>El material</h2>
+    <p style="color:var(--mid);font-size:.9rem;line-height:1.7;margin-bottom:16px">
+      Abierto desde ahora, sin esperar a la sesión. Llegar con los puntos
+      críticos leídos es la diferencia entre seguir la sesión y tomar notas
+      a ciegas.
+    </p>
+    <div class="acciones" style="justify-content:flex-start;margin-top:0">
+      <a class="btn-plat btn-plat--primario" href="biblioteca.html"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.5 3.5h5A4 4 0 0 1 12 7.5v13a3.2 3.2 0 0 0-3.2-2.6H2.5z"/><path d="M21.5 3.5h-5A4 4 0 0 0 12 7.5v13a3.2 3.2 0 0 1 3.2-2.6h6.3z"/></svg> Abrir la Biblioteca</a>
+      <a class="btn-plat btn-plat--secundario" href="alineacion-deck.html"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 3.5h16a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 14V5A1.5 1.5 0 0 1 4 3.5z"/><path d="M8.5 20.5h7"/><path d="M12 15.5v5"/></svg> Ver la presentación</a>
+    </div>
+  </section>
+
+</main>
+
+<script type="module">
+import './js/shell.js';
+import { icono } from './js/iconos.js';
+import { CONFIG } from './js/config.js';
+import { Store }  from './js/store.js';
+import { hoyLocal } from './js/fechas.js';
+import { pintarBarraFlujo, completar, faseAutorizada, estaCompleto } from './js/flow.js';
+import { avanceDeReforzamiento } from './js/brechas.js';
+import { CRITICOS } from './js/data-biblioteca.js';
+
+const MODULO = 'alineacion';
+const $ = id => document.getElementById(id);
+const LIBERADA = faseAutorizada('alineacion');
+
+/* ── Grabación de la sesión ─────────────────────────────────────────────── */
+import('./js/grabacion.js').then(async m => {
+  const st = document.createElement('style'); st.textContent = m.ESTILOS_GRABACION; document.head.appendChild(st);
+  const g = await m.miGrabacion({ liberada: LIBERADA });
+  if (!LIBERADA && !g) return;
+  $('grabacionCard').hidden = false;
+  m.montarGrabacion($('grabacion'), g);
+}).catch(() => {});
+
+/* ── De dónde salen las sesiones ──────────────────────────────────────────
+   Las programa el Centro desde su panel y viven en su propio almacén. En
+   modo local eso significa: se ven si el candidato abre la plataforma en la
+   misma computadora del Centro, o si el evaluador está mirando en espejo.
+
+   Desde el equipo del propio candidato no habrá nada hasta que se encienda
+   Supabase — y entonces esta misma función leerá de ahí. Mientras tanto no
+   se deja la pantalla vacía sin explicación: se dice quién avisa la fecha. */
+function sesionesProgramadas() {
+  try {
+    const d = JSON.parse(localStorage.getItem('posturalia.evaluador.v1'));
+    return Array.isArray(d?.sesiones) ? d.sesiones : [];
+  } catch { return []; }
+}
+
+const hoy = hoyLocal();   // en UTC, de las 18:00 en adelante ya era mañana
+
+const diasHasta = fecha => {
+  const ms = new Date(fecha + 'T00:00:00') - new Date(hoy + 'T00:00:00');
+  return Math.round(ms / 86400000);
+};
+
+const enLetra = fecha => {
+  try {
+    return new Date(fecha + 'T00:00:00').toLocaleDateString('es-MX',
+      { weekday: 'long', day: 'numeric', month: 'long' });
+  } catch { return fecha; }
+};
+
+/* ── Estado de la fase ──────────────────────────────────────────────────── */
+$('estadoFase').innerHTML = LIBERADA
+  ? `<div class="card" style="border-left:4px solid #059669">
+       <h2 style="margin-top:0">Fase liberada ✓</h2>
+       <p style="color:var(--mid);font-size:.92rem;line-height:1.7;margin:0">
+         Tu Centro Evaluador confirmó esta fase. Si ya tienes fecha, aparece abajo.
+       </p>
+     </div>`
+  : `<div class="card" style="border-left:4px solid #D97706">
+       <h2 style="margin-top:0">Tu Centro todavía no libera esta fase</h2>
+       <p style="color:var(--mid);font-size:.92rem;line-height:1.7">
+         La sesión de Alineación se agenda cuando el Centro Evaluador confirma esta
+         fase de tu proceso. Mientras tanto, <strong>el material ya está abierto</strong>:
+         puedes estudiar desde hoy.
+       </p>
+       <p style="margin:0">
+         <a class="btn-plat btn-plat--primario"
+            href="https://wa.me/${CONFIG.marca.whatsapp}" target="_blank" rel="noopener">
+           ${icono('mensaje', 17)} Preguntar por mi Alineación
+         </a>
+       </p>
+     </div>`;
+
+/* ── Sesiones ───────────────────────────────────────────────────────────── */
+const proximas = sesionesProgramadas()
+  .filter(s => (s.fecha || '') >= hoy)
+  .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+
+/* Inscripción a la sesión, como sesiones-alineacion-component.js de Paideia:
+   «Tus sesiones confirmadas», la grilla con cupo y «Inscribirse». */
+async function pintarSesiones() {
+  const m = await import('./js/sesiones-alineacion.js');
+  if (!document.getElementById('saEstilos')) { const st = document.createElement('style'); st.id = 'saEstilos'; st.textContent = m.ESTILOS_SESIONES; document.head.appendChild(st); }
+  const yo = (Store.get('candidato', {}) || {}).email || '';
+  const lista = await m.misSesiones(yo);
+  $('sesiones').innerHTML = m.htmlSesiones(lista, { liberada: LIBERADA && !Store.soloLectura, whatsapp: CONFIG.marca?.whatsapp || '' });
+  await m.sincronizarMiSesion(yo, lista);
+}
+$('sesiones').addEventListener('click', async e => {
+  const ins = e.target.closest('[data-inscribir]'), can = e.target.closest('[data-cancelar]');
+  if (!ins && !can) return;
+  const m = await import('./js/sesiones-alineacion.js');
+  const yo = (Store.get('candidato', {}) || {}).email || '';
+  try {
+    if (ins) await m.inscribirme(ins.dataset.inscribir, yo, { liberada: LIBERADA && !Store.soloLectura });
+    else if (confirm('¿Cancelar tu lugar en esta sesión? Lo puede tomar alguien más.')) await m.cancelarInscripcion(can.dataset.cancelar, yo);
+  } catch (err) { alert(err.message); }
+  pintarSesiones();
+});
+pintarSesiones();
+void proximas;
+
+/* ── Preparación ────────────────────────────────────────────────────────── */
+const auto = Store.get('autodiagnostico', {});
+const refu = avanceDeReforzamiento();
+/* Lo leído vive en 'biblioteca' desde que dejó de cerrar esta fase; los
+   datos de antes seguían en 'alineacion' hasta que se abre la Biblioteca. */
+const bibl = { ...Store.get('alineacion', {}), ...Store.get('biblioteca', {}) };
+const critTotal = CRITICOS.filter(c => c.enDeck).length;   // los que tienen material
+
+const pasos = [
+  { txt: 'Contestar el autodiagnóstico completo',
+    hecho: auto.completado === true },
+  /* `repasados` pasó a ser la lista de temas: interpolarla aquí imprimía las
+     claves internas separadas por comas. */
+  { txt: `Reforzar tus temas y dar el visto bueno en Reforzamiento${
+      refu.temas ? ` (${refu.repasados} de ${refu.temas} temas)` : ''}`,
+    hecho: estaCompleto('reforzamiento') },
+  /* Antes bastaba con haber visto uno (`criticos > 0`) para palomearlo. */
+  { txt: `Leer los puntos críticos en la Biblioteca${
+      bibl.criticos ? ` (${Math.min(bibl.criticos, critTotal)} de ${critTotal})` : ''}`,
+    hecho: (bibl.criticos || 0) >= critTotal },
+  { txt: 'Llegar con tus dudas anotadas: la sesión es en vivo y es el momento de preguntarlas',
+    hecho: false },
+];
+
+$('preparacion').innerHTML = pasos.map(p =>
+  `<li class="${p.hecho ? 'hecho' : ''}">${p.txt}</li>`).join('');
+
+/* ── Cerrar la Alineación ─────────────────────────────────────────────────
+   La fase de Alineación vale 30% del avance ponderado — la más pesada
+   después de Evaluación. Y no había forma de cerrarla: ni la página ofrecía
+   marcarla ni nadie escribía su `completado`. El efecto era absurdo y
+   silencioso: un candidato que pagó todo, hizo todo y ya tenía su
+   certificado se quedaba en 70% para siempre, con la barra de Alineación
+   en cero y sin nada que explicara por qué.
+
+   Quién puede cerrarla: él mismo. No es una evaluación —eso es el Examen y
+   la Práctica—, es una sesión a la que asistió. Nadie gana nada mintiendo
+   sobre haber tomado una sesión que ya pagó. Lo que sí importa es que la
+   confirmación sea explícita y quede fechada, para que el Centro sepa a
+   quién le falta tomarla.
+
+   Solo aparece con la fase liberada: ofrecer "ya la tomé" a quien todavía no
+   se la cobran invita a cerrar un paso que nunca ocurrió.               */
+function pintarCierre() {
+  if (!LIBERADA) { $('cierreAlineacion').innerHTML = ''; return; }
+
+  const d = Store.get(MODULO);
+  const hecha = d.completado === true;
+
+  $('cierreAlineacion').innerHTML = hecha
+    ? `<div class="card" style="border-left:4px solid var(--spoke)">
+         <h2 style="margin-top:0">Alineación tomada</h2>
+         <p style="color:var(--mid);font-size:.92rem;line-height:1.7">
+           Marcaste tu sesión como tomada${d.tomadaEl
+             ? ` el ${new Date(d.tomadaEl).toLocaleDateString('es-MX',
+                 { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}.
+           El material sigue abierto: vuelve a él cuando quieras.
+         </p>
+         <button class="btn-plat btn-plat--secundario" id="btnDeshacer">
+           No la he tomado todavía</button>
+       </div>`
+    : `<div class="card">
+         <h2 style="margin-top:0">¿Ya tomaste tu sesión?</h2>
+         <p style="color:var(--mid);font-size:.92rem;line-height:1.7">
+           Márcalo cuando hayas asistido. Es lo que cierra esta fase, que vale
+           el <strong>30%</strong> de tu avance — sin esto tu proceso se queda
+           atorado ahí aunque lo demás esté completo.
+         </p>
+         <button class="btn-plat btn-plat--primario" id="btnTomada">
+           Ya tomé mi sesión de Alineación</button>
+       </div>`;
+
+  const b1 = $('btnTomada'), b2 = $('btnDeshacer');
+  if (b1) b1.onclick = () => {
+    completar(MODULO, { tomadaEl: new Date().toISOString() });
+    pintarCierre();
+    pintarBarraFlujo($('pasos'), MODULO);
+  };
+  if (b2) b2.onclick = () => {
+    Store.merge(MODULO, { completado: false, tomadaEl: null });
+    pintarCierre();
+    pintarBarraFlujo($('pasos'), MODULO);
+  };
+}
+
+pintarCierre();
+pintarBarraFlujo($('pasos'), MODULO);
+</script>
+<script type="module" src="js/protege.js"></script>
+</body>
+</html>

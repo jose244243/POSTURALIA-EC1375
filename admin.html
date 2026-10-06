@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel del equipo — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<link rel="stylesheet" href="admin-styles.css">
+<style>
+  .emb-fila { display:flex; align-items:center; gap:12px; padding:9px 0 }
+  .emb-nom { flex:0 0 130px; font-size:.86rem; color:var(--dark) }
+  .emb-barra { flex:1; height:24px; background:var(--bg); border-radius:6px; overflow:hidden; display:flex }
+  .emb-seg { height:100%; background:#0d2a6e; transition:width .3s }
+  .emb-val { flex:0 0 130px; text-align:right; font-size:.82rem; color:var(--muted); font-variant-numeric:tabular-nums }
+  .emb-conv { color:#0d2a6e; font-weight:700 }
+
+  .acc-rap { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px }
+
+  .at-fila { display:flex; gap:10px; align-items:flex-start; padding:11px 0;
+             border-bottom:1px solid var(--border); font-size:.88rem; line-height:1.55 }
+  .at-fila:last-child { border-bottom:none }
+  .at-punto { flex:0 0 9px; height:9px; border-radius:50%; margin-top:6px }
+  .at-alto  { background:#DC2626 } .at-medio { background:#D97706 } .at-bajo { background:#64748B }
+  .at-txt   { flex:1; color:var(--dark) }
+
+  .ses-fila { display:flex; gap:12px; align-items:baseline; padding:11px 0;
+              border-bottom:1px solid var(--border); font-size:.87rem; flex-wrap:wrap }
+  .ses-fila:last-child { border-bottom:none }
+  .ses-f { font-weight:700; color:var(--dark) }
+  .ses-meta { color:var(--muted); font-size:.82rem; flex:1 }
+
+  .ut-lote { padding:12px 0; border-bottom:1px solid var(--border) }
+  .ut-lote:last-child { border-bottom:none }
+  .ut-cab { display:flex; justify-content:space-between; font-size:.88rem; font-weight:700; color:var(--dark) }
+  .ut-sub { color:var(--muted); font-size:.81rem; margin:3px 0 7px }
+  .ut-socios { display:flex; gap:7px; flex-wrap:wrap; font-size:.79rem; color:var(--mid) }
+  .ut-socios span { background:var(--bg); border-radius:5px; padding:3px 8px }
+
+  .idx { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:18px }
+  .idx h3 { font-size:.74rem; letter-spacing:.07em; text-transform:uppercase;
+            color:var(--muted); margin:0 0 7px }
+  .idx a { display:block; font-size:.85rem; padding:3px 0; color:var(--mid); text-decoration:none }
+  .idx a:hover { color:#0d2a6e; text-decoration:underline }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="ad-top">
+  <div class="ad-top-in">
+    <div>
+      <h1 class="ad-titulo">Panel del equipo</h1>
+      <div class="ad-sub" id="sub"></div>
+      <div class="acc-rap">
+        <a class="btn-a btn-a--pri" href="admin-candidatos.html">Ver candidatos</a>
+        <a class="btn-a btn-a--sec" href="admin-precios.html">Precios y pagos</a>
+        <a class="btn-a btn-a--sec" href="admin-sesiones.html">Nueva sesión</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="ad-wrap">
+
+  <div id="aviso"></div>
+  <div id="pruebaRapida"></div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="card" id="cardAtencion" hidden>
+    <h2>Requieren atención</h2>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">
+      La lista de candidatos dice quién existe. Esto dice a quién hay que llamarle hoy.
+    </p>
+    <div id="atencion"></div>
+  </div>
+
+  <div class="card">
+    <h2>Embudo por fase</h2>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">
+      Cuántos candidatos activos tienen pagada cada fase, y qué porcentaje pasó
+      desde la fase anterior. Donde cae el porcentaje es donde se está perdiendo gente.
+    </p>
+    <div id="embudo"></div>
+  </div>
+
+  <div class="card">
+    <h2>Dónde van en el proceso</h2>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">
+      Esto sale de los expedientes que hayas cargado, no de los pagos.
+    </p>
+    <div id="pasos"></div>
+  </div>
+
+  <div class="card">
+    <h2>Últimos pagos registrados</h2>
+    <div id="pagos"></div>
+  </div>
+
+  <div class="card">
+    <h2>Próximas sesiones de Alineación</h2>
+    <div id="sesiones"></div>
+  </div>
+
+  <div class="card">
+    <h2>Utilidades por lote</h2>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">
+      Sobre lo cobrado, con el reparto configurado en
+      <a href="admin-utilidades.html">Utilidades</a>.
+    </p>
+    <div id="utilidades"></div>
+  </div>
+
+  <div class="card">
+    <h2>Índice de módulos</h2>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:14px">
+      Todo lo que ve el candidato, para abrirlo y revisarlo sin tener que
+      entrar con su cuenta.
+    </p>
+    <div class="idx" id="indice"></div>
+  </div>
+
+  <div class="card" id="cardEquipo">
+    <h2>Acceso del equipo</h2>
+    <p style="color:var(--muted);font-size:.85rem;line-height:1.6;margin-bottom:12px">
+      Quién entra al panel y con qué rol, como en Paideia: <strong>Administrador</strong> ve todo;
+      <strong>Evaluador</strong> solo Candidatos y la evaluación, sin precios ni utilidades.
+      Cada persona entra con su correo y crea su contraseña la primera vez. Quien es Administrador pasa de
+      la vista del equipo a la del candidato con «Ver como candidato» y regresa con «Volver al panel de administrador».
+      También puedes dar acceso marcando a una persona como <strong>Administrador (equipo)</strong> en Candidatos.
+    </p>
+    <div id="equipo"></div>
+    <div class="alta" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <input type="email" id="eqCorreo" placeholder="correo@dominio.com" aria-label="Correo" style="flex:2 1 220px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit">
+      <input type="text" id="eqNombre" placeholder="Nombre" aria-label="Nombre" style="flex:1 1 160px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit">
+      <select id="eqRol" aria-label="Rol" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit"><option value="evaluador">Evaluador</option><option value="admin">Administrador</option></select>
+      <button class="btn-a btn-a--pri" id="eqAgregar">+ Dar acceso</button>
+    </div>
+  </div>
+
+  <div class="card" id="cardDemo">
+    <h2>Datos de prueba</h2>
+    <p style="color:var(--muted);font-size:.85rem;line-height:1.6;margin-bottom:8px">
+      Personas <strong>ficticias</strong> para probar sin copiar datos personales. Se quitan con un clic
+      y no tocan los expedientes reales. Cargar uno reemplaza al otro.
+    </p>
+    <ul style="color:var(--muted);font-size:.85rem;line-height:1.6;margin:0 0 12px 18px">
+      <li><strong>Escenario completo:</strong> una persona por cada categoría (prospecto, cada paso, beca,
+        anticipo, estancado, plazo vencido, esperando evaluador, COMPETENTE, TODAVÍA NO COMPETENTE,
+        entregado, desistió, cambió de lote), sesiones con y sin Zoom, reparto y costos. Incluye tu cuenta
+        de prueba <code>posturalia.d817@gmail.com</code> con Registro y Alineación liberados y una sesión reservada.</li>
+      <li><strong>Cifras de Paideia:</strong> las mismas cifras del panel de Paideia al 23-sep-2026
+        (19 registrados, $82,000 cobrados, tres lotes con su reparto).</li>
+    </ul>
+    <details style="font-size:.85rem;margin-bottom:12px"><summary style="cursor:pointer;font-weight:600">Cómo probar el recorrido completo en este navegador (sin Supabase)</summary>
+      <ol style="margin:8px 0 0 18px;line-height:1.7;color:var(--muted)">
+        <li>Carga el escenario completo.</li>
+        <li>Abre la vista del candidato, sal de la sesión y entra con <code>posturalia.d817@gmail.com</code> (si es la primera vez, crea la contraseña).</li>
+        <li>Verás Registro y Alineación abiertos y tu sesión reservada: contesta lo que quieras.</li>
+        <li>Vuelve al panel → Candidatos → <strong>Traer el avance de este navegador</strong>: tu avance aparece en la lista.</li>
+        <li>Libera o revoca fases en Precios y pagos, publica una Cédula en Evaluación, y regresa a la vista del candidato para ver el efecto.</li>
+      </ol>
+      <p style="margin:8px 0 0;color:var(--muted)">Para probar con otras personas en sus propios equipos (Humberto, Diego, candidatos reales) hace falta Supabase: sin él, cada navegador guarda lo suyo.</p>
+    </details>
+    <div id="demoEstado" style="font-size:.85rem;margin-bottom:10px"></div>
+    <button class="btn-a btn-a--pri" id="btnEscenario">Cargar escenario completo</button>
+    <button class="btn-a btn-a--sec" id="btnDemo">Cargar cifras de Paideia</button>
+    <button class="btn-a btn-a--peligro" id="btnQuitarDemo">Quitar datos de prueba</button>
+  </div>
+
+</main>
+
+<script type="module">
+import { ofrecerPrueba } from './js/prueba-rapida.js';
+import './js/admin-shell.js';
+import { CONFIG } from './js/config.js';
+import { hoyLocal } from './js/fechas.js';
+import { esc, ligaSegura } from './js/seguro.js';
+import { cargar, candidatos, contables, activos, kpis, pesos, atencion,
+         utilidadesGlobal, lotes, FASES, FASE_LABEL } from './js/admin-data.js';
+
+const $ = id => document.getElementById(id);
+
+const hora = () => new Date().toLocaleTimeString('es-MX',
+  { hour: 'numeric', minute: '2-digit' });
+
+function pintar() {
+  const datos = cargar();
+  const lista = candidatos(datos);
+  const k = kpis(datos);
+  const ls = lotes(datos);
+
+  if (lista.length) $('pruebaRapida').innerHTML = '';
+  else if (!$('pruebaRapida').firstElementChild) ofrecerPrueba($('pruebaRapida'));
+  $('sub').textContent = lista.length
+    ? `${k.registrados} registrados · ${ls.length} lote${ls.length === 1 ? '' : 's'} · actualizado ${hora()}`
+    : 'Sin expedientes cargados todavía';
+
+  $('aviso').innerHTML = lista.length ? '' : `
+    <div class="card" style="border-left:4px solid #2563EB">
+      <h2 style="margin-top:0">Empieza por cargar expedientes</h2>
+      <p style="color:var(--mid);font-size:.92rem;line-height:1.7">
+        El panel se llena con los respaldos <code>.json</code> que cada candidato descarga
+        desde su módulo de Entrega. Ve a <a href="admin-candidatos.html">Candidatos</a> y
+        arrástralos ahí. Después, en <a href="admin-precios.html">Precios y pagos</a>,
+        registras cuánto acordaste con cada quien y qué fases ya pagó.
+      </p>
+      <p style="color:var(--muted);font-size:.86rem;line-height:1.6;margin:0">
+        Mientras no haya base de datos en la nube, esto no se actualiza solo: refleja
+        los respaldos que hayas cargado y la fecha de cada uno.
+      </p>
+    </div>`;
+
+  /* Las cuatro tarjetas del panel de Paideia, con sus mismas lecturas */
+  const ug = utilidadesGlobal(datos);
+  const hoyStr = hoyLocal();
+  const inscritosProx = (datos.sesiones || []).filter(s => (s.fecha || '') >= hoyStr)
+    .reduce((a, s) => a + (s.inscritos || []).length, 0);
+  $('kpis').innerHTML = `
+    <div class="kpi"><b>${k.inscritos}</b><span>candidatos activos · ${k.completados} certificados</span></div>
+    <div class="kpi kpi--dinero"><b>${pesos(k.ingresosTotales)}</b><span>ingresos · proyectado ${pesos(k.proyectado)}</span></div>
+    <div class="kpi kpi--ok"><b>${pesos(ug.pagado)}</b><span>utilidades pagadas · pendiente ${pesos(ug.pendiente)}</span></div>
+    <div class="kpi"><b>${inscritosProx}</b><span>inscritos a próximas sesiones</span></div>
+    <div class="kpi"><b>${k.avanceMedio}%</b><span>avance promedio</span></div>
+    <div class="kpi ${k.desistieron ? 'kpi--warn' : ''}"><b>${k.desistieron}</b><span>desistieron · ${k.cambioLote} cambio de lote</span></div>`;
+
+  /* Requieren atención */
+  const alertas = atencion(datos);
+  $('cardAtencion').hidden = !alertas.length;
+  /* Cada alerta lleva a donde se resuelve (como Paideia) */
+  $('atencion').innerHTML = alertas.map(a => `
+    <${a.href ? `a href="${esc(a.href)}"` : 'div'} class="at-fila" style="${a.href ? 'text-decoration:none;color:inherit' : ''}">
+      <span class="at-punto at-${a.nivel}"></span>
+      <span class="at-txt">${esc(a.txt)}${a.href ? ' <span style="color:var(--muted)">→</span>' : ''}</span>
+    </${a.href ? 'a' : 'div'}>`).join('');
+
+  const max = Math.max(1, ...FASES.map(f => k.porFase[f]));
+  $('embudo').innerHTML = FASES.map((f, i) => `
+    <div class="emb-fila">
+      <div class="emb-nom">${FASE_LABEL[f]}</div>
+      <div class="emb-barra"><div class="emb-seg" style="width:${(k.porFase[f] / max) * 100}%"></div></div>
+      <div class="emb-val">
+        ${k.porFase[f]} ${i > 0 ? `· <span class="emb-conv">${k.conv[f]}%</span>` : ''}
+        <br><span style="font-size:.76rem">${pesos(k.ingresosPorFase[f])}</span>
+      </div>
+    </div>`).join('');
+
+  /* En qué paso está cada quien — mismas filas que "Candidatos por paso" de
+     Paideia: todos los pasos (también los que están en 0), más "Esperando
+     evaluador" (terminó todo y falta que el Centro cierre la Entrega),
+     "Certificado entregado" y "Sin iniciar" (no ha abierto nada). */
+  const modulos = CONFIG.flujo.filter(m => m.listo);
+  const cuenta = {};
+  const act = activos(lista);
+  act.forEach(c => {
+    const e = c.estado || {};
+    const algo = modulos.some(m => e[m.id]?.iniciado || e[m.id]?.completado);
+    const pend = modulos.find(m => !e[m.id]?.completado);
+    const id = !algo ? '__sin'
+      : !pend ? '__cert'
+      : pend.requiere === 'evaluador' && modulos.filter(m => m.requiere !== 'evaluador').every(m => e[m.id]?.completado) ? '__esp'
+      : pend.id;
+    cuenta[id] = (cuenta[id] || 0) + 1;
+  });
+
+  const filas = [
+    ...modulos.map(m => [m.id, m.nombre]),
+    ['__esp', 'Esperando evaluador'],
+    ['__cert', 'Certificado entregado'],
+    ['__sin', 'Sin iniciar'],
+  ];
+  const hayAlgo = act.length > 0;
+
+  $('pasos').innerHTML = hayAlgo
+    ? `<div style="text-align:right;color:var(--muted);font-size:.8rem;margin:-6px 0 6px">${act.length} activos</div>` +
+      filas.map(([id, label]) => `
+        <div class="emb-fila" style="${cuenta[id] ? '' : 'opacity:.55'}">
+          <div class="emb-nom" style="flex:0 0 190px">${label}</div>
+          <div class="emb-barra">
+            <div class="emb-seg" style="width:${((cuenta[id] || 0) / Math.max(1, act.length)) * 100}%"></div>
+          </div>
+          <div class="emb-val" style="flex:0 0 50px">${cuenta[id] || 0}</div>
+        </div>`).join('')
+    : '<p class="vacio">Carga expedientes para ver esto.</p>';
+
+  const pagos = [...datos.pagos]
+    .sort((a, b) => String(b.autorizado_en || '').localeCompare(String(a.autorizado_en || '')))
+    .slice(0, 8);
+
+  $('pagos').innerHTML = pagos.length
+    ? `<table class="tbl"><thead><tr>
+         <th>Candidato</th><th>Fase</th><th class="num">Monto</th>
+         <th class="ocultar-movil">Origen</th><th class="num">Fecha</th>
+       </tr></thead><tbody>${pagos.map(p => {
+         const c = lista.find(x => x.email === p.email);
+         return `<tr>
+           <td><a href="admin-candidatos.html?q=${encodeURIComponent(p.email)}">${esc(c?.nombre || p.email)}</a></td>
+           <td><span class="pastilla p-info">${FASE_LABEL[p.fase] || p.fase}</span></td>
+           <td class="num">${pesos(p.monto)}</td>
+           <td class="ocultar-movil">${p.origen || 'manual'}</td>
+           <td class="num">${(p.autorizado_en || '').slice(0, 10)}</td>
+         </tr>`;
+       }).join('')}</tbody></table>`
+    : '<p class="vacio">Todavía no registras pagos. Se hace en <a href="admin-precios.html">Precios y pagos</a>.</p>';
+
+  /* Próximas sesiones */
+  const hoy = hoyLocal();
+  const proximas = (datos.sesiones || [])
+    .filter(s => (s.fecha || '') >= hoy)
+    .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))
+    .slice(0, 5);
+
+  $('sesiones').innerHTML = proximas.length
+    ? proximas.map(s => `
+        <div class="ses-fila">
+          <span class="ses-f">${esc(s.fecha)}</span>
+          <span class="ses-meta">
+            ${esc(s.horaIni || '')}${s.horaFin ? '–' + esc(s.horaFin) : ''} h
+            ${s.instructor ? ' · ' + esc(s.instructor) : ''}
+            · ${(s.inscritos || []).length} / ${s.cupo || 0} inscritos
+          </span>
+          ${ligaSegura(s.liga)
+            ? `<a href="${esc(ligaSegura(s.liga))}" target="_blank" rel="noopener">Abrir Zoom</a>`
+            : '<span style="color:var(--warn);font-size:.82rem">sin liga</span>'}
+        </div>`).join('')
+    : '<p class="vacio">No hay sesiones programadas. Se crean en <a href="admin-sesiones.html">Sesiones de Alineación</a>.</p>';
+
+  /* Utilidades por lote */
+  const g = utilidadesGlobal(datos);
+  $('utilidades').innerHTML = g.porLote.some(u => u.ingresos || u.socios.length)
+    ? g.porLote.map(u => `
+        <div class="ut-lote">
+          <div class="ut-cab">
+            <span>Lote ${u.lote}</span>
+            <span>${pesos(u.ingresos)} cobrado</span>
+          </div>
+          <div class="ut-sub">
+            ${pesos(u.pagado)} pagado · ${pesos(u.pendiente)} pendiente
+            ${u.excedido ? ` · <strong class="saldo-mas">${pesos(u.excedido)} más de lo que entró</strong>`
+              : u.pagadoDeMas ? ` · <span class="saldo-mas">${pesos(u.pagadoDeMas)} pagado de más</span>` : ''}
+            ${Math.round(u.sumaPct) !== 100 && u.socios.length
+              ? ` · reparto al ${u.sumaPct.toFixed(2)}%` : ''}
+          </div>
+          <div class="ut-socios">${u.socios.length
+            ? u.socios.map(s => `<span class="${s.pagadoDeMas ? 'saldo-mas' : ''}">${s.label} ${pesos(s.pagado)} / ${pesos(s.aRepartir)}</span>`).join('')
+            : '<span style="color:var(--muted)">sin socios configurados</span>'}</div>
+        </div>`).join('')
+    : '<p class="vacio">Configura el reparto en <a href="admin-utilidades.html">Utilidades</a>.</p>';
+
+  /* Índice de módulos */
+  const grupos = [
+    ['Proceso del candidato', CONFIG.flujo.filter(m => m.listo)
+      .map((m, i) => [`${i + 1}. ${m.nombre}`, m.archivo])],
+    ['Recursos', [
+      ['Biblioteca', 'biblioteca.html'],
+      ['Guion Maestro', 'guion-maestro.html'],
+      ['Tutoriales y toolkit', 'recursos.html'],
+      ['Material de Alineación', 'alineacion-deck.html'],
+    ]],
+    ['Administración', [
+      ['Panel del equipo', 'admin.html'],
+      ['Candidatos', 'admin-candidatos.html'],
+      ['Precios y pagos', 'admin-precios.html'],
+      ['Sesiones de Alineación', 'admin-sesiones.html'],
+      ['KPIs', 'admin-kpis.html'],
+      ['Utilidades', 'admin-utilidades.html'],
+    ]],
+  ];
+
+  $('indice').innerHTML = grupos.map(([titulo, enlaces]) => `
+    <div>
+      <h3>${titulo}</h3>
+      ${enlaces.map(([n, href]) =>
+        `<a href="${href}" target="_blank" rel="noopener">${n}</a>`).join('')}
+    </div>`).join('');
+}
+
+import('./js/cuenta.js').then(({ equipoLocal, guardarMiembro, quitarMiembro, restablecerLocal, sesion, correoValido }) => {
+  const nube = !!(CONFIG.supabase?.url && CONFIG.supabase?.anonKey);
+  const pintarEq = () => {
+    const yo = sesion();
+    $('cardEquipo').hidden = yo?.rol === 'evaluador';
+    const lista = equipoLocal();
+    const centrales = (CONFIG.equipoCentral || []).filter((m, i, a) => a.findIndex(x => x.nombre === m.nombre && x.rol === m.rol) === i);
+    const filasCentral = centrales.map(m => `<tr><td><strong>${esc(m.nombre || 'Integrante')}</strong><div style="color:var(--muted);font-size:.78rem">Lista central · entra en cualquier navegador</div></td>
+      <td>${m.rol === 'admin' ? 'Administrador' : 'Evaluador'}</td><td></td></tr>`).join('');
+    $('equipo').innerHTML = nube
+      ? `<p class="vacio">Con la nube encendida el equipo se administra en la tabla <code>evaluadores</code> de Supabase (columna <code>rol</code>).</p>`
+      : (lista.length || filasCentral) ? `<table class="tbl"><thead><tr><th>Persona</th><th>Rol</th><th></th></tr></thead><tbody>${filasCentral}${lista.map(m => `<tr>
+          <td><strong>${esc(m.nombre || m.correo)}</strong><div style="color:var(--muted);font-size:.78rem">${esc(m.correo)}${m.correo === yo?.correo ? ' · tú' : ''}</div></td>
+          <td>${m.rol === 'admin' ? 'Administrador' : 'Evaluador'}${m.fijo ? ' <small style="color:var(--muted)">(config.js)</small>' : ''}</td>
+          <td class="num">${m.fijo || m.correo === yo?.correo ? '' : `<button class="btn-a btn-a--sec" data-eq-reset="${esc(m.correo)}">Nueva contraseña</button>
+            <button class="btn-a btn-a--peligro" data-eq-quitar="${esc(m.correo)}">Quitar</button>`}</td></tr>`).join('')}</tbody></table>`
+      : '<p class="vacio">Sin equipo registrado.</p>';
+  };
+  $('eqAgregar').onclick = () => {
+    const c = $('eqCorreo').value.trim();
+    if (!correoValido(c)) { $('eqCorreo').focus(); return; }
+    guardarMiembro(c, $('eqRol').value, $('eqNombre').value); $('eqCorreo').value = ''; $('eqNombre').value = ''; pintarEq();
+  };
+  $('equipo').addEventListener('click', async e => {
+    const q = e.target.closest('[data-eq-quitar]');
+    if (q && confirm(`¿Quitarle el acceso al panel a ${q.dataset.eqQuitar}?`)) { quitarMiembro(q.dataset.eqQuitar); pintarEq(); return; }
+    const r = e.target.closest('[data-eq-reset]');
+    if (r) {
+      const p = prompt(`Nueva contraseña para ${r.dataset.eqReset} (mínimo 6 caracteres). Díctasela en persona; se la puede cambiar después.`);
+      if (p == null) return;
+      if (p.length < 6) { alert('Mínimo 6 caracteres.'); return; }
+      await restablecerLocal(r.dataset.eqReset, p); alert('Listo.');
+    }
+  });
+  window.addEventListener('cuenta:cambio', pintarEq); pintarEq();
+});
+import('./js/demo-paideia.js').then(({ cargarDemoPaideia, cargarEscenarioCompleto, quitarDemo }) => {
+  const est = () => {
+    const d = cargar();
+    $('demoEstado').innerHTML = d.demo ? `Cargados el ${new Date(d.demo.cargadoEl).toLocaleString('es-MX')} · ${esc(d.demo.fuente)}` : '';
+    $('btnQuitarDemo').hidden = !d.demo;
+  };
+  $('btnDemo').onclick = () => { if (confirm('¿Cargar los datos de prueba? Si ya estaban, se reemplazan.')) { cargarDemoPaideia(); est(); } };
+  $('btnEscenario').onclick = () => { if (confirm('¿Cargar el escenario completo de prueba? Si ya había datos de prueba, se reemplazan.')) { cargarEscenarioCompleto(); est(); } };
+  $('btnQuitarDemo').onclick = () => { if (confirm('¿Quitar todos los datos de prueba?')) { quitarDemo(); est(); } };
+  window.addEventListener('admin:cambio', est); est();
+});
+window.addEventListener('admin:cambio', pintar);
+pintar();
+</script>
+</body>
+</html>

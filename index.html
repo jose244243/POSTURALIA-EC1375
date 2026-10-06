@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de control — Certificación EC1375 · POSTURALIA</title>
+<meta name="description" content="Plataforma de acompañamiento para la certificación SEP-CONOCER EC1375. Posturalia, Monterrey N.L.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <div id="avisoLimite"></div>
+  <div id="avisoAlmacen"></div>
+
+  <!-- ── Saludo y siguiente paso ─────────────────────────────────────── -->
+  <section class="pn-hero" id="hero"></section>
+
+  <!-- ── Cuatro cifras ───────────────────────────────────────────────── -->
+  <div class="pn-kpis" id="kpis"></div>
+
+  <!-- ── Avance ──────────────────────────────────────────────────────── -->
+  <section class="card">
+    <h2>Tu progreso</h2>
+    <div class="pn-avance">
+      <div class="pn-dona" id="dona"></div>
+      <div class="pn-avance-detalle">
+        <div class="pn-leyenda" id="leyenda"></div>
+        <p class="pn-nota">
+          El avance pesa distinto en cada fase: terminar el Registro no es lo
+          mismo que terminar la Evaluación.
+        </p>
+        <div id="fases"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Ruta ────────────────────────────────────────────────────────── -->
+  <section class="card">
+    <h2>Ruta de certificación</h2>
+    <div class="pn-ruta" id="ruta"></div>
+  </section>
+
+  <!-- ── Expediente ──────────────────────────────────────────────────── -->
+  <section class="card">
+    <div class="pn-cab">
+      <h2>Documentos del expediente</h2>
+      <span class="pn-cuenta" id="cuentaDocs"></span>
+    </div>
+    <div id="docs"></div>
+  </section>
+
+  <!-- ── Pagos ───────────────────────────────────────────────────────── -->
+  <section class="card">
+    <h2>Pagos por fase</h2>
+    <p class="pn-nota" style="margin-top:0">
+      Tu Centro Evaluador marca cada fase conforme la cubres. Es lo que
+      destraba los módulos con llave.
+    </p>
+    <div class="pn-pagos" id="pagos"></div>
+  </section>
+
+  <!-- ── Sesión ──────────────────────────────────────────────────────── -->
+  <section class="card" id="cardSesion"></section>
+
+  <!-- ── Centro Evaluador: etapas del certificado y Cédula ──────────── -->
+  <section class="card" id="cardCentro" hidden></section>
+
+  <!-- ── Avisos ──────────────────────────────────────────────────────── -->
+  <section class="card">
+    <div class="pn-cab">
+      <h2>Requieren tu atención</h2>
+      <span class="pn-cuenta" id="cuentaAvisos"></span>
+    </div>
+    <div id="avisos"></div>
+  </section>
+
+  <!-- ── Consulta ────────────────────────────────────────────────────── -->
+  <section class="card">
+    <h2>Recursos</h2>
+    <p class="pn-nota" style="margin-top:0">
+      Abierto siempre, sin esperar a ningún paso. Es lo que abres cuando
+      necesitas repasar algo.
+    </p>
+    <div class="modulos" id="consulta"></div>
+  </section>
+
+  <!-- ── Respaldo ────────────────────────────────────────────────────── -->
+  <section class="card">
+    <h2>Tu expediente</h2>
+    <p class="pn-nota" style="margin-top:0" id="notaGuardado"></p>
+    <div class="acciones" style="justify-content:flex-start;margin-top:0">
+      <button class="btn-plat btn-plat--secundario" id="btnRespaldo">Descargar respaldo</button>
+      <button class="btn-plat btn-plat--secundario" id="btnRestaurar">Restaurar respaldo</button>
+      <button class="btn-plat btn-plat--secundario" id="btnReiniciar">Reiniciar proceso</button>
+    </div>
+    <input type="file" id="archivoRespaldo" accept="application/json" hidden>
+  </section>
+
+  <p class="pn-pie">
+    ¿Eres del Centro Evaluador? <a href="admin.html">Abre el panel del evaluador</a>
+    · <a href="portada.html">Volver a la entrada</a>
+  </p>
+
+</main>
+
+<script type="module">
+import './js/shell.js';
+import { CONFIG }  from './js/config.js';
+import { esc } from './js/seguro.js';
+import { Store, verificarAlmacenamiento } from './js/store.js';
+import { icono, iconoDe, ICONO_ESTADO }   from './js/iconos.js';
+import { estadoDelFlujo, avanceGlobal, avancePorFase, siguientePaso,
+         pintarBarraFlujo, navegable, ETIQUETA, ESTADO } from './js/flow.js';
+import { candidato, documentosDelExpediente, conteoDocumentos, pagosPorFase,
+         faseMasAltaPagada, resumenPasos, limiteEntrega, sesionAlineacion,
+         avisos, estadoDeGuardado } from './js/panel.js';
+
+const $ = id => document.getElementById(id);
+
+/* ── Saludo ────────────────────────────────────────────────────────────── */
+function pintarHero() {
+  const c   = candidato();
+  const sig = siguientePaso();
+  const g   = estadoDeGuardado();
+  const pasos = resumenPasos();
+  const listo = pasos.completados === pasos.total;
+  /* Sin paso pendiente de su lado (como Paideia): si lo que sigue espera un
+     pago, el botón lleva a pagarlo; si espera al Centro, a su Cédula. */
+  const frenado = !sig ? estadoDelFlujo().find(m => m.estado === ESTADO.SIN_PAGO) : null;
+
+  const saludo = c.tiene
+    ? `Hola, ${esc(c.nombre)}`
+    : 'Tu proceso de certificación';
+
+  /* Sin nombre todavía no hay a quién saludar, pero sí hay algo que decir:
+     de dónde va a salir el nombre. */
+  const sub = c.tiene
+    ? `Tu panel de certificación ${CONFIG.marca.estandar}`
+    : `${CONFIG.marca.estandarNombre} · lo capturas en el Plan de Evaluación`;
+
+  $('hero').innerHTML = `
+    <div class="pn-hero-top">
+      <span class="pn-pill">
+        ${icono(listo ? 'medalla' : 'escudo', 15)}
+        ${listo ? 'Proceso terminado' : `Fase ${(faseMasAltaPagada()?.label) || 'Registro'}`}
+      </span>
+      <span class="pn-avatar" aria-hidden="true">${esc(c.iniciales)}</span>
+    </div>
+
+    <h1 class="pn-saludo">${saludo}</h1>
+    <p class="pn-sub">${sub}</p>
+
+    <div class="pn-meta">
+      <span>${icono('escudo', 15)} Datos protegidos</span>
+      <span>${icono(g.enNube ? 'nube' : 'archivo', 15)} ${g.titulo}</span>
+      <span>${icono('sincroniza', 15)} ${g.detalle}</span>
+    </div>
+
+    <div class="pn-hero-btns">
+      ${sig
+        ? `<a class="pn-cta" href="${sig.archivo}">
+             <span>Continuar: ${sig.nombre}</span>${icono('flecha', 20)}
+           </a>`
+        : frenado
+        ? `<a class="pn-cta" href="${frenado.archivo}">
+             <span>Pagar ${esc(CONFIG.fases.find(f => f.id === frenado.fase)?.label || frenado.fase)}</span>${icono('flecha', 20)}
+           </a>`
+        : listo
+        ? `<span class="pn-cta pn-cta--off">
+             <span>No hay nada pendiente de tu lado</span>${icono('cheque', 20)}
+           </span>`
+        : `<a class="pn-cta" href="cedula.html">
+             <span>Ver mi Cédula y el trámite</span>${icono('flecha', 20)}
+           </a>`}
+      <a class="pn-cta2" href="#docs">${icono('archivo', 18)} Ver mis documentos</a>
+    </div>`;
+}
+
+/* ── Cuatro cifras ─────────────────────────────────────────────────────── */
+function pintarKpis() {
+  const pasos = resumenPasos();
+  const docs  = conteoDocumentos();
+  const fase  = faseMasAltaPagada();
+  const ses   = sesionAlineacion();
+
+  const tile = (ico, valor, etiqueta) => `
+    <div class="pn-kpi">
+      <span class="pn-kpi-ico">${icono(ico, 20)}</span>
+      <strong class="pn-kpi-val">${valor}</strong>
+      <span class="pn-kpi-eti">${etiqueta}</span>
+    </div>`;
+
+  $('kpis').innerHTML =
+      tile('chequeCaja', `${pasos.completados} / ${pasos.total}`, 'Pasos completados')
+    + tile('archivo',    `${docs.entregados} / ${docs.total}`,    'Documentos')
+    + tile('dinero',     fase ? fase.label : 'Ninguna',           'Fase pagada')
+    + tile('calendario', ses ? esc(ses.texto) : 'Sin reservar',        'Sesión de Alineación');
+}
+
+/* ── Dona de avance ────────────────────────────────────────────────────── */
+function pintarAvance() {
+  const pct   = avanceGlobal();
+  const pasos = resumenPasos();
+  const R = 52, C = 2 * Math.PI * R;
+
+  $('dona').innerHTML = `
+    <svg viewBox="0 0 120 120" class="pn-dona-svg" role="img"
+         aria-label="${pct}% de avance">
+      <circle cx="60" cy="60" r="${R}" class="pn-dona-fondo"/>
+      <circle cx="60" cy="60" r="${R}" class="pn-dona-arco"
+              stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct / 100)}"/>
+    </svg>
+    <div class="pn-dona-txt">
+      <strong id="txtGlobal">${pct}%</strong>
+      <span>de avance</span>
+    </div>`;
+
+  $('leyenda').innerHTML = [
+    ['ok',  'Completados',     pasos.completados],
+    ['cur', 'En curso',        pasos.enCurso],
+    ['off', 'Por desbloquear', pasos.porDesbloquear],
+  ].map(([c, t, n]) => `
+    <span class="pn-leyenda-it">
+      <i class="pn-punto pn-punto--${c}"></i>${t}<strong>${n}</strong>
+    </span>`).join('');
+
+  $('fases').innerHTML = avancePorFase().map(f => `
+    <div class="pn-fase">
+      <span class="pn-fase-n">${f.label}</span>
+      <span class="pn-fase-b"><i style="width:${f.pct}%"></i></span>
+      <span class="pn-fase-p">${f.hechos}/${f.modulos} · vale ${f.peso}%</span>
+    </div>`).join('');
+}
+
+/* ── Ruta ──────────────────────────────────────────────────────────────── */
+function pintarRuta() {
+  $('ruta').innerHTML = estadoDelFlujo().map((m, i) => {
+    const cuerpo = `
+      <span class="pn-paso-n">${i + 1}</span>
+      <span class="pn-paso-ico">${icono(iconoDe(m.id), 20)}</span>
+      <span class="pn-paso-txt">
+        <strong>${m.nombre}</strong>
+        <small>${m.motivo || ETIQUETA[m.estado]}</small>
+      </span>
+      <span class="pn-paso-est">${icono(ICONO_ESTADO[m.estado] || 'flecha', 18)}</span>`;
+
+    const cls = `pn-paso pn-paso--${m.estado}`;
+    return navegable(m.estado)
+      ? `<a class="${cls}" href="${m.archivo}">${cuerpo}</a>`
+      : `<span class="${cls}" aria-disabled="true">${cuerpo}</span>`;
+  }).join('');
+}
+
+/* ── Expediente ────────────────────────────────────────────────────────── */
+function pintarDocs() {
+  const grupos = documentosDelExpediente();
+  const c = conteoDocumentos();
+
+  $('cuentaDocs').textContent = `${c.entregados} / ${c.total}`;
+
+  if (!grupos.length) {
+    $('docs').innerHTML = `<p class="pn-vacio">
+      Todavía no hay documentos en tu expediente. Aparecen conforme avanzas.</p>`;
+    return;
+  }
+
+  $('docs').innerHTML = grupos.map(g => `
+    <div class="pn-docgrupo">
+      <div class="pn-docfase">${g.label}</div>
+      ${g.docs.map(d => `
+        <a class="pn-doc ${d.entregado ? 'pn-doc--ok' : ''}" href="${d.archivo}">
+          <span class="pn-doc-ico">${icono(d.tipo === 'descarga' ? 'descarga' : 'subir', 18)}</span>
+          <span class="pn-doc-nom">${d.nombre}</span>
+          <span class="pn-doc-est">
+            ${d.entregado ? icono('cheque', 15) : ''}${d.etiqueta}
+          </span>
+        </a>`).join('')}
+    </div>`).join('');
+}
+
+/* ── Pagos ─────────────────────────────────────────────────────────────── */
+function pintarPagos() {
+  /* La primera fase sin pagar lleva a su caja de pago (como Paideia) */
+  const fases = pagosPorFase();
+  const primera = fases.find(f => !f.pagada);
+  const cajaDe = f => CONFIG.flujo.find(m => m.fase === f.id && m.listo)?.archivo;
+  $('pagos').innerHTML = fases.map(f => `
+    <div class="pn-pago ${f.pagada ? 'pn-pago--ok' : ''}">
+      <span class="pn-pago-ico">${icono(f.pagada ? 'cheque' : 'candado', 18)}</span>
+      <span class="pn-pago-n">${f.label}<small>${f.peso}% del proceso</small></span>
+      <span class="pn-pago-est">${f.pagada ? 'Liberada'
+        : f === primera && f.id !== 'registro' && cajaDe(f) ? `<a href="${cajaDe(f)}">Pagar</a>` : 'Por liberar'}</span>
+    </div>`).join('');
+}
+
+/* ── Sesión ────────────────────────────────────────────────────────────── */
+function pintarSesion() {
+  const s = sesionAlineacion();
+  $('cardSesion').innerHTML = `
+    <h2>Sesión de Alineación</h2>
+    ${s ? `
+      <div class="pn-sesion">
+        <span class="pn-sesion-ico">${icono('video', 22)}</span>
+        <div>
+          <strong>${s.texto}</strong>
+          <small>${s.hora ? s.hora + ' · ' : ''}${s.instructor || 'Instructor por confirmar'}</small>
+        </div>
+        ${s.enlace ? `<a class="btn-plat" href="${s.enlace}" target="_blank" rel="noopener">Entrar</a>` : ''}
+      </div>`
+    : `<p class="pn-vacio">
+         Aún no tienes sesión reservada. La sesión en vivo es lo que se cobra
+         en la fase de Alineación; el material de estudio ya está abierto.
+       </p>
+       <a class="btn-plat" href="alineacion.html">Ver la Alineación</a>`}`;
+}
+
+/* ── Avisos ────────────────────────────────────────────────────────────── */
+function pintarAvisos() {
+  const lista = avisos();
+  $('cuentaAvisos').textContent = lista.length || '0';
+
+  if (!lista.length) {
+    $('avisos').innerHTML = `<p class="pn-todobien">
+      ${icono('cheque', 18)} Todo en orden</p>`;
+    return;
+  }
+
+  $('avisos').innerHTML = lista.map(a => `
+    <div class="pn-aviso pn-aviso--${a.nivel}">
+      <span class="pn-aviso-ico">${icono(a.nivel === 'info' ? 'reloj' : 'alerta', 18)}</span>
+      <span class="pn-aviso-txt">${a.txt}</span>
+      ${a.a ? `<a class="pn-aviso-cta" href="${a.a}"
+                  ${a.a.startsWith('http') ? 'target="_blank" rel="noopener"' : ''}>${a.cta}</a>` : ''}
+    </div>`).join('');
+}
+
+/* ── Fecha límite ──────────────────────────────────────────────────────── */
+function pintarLimite() {
+  const l = limiteEntrega();
+  /* Sin fecha puesta por el Centro, la de la Sala de evidencias: N días
+     desde que se liberó la Alineación (como Paideia). */
+  if (!l) { $('avisoLimite').innerHTML = ''; import('./js/sala-ui.js').then(m => m.montarAviso($('avisoLimite'))).catch(() => {}); return; }
+
+  $('avisoLimite').innerHTML = `
+    <div class="pn-limite ${l.vencido ? 'pn-limite--vencido' : l.urgente ? 'pn-limite--urge' : ''}">
+      ${icono('calendario', 18)}
+      ${l.vencido
+        ? `La fecha para entregar tu evidencia venció el <strong>${l.texto}</strong>.`
+        : `Tienes hasta el <strong>${l.texto}</strong> para entregar tu evidencia
+           · faltan ${l.dias} día${l.dias === 1 ? '' : 's'}`}
+    </div>`;
+}
+
+/* ── Consulta ──────────────────────────────────────────────────────────── */
+function pintarConsulta() {
+  $('consulta').innerHTML = (CONFIG.consulta || []).map(m => `
+    <a class="recurso" href="${m.archivo}">
+      <div class="modulo-ico">${icono(iconoDe(m.id), 24)}</div>
+      <div class="modulo-nom">${m.nombre}</div>
+      <div class="modulo-est">${m.desc || 'Consulta'}</div>
+    </a>`).join('');
+}
+
+/* ── Todo junto ────────────────────────────────────────────────────────── */
+function pintar() {
+  pintarBarraFlujo($('pasos'), null);
+  pintarLimite();
+  pintarHero();
+  pintarKpis();
+  pintarAvance();
+  pintarRuta();
+  pintarDocs();
+  pintarPagos();
+  pintarSesion();
+  pintarAvisos();
+  pintarConsulta();
+  $('notaGuardado').textContent = estadoDeGuardado().enNube
+    ? 'Tu avance se guarda en la nube y en este navegador. El respaldo sirve para llevarte todo a otro sistema.'
+    : 'Tu avance se guarda en este navegador y en este dispositivo. Descarga un respaldo si vas a cambiar de equipo o limpiar el navegador.';
+}
+
+/* Aviso si el navegador no deja guardar */
+if (!verificarAlmacenamiento()) {
+  $('avisoAlmacen').innerHTML =
+    `<div class="aviso aviso--warn"><strong>Tu navegador no permite guardar el avance.</strong>
+     Puede ser por modo privado o por cookies bloqueadas. Puedes contestar, pero el
+     progreso no se conservará al cerrar la página.</div>`;
+}
+
+$('btnRespaldo').onclick = () => Store.descargarRespaldo();
+$('btnRestaurar').onclick = () => $('archivoRespaldo').click();
+
+$('archivoRespaldo').onchange = async (e) => {
+  const archivo = e.target.files[0];
+  if (!archivo) return;
+  try {
+    const ok = Store.importar(JSON.parse(await archivo.text()));
+    alert(ok ? 'Respaldo restaurado correctamente.'
+             : 'El archivo no corresponde a un respaldo de esta plataforma.');
+    if (ok) pintar();
+  } catch {
+    alert('No se pudo leer el archivo.');
+  }
+  e.target.value = '';
+};
+
+$('btnReiniciar').onclick = () => {
+  if (confirm('Esto borrará TODO tu avance en esta plataforma. ¿Continuar?')) {
+    Store.clearAll();
+    pintar();
+  }
+};
+
+/* ── Centro Evaluador (como el panel de Paideia): etapas de la
+   certificación y aviso de la Cédula publicada ─────────────────────────── */
+async function pintarCentro() {
+  const { miEvaluacion, misEtapas } = await import('./js/resultado.js');
+  const { cedulaPublicada, dictamenDe } = await import('./js/evaluacion.js');
+  let ev = null; try { ev = await miEvaluacion(); } catch {}
+  const t = misEtapas(ev);
+  const ced = cedulaPublicada(ev);
+  if (!ev && !t.etapas[0].hecha) { $('cardCentro').hidden = true; return; }
+  const hechas = t.etapas.filter(x => x.hecha).length;
+  $('cardCentro').hidden = false;
+  $('cardCentro').innerHTML = `
+    <div class="pn-cab"><h2>Tu certificación con el Centro Evaluador</h2><span class="pn-cuenta">${hechas} de ${t.etapas.length}</span></div>
+    ${ced ? `<div class="aviso ${ev.firma_candidato ? '' : 'aviso--warn'}" style="margin-bottom:12px">
+      <strong>${dictamenDe(ev) === 'competente' ? 'Tu resultado: COMPETENTE.' : 'Tu Cédula de Evaluación ya está publicada.'}</strong>
+      ${ev.firma_candidato ? 'Ya la firmaste.' : 'Léela y fírmala.'} <a href="cedula.html">Ver mi Cédula</a></div>` : ''}
+    <div class="pn-etapas">${t.etapas.map((x, i) => `<div class="pn-etapa pn-etapa--${x.hecha ? 'ok' : t.actual === x.clave ? 'actual' : 'pend'}${x.bloqueada ? ' pn-etapa--bloq' : ''}">
+      <span class="pn-etapa-n">${x.hecha ? icono('cheque', 13) : i + 1}</span>
+      <span class="pn-etapa-txt"><strong>${esc(x.label)}</strong><small>${x.hecha ? 'Listo' : t.actual === x.clave ? 'En esta etapa' : x.bloqueada ? 'No aplica con este dictamen' : 'Pendiente'}</small></span></div>`).join('')}</div>
+    <a class="btn-plat btn-plat--secundario" href="cedula.html" style="margin-top:10px">Ver el detalle</a>`;
+}
+
+pintar();
+pintarCentro();
+window.addEventListener('store:cambio', pintar);
+/* La sesión en vivo a la que se inscribió (en la nube o en este navegador):
+   si cambió desde la última visita, se actualiza la tarjeta «Tu sesión». */
+(async () => {
+  const yo = (Store.get('candidato', {}) || {}).email || '';
+  if (!yo) return;
+  try { const m = await import('./js/sesiones-alineacion.js'); await m.sincronizarMiSesion(yo); } catch {}
+})();
+</script>
+</body>
+</html>

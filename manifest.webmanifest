@@ -1,0 +1,59 @@
+{
+  "name": "POSTURALIA — Certificación EC1375",
+  "short_name": "POSTURALIA",
+  "description": "Plataforma de acompañamiento para la certificación SEP-CONOCER EC1375. Centro Evaluador Posturalia, Monterrey N.L.",
+  "id": "/",
+  "start_url": "./portada.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#F1F5F9",
+  "theme_color": "#0d2a6e",
+  "lang": "es-MX",
+  "dir": "ltr",
+  "categories": ["education", "productivity", "medical"],
+  "icons": [
+    {
+      "src": "iconos/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "iconos/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "iconos/icono-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mi proceso",
+      "short_name": "Proceso",
+      "description": "Avance del candidato, módulo por módulo",
+      "url": "./index.html",
+      "icons": [{ "src": "iconos/icono-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Biblioteca",
+      "short_name": "Biblioteca",
+      "description": "Material de Alineación y recursos de consulta",
+      "url": "./biblioteca.html",
+      "icons": [{ "src": "iconos/icono-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Panel del evaluador",
+      "short_name": "Panel",
+      "description": "Candidatos, pagos y KPIs del Centro Evaluador",
+      "url": "./admin.html",
+      "icons": [{ "src": "iconos/icono-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documentos de Sesión — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  .g-resumen {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+    gap:10px; margin-bottom:20px
+  }
+  .g-stat { background:var(--bg); border-radius:8px; padding:12px; text-align:center }
+  .g-stat b { display:block; font-size:1.35rem; color:var(--spoke-deep); line-height:1.2 }
+  .g-stat span { color:var(--muted); font-size:.76rem }
+
+  .sec { border:1px solid var(--border); border-radius:8px; margin-bottom:10px; overflow:hidden; background:var(--white) }
+  .sec-head {
+    display:flex; gap:12px; align-items:center; width:100%; text-align:left;
+    padding:14px 16px; cursor:pointer; background:var(--white); transition:background .15s
+  }
+  .sec-head:hover { background:var(--bg) }
+  .sec-head[aria-expanded="true"] { background:var(--bg); border-bottom:1px solid var(--border) }
+  .sec-n {
+    flex:0 0 30px; height:30px; display:flex; align-items:center; justify-content:center;
+    background:var(--spoke); color:#fff; border-radius:50%; font-size:.8rem; font-weight:700
+  }
+  .sec-head[aria-expanded="true"] .sec-n { background:var(--spoke-deep) }
+  .sec-t { flex:1; font-weight:600; color:var(--dark); font-size:.96rem }
+  .sec-meta { color:var(--muted); font-size:.76rem; white-space:nowrap }
+  .sec-caret { color:var(--muted); font-size:.8rem; transition:transform .2s }
+  .sec-head[aria-expanded="true"] .sec-caret { transform:rotate(90deg) }
+  .sec-body { padding:6px 16px 16px }
+
+  .paso { display:flex; gap:11px; padding:11px 0; border-bottom:1px dashed var(--border) }
+  .paso:last-child { border-bottom:none }
+  .paso-chk {
+    flex:0 0 18px; width:18px; height:18px; margin-top:3px; cursor:pointer; accent-color:var(--spoke)
+  }
+  .paso-cuerpo { flex:1; min-width:0 }
+  .paso-tag {
+    display:inline-block; padding:2px 8px; border-radius:4px; margin-bottom:5px;
+    font-size:.68rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase
+  }
+  .tag-dialogo { background:#E0F2FE; color:#075985 }
+  .tag-accion  { background:#ECFDF5; color:#065F46 }
+  .tag-usuario { background:#F1F5F9; color:#475569 }
+  .tag-nota    { background:#FEF3C7; color:#92400E }
+  .paso-txt { color:var(--dark); font-size:.93rem; line-height:1.65 }
+  .paso--dialogo .paso-txt { font-style:italic }
+  .paso--dialogo .paso-txt::before { content:'“' }
+  .paso--dialogo .paso-txt::after  { content:'”' }
+  .paso--nota .paso-txt { color:var(--mid); font-size:.87rem }
+  .paso.hecho .paso-txt { opacity:.5; text-decoration:line-through }
+  .paso-sub {
+    font-weight:700; color:var(--muted); font-size:.74rem; text-transform:uppercase;
+    letter-spacing:.07em; padding:14px 0 2px
+  }
+  .placeholder { color:var(--spoke-deep); font-weight:600; font-style:normal }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <div class="plat-head">
+    <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+    <h1>Documentos de Sesión</h1>
+    <p>Los seis formatos que llevas el día de la evaluación, y el guión para ensayarlos.</p>
+  </div>
+
+  <!-- Sala de evidencias: se muestra si el Centro publicó horarios o tienes uno -->
+  <div id="salaTarjeta"></div>
+
+  <!-- ── Llenarlos con el usuario (como Documentos de Sesión de Paideia) ── -->
+  <div class="card card--acento" id="llenar">
+    <h2 style="margin-top:0">Llénalos con tu usuario, paso a paso</h2>
+    <p style="color:var(--mid);font-size:.92rem;line-height:1.7;margin:0 0 12px">
+      Durante tu sesión grabada, 19 pasos con el guion de cada momento: la Ficha de Registro, el Aviso de Privacidad,
+      los signos vitales, el Consentimiento, el Plan de Sesión y el Plan de Seguimiento. Tu usuario firma en pantalla y
+      al final salen <strong>llenos y firmados</strong>, directo a tu expediente y a tu portafolio.</p>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <a class="btn-plat btn-plat--primario" href="sesion.html" id="llenarBtn">Empezar con mi usuario →</a>
+      <span id="llenarEstado" style="font-size:.86rem;color:var(--muted)"></span></div>
+  </div>
+
+  <!-- ── Los cuatro formatos ─────────────────────────────────────────── -->
+  <div class="card card--acento">
+    <h2>Los seis formatos</h2>
+    <p style="color:var(--mid);font-size:.92rem;line-height:1.7;margin:0 0 4px">
+      El evaluador los revisa <strong>documento en mano</strong>. A un formato al
+      que le falta un contenido no le quitan un punto: pierde el reactivo
+      entero, y varios de éstos son de los pesados. Bajar un formato genérico
+      de internet es de los errores más caros, porque se descubre el día de la
+      evaluación y ya no se puede arreglar.
+    </p>
+  </div>
+
+  <div id="formatos"></div>
+
+  <div class="card card--acento">
+    <h2>Cómo usar este guión</h2>
+    <p style="color:var(--mid);font-size:.92rem;line-height:1.7;margin:0">
+      Cada sección corresponde a un momento de la sesión. Lo que aparece
+      <em>entre comillas</em> es lo que dices; lo marcado como <strong>acción</strong> es lo que
+      el evaluador observa que hagas. Los textos <span class="placeholder">[ENTRE CORCHETES]</span>
+      los sustituyes con datos reales. Ve marcando la casilla de cada paso conforme lo domines.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="g-resumen">
+      <div class="g-stat"><b id="nSec">–</b><span>secciones</span></div>
+      <div class="g-stat"><b id="nDia">–</b><span>diálogos</span></div>
+      <div class="g-stat"><b id="nAcc">–</b><span>acciones</span></div>
+      <div class="g-stat"><b id="nHechos">–</b><span>dominados</span></div>
+    </div>
+    <div class="barra"><div class="barra-fill" id="barra" style="width:0%"></div></div>
+    <div class="barra-txt" style="margin-top:8px">
+      <span id="txtAvance">0 de 0 pasos</span>
+      <button class="btn-plat btn-plat--secundario" id="btnTodo"
+              style="padding:6px 12px;font-size:.8rem">Expandir todo</button>
+    </div>
+  </div>
+
+  <div id="secciones"></div>
+
+  <div class="acciones">
+    <button class="btn-plat btn-plat--secundario" id="btnImprimir"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.5 9V3.5h11V9"/><path d="M6.5 17.5H5A2 2 0 0 1 3 15.5v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1.5"/><path d="M6.5 14h11v6.5h-11z"/></svg> Imprimir guión</button>
+    <a class="btn-plat btn-plat--primario" href="index.html">Volver al tablero →</a>
+  </div>
+
+</main>
+
+<dialog class="fmt-visor" id="fmtVisor">
+  <div class="fmt-top no-imprimir">
+    <strong id="fmtTitulo"></strong>
+    <div style="display:flex;gap:8px">
+      <button class="btn-plat btn-plat--secundario" id="fmtImprimir">Imprimir</button>
+      <button class="btn-plat btn-plat--primario" id="fmtCerrar">Cerrar</button>
+    </div>
+  </div>
+  <div id="fmtCuerpo"></div>
+</dialog>
+
+<script type="module">
+import('./js/sala-ui.js').then(m => m.montarTarjeta(document.getElementById('salaTarjeta'))).catch(() => {});
+import './js/shell.js';
+import { Store, comoLista } from './js/store.js';
+import { pintarBarraFlujo, completar } from './js/flow.js';
+import { GUION, TOTAL_PASOS, GUION_VERSION, MIGRAR_POSICIONES } from './js/data-guion.js';
+import { rejillaVideos, montarVideos } from './js/videos.js';
+montarVideos();
+import { FORMATOS, camposLlenables } from './js/data-formatos.js';
+import { icono as ic } from './js/iconos.js';
+import { registrarDocumento } from './js/flow.js';
+import { CONFIG } from './js/config.js';
+import { prepararArchivo, guardarArchivo, quitarArchivo, leerArchivos, archivoCompleto, mandarAlAlmacen, pesoLegible } from './js/archivos.js';
+import { esc, imagenSegura } from './js/seguro.js';
+
+const MODULO = 'documentos';
+const $ = id => document.getElementById(id);
+
+let datos = Store.get(MODULO, {});
+/* Marcas de una versión anterior del guión: se recorren a su nueva posición. */
+if (datos.guion !== GUION_VERSION && comoLista(datos.hechos).length) {
+  datos.hechos = comoLista(datos.hechos).map(k => {
+    const [si, ii] = String(k).split('.');
+    return MIGRAR_POSICIONES[si] !== undefined ? `${MIGRAR_POSICIONES[si]}.${ii}` : k;
+  });
+  Store.merge(MODULO, { hechos: datos.hechos, guion: GUION_VERSION, abiertas: [] });
+  datos.abiertas = [];
+} else if (datos.guion !== GUION_VERSION) {
+  Store.merge(MODULO, { guion: GUION_VERSION });
+}
+const hechos  = new Set(comoLista(datos.hechos));
+const abiertas = new Set(datos.abiertas === undefined ? [0] : comoLista(datos.abiertas));
+
+const TAG = {
+  dialogo: ['tag-dialogo', 'Qué dices'],
+  accion:  ['tag-accion',  'Qué haces'],
+  usuario: ['tag-usuario', 'Responde el usuario'],
+  nota:    ['tag-nota',    'Nota del estándar'],
+};
+
+/* Resalta los [MARCADORES] que el candidato debe sustituir */
+const resaltar = t =>
+  String(t).replace(/\[([^\]]+)\]/g, '<span class="placeholder">[$1]</span>');
+
+function pintarPaso(sIdx, item, iIdx) {
+  if (item.t === 'subtitulo') {
+    return `<div class="paso-sub">${item.x}</div>`;
+  }
+  const clave = `${sIdx}.${iIdx}`;
+  const [cls, etiqueta] = TAG[item.t] || TAG.accion;
+  const marcable = item.t === 'dialogo' || item.t === 'accion';
+  const hecho = hechos.has(clave);
+
+  return `<div class="paso paso--${item.t} ${hecho ? 'hecho' : ''}" data-clave="${clave}">
+    ${marcable
+      ? `<input class="paso-chk" type="checkbox" ${hecho ? 'checked' : ''}
+                aria-label="Marcar como dominado">`
+      : '<span style="flex:0 0 18px"></span>'}
+    <div class="paso-cuerpo">
+      <span class="paso-tag ${cls}">${etiqueta}</span>
+      <div class="paso-txt">${resaltar(item.x)}</div>
+    </div>
+  </div>`;
+}
+
+/* ── Los cuatro formatos ──────────────────────────────────────────────────
+   Este módulo declara en config.js que aporta cuatro documentos al
+   expediente —ficha, consentimiento, plan de sesión y plan de seguimiento—
+   y flow.js lo cierra contra esos cuatro. Pero la página no los producía ni
+   los registraba: solo llamaba a completar(), que para un módulo documental
+   flow.js ignora. Resultado: el candidato marcaba todo el guión, la pantalla
+   se veía terminada, y el módulo se quedaba "en curso" para siempre sin un
+   motivo que enseñarle.
+
+   Ahora los formatos existen de verdad: se ven, se imprimen, y quedan
+   registrados en el expediente cuando el candidato los baja.              */
+const tieneFormato = clave =>
+  !!(Store.get(MODULO).documentos || {})[clave];
+const lleno = clave => (Store.get(MODULO).documentos || {})[clave]?.lleno === true;
+
+/* Estado del recorrido «Llénalos con tu usuario» */
+(function estadoLlenado() {
+  const d = Store.get(MODULO, {}), gen = d.sesionGenerada, s = d.sesion;
+  if (gen) {
+    $('llenarEstado').textContent = `Generados el ${new Date(gen.fecha).toLocaleDateString('es-MX')}${gen.usuario ? ' · usuario: ' + gen.usuario : ''}`;
+    $('llenarBtn').textContent = 'Ver o corregir mis documentos →';
+  } else if (s && s.paso > 0) {
+    $('llenarEstado').textContent = `Vas en el paso ${Math.min(s.paso, 19)} de 19`;
+    $('llenarBtn').textContent = 'Continuar donde me quedé →';
+  }
+})();
+
+function pintarFormatos() {
+  $('formatos').innerHTML = FORMATOS.map(f => {
+    const ok = tieneFormato(f.clave);
+    return `<div class="fmt-card ${ok ? 'fmt-card--ok' : ''}">
+      <span class="fmt-ico">${ic(ok ? 'cheque' : 'archivo', 20)}</span>
+      <div class="fmt-cuerpo">
+        <div class="fmt-t">${f.nombre}</div>
+        <div class="fmt-d">${f.para}</div>
+        <div class="fmt-meta">${lleno(f.clave) ? '<strong style="color:var(--spoke-deep)">Lleno y firmado con tu usuario</strong> · ' : ''}${f.reactivos} · ${camposLlenables(f)} campo${camposLlenables(f) === 1 ? "" : "s"} por llenar</div>
+        ${firmados(f.clave)}
+      </div>
+      <div class="fmt-acciones">
+        <button class="btn-plat btn-plat--secundario" data-ver="${f.clave}">Ver</button>
+        <label class="btn-plat btn-plat--secundario" title="Foto o PDF del formato ya firmado por tu usuario: va a tu portafolio">Subir firmado
+          <input type="file" hidden data-firmado="${f.clave}" accept="image/*,application/pdf" multiple></label>
+        ${lleno(f.clave) ? `<a class="btn-plat btn-plat--secundario" href="sesion.html">Ver lleno</a>`
+          : `<button class="btn-plat ${ok ? 'btn-plat--secundario' : 'btn-plat--primario'}"
+                data-bajar="${f.clave}">${ok ? 'Ya lo tengo' : 'Descargar'}</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* v47 · El formato firmado (foto o PDF) que el candidato sube: va al
+   portafolio detrás de su DOC, como en el portafolio de Humberto, donde
+   los DOC 1–5 son los formatos firmados escaneados. */
+const CLAVE_FIRMADO = k => `firmado_${k}`;
+function firmados(k) {
+  const lista = leerArchivos(MODULO, CLAVE_FIRMADO(k));
+  if (!lista.length) return '';
+  return `<div class="fmt-firmados">${lista.map((a, i) => `<span class="fmt-firmado ${a.revision?.nivel === 'aviso' || !archivoCompleto(a) ? 'ojo' : ''}">
+      ${a.miniatura ? `<img src="${imagenSegura(a.miniatura)}" alt="">` : ''}
+      <b>${esc(a.nombre || 'Archivo')}</b> <small>${a.bytes ? pesoLegible(a.bytes) : ''}${a.paginas ? ` · PDF ${a.paginas} pág.` : ''}</small>
+      <button type="button" data-quitar-firmado="${k}" data-indice="${i}" aria-label="Quitar ${esc(a.nombre || 'archivo')}">✕</button></span>`).join('')}
+    <small class="fmt-firmado-nota">✓ Firmado · va a tu portafolio</small></div>`;
+}
+document.addEventListener('change', async e => {
+  const inp = e.target.closest('[data-firmado]');
+  if (!inp || !inp.files?.length) return;
+  const k = inp.dataset.firmado, clave = CLAVE_FIRMADO(k), malos = [];
+  for (const f of [...inp.files]) {
+    const reg = await prepararArchivo(f, { modulo: MODULO, clave });
+    if (reg.rechazo) { malos.push(`${f.name}: ${reg.rechazo}`); continue; }
+    let res = guardarArchivo(MODULO, clave, reg, { agregar: true });
+    if (!res.ok && res.motivo === 'sin-espacio') { const l = await mandarAlAlmacen(reg, { modulo: MODULO, clave }); if (l) res = guardarArchivo(MODULO, clave, l, { agregar: true }); }
+    if (!res.ok) malos.push(`${f.name}: no se pudo guardar en este navegador.`);
+  }
+  /* Subir el firmado también cuenta como tenerlo */
+  if (leerArchivos(MODULO, clave).length && !tieneFormato(k)) {
+    const f = FORMATOS.find(x => x.clave === k);
+    registrarDocumento(MODULO, k, { nombre: f?.nombre || k, firmado: true, fecha: new Date().toISOString() });
+  }
+  pintarFormatos(); pintarBarraFlujo($('pasos'), MODULO);
+  if (malos.length) alert(malos.join('\n'));
+});
+document.addEventListener('click', e => {
+  const q = e.target.closest('[data-quitar-firmado]');
+  if (!q) return;
+  quitarArchivo(MODULO, CLAVE_FIRMADO(q.dataset.quitarFirmado), +q.dataset.indice);
+  pintarFormatos();
+});
+
+/* El formato, tal como se imprime */
+function formatoAHTML(f) {
+  const campo = c => {
+    if (c.t === 'grupo')   return `<h3 class="fmt-grupo">${c.x}</h3>`;
+    if (c.t === 'leyenda') return `<p class="fmt-leyenda">${c.x}</p>`;
+    if (c.t === 'firma')   return `
+      <div class="fmt-firma">
+        <span class="fmt-raya"></span>
+        <small>${c.x}</small>
+      </div>`;
+    if (c.t === 'area')    return `
+      <div class="fmt-campo">
+        <label>${c.x}</label>
+        <div class="fmt-lineas">${'<span></span>'.repeat(c.filas || 2)}</div>
+      </div>`;
+    return `
+      <div class="fmt-campo ${c.ancho === 'corto' ? 'fmt-campo--corto' : ''}">
+        <label>${c.x}</label>
+        <div class="fmt-lineas"><span></span></div>
+      </div>`;
+  };
+
+  return `
+    <div class="fmt-hoja">
+      <header class="fmt-hoja-top">
+        <div>
+          <strong>${CONFIG.marca.nombre}</strong>
+          <small>Centro Evaluador · ${CONFIG.marca.estandar}</small>
+        </div>
+        <h2>${f.nombre}</h2>
+      </header>
+      <div class="fmt-campos">${f.campos.map(campo).join('')}</div>
+      ${f.nota ? `<p class="fmt-nota">${f.nota}</p>` : ''}
+      <p class="fmt-pie">Formato basado en los contenidos que enumera el
+        ${CONFIG.marca.estandar}. Valídalo con tu Centro Evaluador antes de usarlo
+        con un usuario real.</p>
+    </div>`;
+}
+
+$('formatos').addEventListener('click', e => {
+  const ver = e.target.closest('[data-ver]');
+  const bajar = e.target.closest('[data-bajar]');
+
+  if (ver) {
+    const f = FORMATOS.find(x => x.clave === ver.dataset.ver);
+    $('fmtTitulo').textContent = f.nombre;
+    $('fmtCuerpo').innerHTML = formatoAHTML(f);
+    $('fmtVisor').showModal();
+    return;
+  }
+
+  if (bajar) {
+    const f = FORMATOS.find(x => x.clave === bajar.dataset.bajar);
+    /* Si ya lo tenía, el botón lo quita: marcarse algo por error y no poder
+       desmarcarlo obliga a reiniciar el proceso entero. */
+    if (tieneFormato(f.clave)) {
+      registrarDocumento(MODULO, f.clave, false);
+    } else {
+      descargarFormato(f);
+      registrarDocumento(MODULO, f.clave, {
+        nombre: f.nombre, generado: true, fecha: new Date().toISOString(),
+      });
+    }
+    pintarFormatos();
+    pintarBarraFlujo($('pasos'), MODULO);
+  }
+});
+
+/* Se baja como HTML imprimible, no como PDF: un PDF generado aquí saldría
+   con las tipografías del navegador de cada quien y sin manera de corregir
+   un campo. En HTML el candidato lo abre, lo imprime y, si su Centro le pide
+   un ajuste, lo edita. */
+function descargarFormato(f) {
+  const hoja = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+    <title>${f.nombre} — ${CONFIG.marca.nombre}</title>
+    <style>${ESTILO_IMPRESION}</style></head>
+    <body>${formatoAHTML(f)}</body></html>`;
+
+  const url = URL.createObjectURL(new Blob([hoja], { type: 'text/html;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${f.clave}-${CONFIG.marca.nombre.toLowerCase()}.html`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+const ESTILO_IMPRESION = `
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color:#0F172A;
+         margin:0; padding:26px; background:#fff; font-size:13px; line-height:1.5 }
+  .fmt-hoja-top { display:flex; justify-content:space-between; align-items:flex-end;
+    gap:20px; padding-bottom:12px; margin-bottom:18px; border-bottom:2px solid #0d2a6e }
+  .fmt-hoja-top strong { display:block; font-size:15px; letter-spacing:.06em; color:#0d2a6e }
+  .fmt-hoja-top small { color:#64748B; font-size:11px }
+  .fmt-hoja-top h2 { margin:0; font-size:17px; text-align:right }
+  .fmt-grupo { margin:18px 0 8px; font-size:11px; letter-spacing:.09em; text-transform:uppercase;
+    color:#64748B; border-bottom:1px solid #E2E8F0; padding-bottom:4px }
+  .fmt-campo { margin-bottom:11px }
+  .fmt-campo--corto { display:inline-block; width:31%; margin-right:2% ; vertical-align:top }
+  .fmt-campo label { display:block; font-size:11px; color:#475569; margin-bottom:3px }
+  .fmt-lineas span { display:block; border-bottom:1px solid #94A3B8; height:19px }
+  .fmt-leyenda { margin:14px 0; padding:10px 13px; background:#F8FAFC;
+    border-left:3px solid #0d2a6e; font-size:11.5px; line-height:1.6 }
+  .fmt-firma { display:inline-block; width:45%; margin:26px 4% 0 0; vertical-align:top }
+  .fmt-raya { display:block; border-bottom:1px solid #0F172A; height:34px }
+  .fmt-firma small { display:block; font-size:10.5px; color:#475569; margin-top:5px }
+  .fmt-nota { margin-top:22px; font-size:11px; color:#475569; font-style:italic }
+  .fmt-pie { margin-top:8px; font-size:10px; color:#94A3B8 }
+  @media print { body { padding:0 } .fmt-hoja { page-break-inside:auto } }`;
+
+$('fmtCerrar').onclick = () => $('fmtVisor').close();
+$('fmtImprimir').onclick = () => {
+  const v = window.open('', '_blank');
+  v.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <title>${$('fmtTitulo').textContent}</title><style>${ESTILO_IMPRESION}</style></head>
+    <body>${$('fmtCuerpo').innerHTML}</body></html>`);
+  v.document.close();
+  v.focus();
+  setTimeout(() => v.print(), 350);
+};
+
+function pintar() {
+  $('secciones').innerHTML = GUION.map((sec, i) => {
+    const abierta = abiertas.has(i);
+    const dial = sec.items.filter(x => x.t === 'dialogo').length;
+    const acc  = sec.items.filter(x => x.t === 'accion').length;
+
+    return `<div class="sec">
+      <button class="sec-head" aria-expanded="${abierta}" data-sec="${i}">
+        <span class="sec-n">${sec.seccionNum}</span>
+        <span class="sec-t">${sec.nombre}</span>
+        <span class="sec-meta">${dial} diálogo${dial === 1 ? '' : 's'} · ${acc} acción${acc === 1 ? '' : 'es'}</span>
+        <span class="sec-caret">▶</span>
+      </button>
+      ${abierta
+        ? `<div class="sec-body">${sec.items.map((x, j) => pintarPaso(i, x, j)).join('')}${sec.videos?.length ? rejillaVideos(sec.videos) : ''}</div>`
+        : ''}
+    </div>`;
+  }).join('');
+
+  actualizarResumen();
+}
+
+function actualizarResumen() {
+  const marcables = GUION.reduce((n, s) =>
+    n + s.items.filter(x => x.t === 'dialogo' || x.t === 'accion').length, 0);
+
+  $('nSec').textContent = GUION.length;
+  $('nDia').textContent = GUION.reduce((n, s) => n + s.items.filter(x => x.t === 'dialogo').length, 0);
+  $('nAcc').textContent = GUION.reduce((n, s) => n + s.items.filter(x => x.t === 'accion').length, 0);
+  /* Los pasos se guardan por posición ("sección.renglón"). Cuando el guión
+     cambie —Humberto todavía tiene que validarlo— una marca vieja puede
+     apuntar a un renglón que ya no es marcable o ya no existe, y el contador
+     llegaba a "53 de 51 · 104%". Solo cuentan las que caen en un paso real. */
+  const validas = new Set();
+  GUION.forEach((sec, si) => sec.items.forEach((x, ii) => {
+    if (x.t === 'dialogo' || x.t === 'accion') validas.add(`${si}.${ii}`);
+  }));
+  const n = [...hechos].filter(k => validas.has(k)).length;
+  $('nHechos').textContent = n;
+
+  const pct = marcables ? Math.round((n / marcables) * 100) : 0;
+  $('barra').style.width = pct + '%';
+  $('txtAvance').textContent = `${n} de ${marcables} pasos dominados · ${pct}%`;
+
+  if (n === marcables && marcables > 0) {
+    completar(MODULO, { pasos: marcables, secciones: GUION.length });
+    pintarBarraFlujo($('pasos'), MODULO);
+  }
+}
+
+function guardar() {
+  Store.merge(MODULO, { hechos: [...hechos], abiertas: [...abiertas] });
+}
+
+/* ── Interacción ──────────────────────────────────────────────────────── */
+$('secciones').addEventListener('click', e => {
+  const head = e.target.closest('.sec-head');
+  if (head) {
+    const i = Number(head.dataset.sec);
+    abiertas.has(i) ? abiertas.delete(i) : abiertas.add(i);
+    guardar();
+    pintar();
+    return;
+  }
+
+  const chk = e.target.closest('.paso-chk');
+  if (chk) {
+    const fila = chk.closest('.paso');
+    const clave = fila.dataset.clave;
+    chk.checked ? hechos.add(clave) : hechos.delete(clave);
+    fila.classList.toggle('hecho', chk.checked);
+    guardar();
+    actualizarResumen();
+  }
+});
+
+$('btnTodo').onclick = () => {
+  const todasAbiertas = abiertas.size === GUION.length;
+  abiertas.clear();
+  if (!todasAbiertas) GUION.forEach((_, i) => abiertas.add(i));
+  $('btnTodo').textContent = todasAbiertas ? 'Expandir todo' : 'Contraer todo';
+  guardar();
+  pintar();
+};
+
+$('btnImprimir').onclick = () => {
+  GUION.forEach((_, i) => abiertas.add(i));
+  pintar();
+  setTimeout(() => window.print(), 100);
+};
+
+/* ── Arranque ─────────────────────────────────────────────────────────── */
+pintarBarraFlujo($('pasos'), MODULO);
+pintar();
+pintarFormatos();
+</script>
+</body>
+</html>

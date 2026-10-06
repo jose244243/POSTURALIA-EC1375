@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examen (formulario anterior) — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+.ex-op--elegida { border-color: var(--spoke-deep); background: var(--spoke-pale); }
+.ex-op--elegida .ex-op-letra { background: var(--spoke-deep); color: var(--white); }
+.ex-mapa { display:flex; flex-wrap:wrap; gap:6px }
+.ex-mapa button { width:34px; height:34px; border-radius:8px; border:1px solid var(--border); background:var(--white); font-size:.8rem; font-weight:600; color:var(--mid); cursor:pointer }
+.ex-mapa button.hecho { background:var(--spoke-pale); border-color:var(--spoke-lt); color:var(--spoke-deep) }
+.ex-mapa button.actual { outline:2px solid var(--spoke-deep); outline-offset:1px }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <!-- ── INTRODUCCIÓN ── -->
+  <section id="vIntro">
+    <div class="plat-head">
+      <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.5 3a3 3 0 0 0-3 3 3 3 0 0 0-2 5.2A3 3 0 0 0 6 16.5 3 3 0 0 0 9.5 21a2.5 2.5 0 0 0 2.5-2.5V5.5A2.5 2.5 0 0 0 9.5 3z"/><path d="M14.5 3a3 3 0 0 1 3 3 3 3 0 0 1 2 5.2A3 3 0 0 1 18 16.5 3 3 0 0 1 14.5 21a2.5 2.5 0 0 1-2.5-2.5V5.5A2.5 2.5 0 0 1 14.5 3z"/></svg></div>
+      <h1>Examen de Conocimientos</h1>
+      <p>Una pregunta a la vez. Si te equivocas verás la respuesta correcta y el porqué, para que repases antes de continuar.</p>
+    </div>
+
+    <div class="card card--acento">
+      <h2>Cómo funciona</h2>
+      <p style="color:var(--mid);font-size:.93rem;line-height:1.7" id="descExamen"></p>
+    </div>
+
+    <div class="acciones">
+      <button class="btn-plat btn-plat--primario" id="btnComenzar">Comenzar examen →</button>
+    </div>
+  </section>
+
+  <!-- ── REACTIVO ── -->
+  <section id="vReactivo" hidden>
+    <div class="card card--acento">
+      <div class="barra-txt">
+        <span id="contador"></span>
+        <span id="marcador"></span>
+      </div>
+      <div class="barra"><div class="barra-fill" id="barra" style="width:0%"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="ex-categoria" id="categoria"></div>
+      <div class="ex-pregunta" id="pregunta"></div>
+      <div class="ex-opciones" id="opciones"></div>
+      <div id="feedback"></div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">Ve a cualquier reactivo · puedes cambiar tus respuestas hasta enviar</div>
+      <div class="ex-mapa" id="mapa"></div>
+      <div id="avisoFaltan"></div>
+    </div>
+
+    <div class="acciones">
+      <button class="btn-plat btn-plat--secundario" id="btnAnterior">← Anterior</button>
+      <button class="btn-plat btn-plat--primario" id="btnSiguiente">Siguiente →</button>
+    </div>
+  </section>
+
+  <!-- ── RESULTADO ── -->
+  <section id="vResultado" hidden>
+    <div class="plat-head">
+      <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+      <h1>Resultado del examen</h1>
+    </div>
+
+    <div class="card">
+      <div class="resultado" id="bloqueResultado">
+        <div class="resultado-pct" id="pct">0%</div>
+        <div class="resultado-sub" id="pctSub"></div>
+      </div>
+    </div>
+
+    <div class="card" id="cardVeredicto"></div>
+
+    <div class="card">
+      <h2>Desempeño por área</h2>
+      <div class="desglose" id="porArea"></div>
+    </div>
+
+    <div class="card">
+      <h2>Qué repasar</h2>
+      <div id="fallados"></div>
+    </div>
+
+    <div class="acciones">
+      <button class="btn-plat btn-plat--secundario" id="btnRepetir">↺ Repetir examen</button>
+      <button class="btn-plat btn-plat--secundario" id="btnImprimir"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.5 9V3.5h11V9"/><path d="M6.5 17.5H5A2 2 0 0 1 3 15.5v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1.5"/><path d="M6.5 14h11v6.5h-11z"/></svg> Imprimir / PDF</button>
+      <a class="btn-plat btn-plat--primario" href="index.html">Volver al proceso →</a>
+    </div>
+  </section>
+
+</main>
+
+<script type="module">
+import './js/shell.js';
+import { CONFIG } from './js/config.js';
+import { Store }  from './js/store.js';
+import { pintarBarraFlujo, completar } from './js/flow.js';
+import { BANCO, seleccionarReactivos } from './js/data-examen.js';
+import { BIBLIOTECA } from './js/data-biblioteca.js';
+
+const MODULO = 'examen';
+const N      = Math.min(CONFIG.reglas.reactivosExamen, BANCO.length);
+const UMBRAL = CONFIG.reglas.umbralExamen;
+const LETRAS = ['A', 'B', 'C', 'D', 'E'];
+
+const $ = id => document.getElementById(id);
+const vistas = { intro: $('vIntro'), reactivo: $('vReactivo'), resultado: $('vResultado') };
+
+function mostrar(n) {
+  Object.entries(vistas).forEach(([k, el]) => el.hidden = (k !== n));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+let estado = Store.get(MODULO, {});
+let orden  = estado.orden || [];
+let idx    = estado.currentIndex ?? 0;
+let respuestas = estado.answers || {};   // { indiceBanco: opciónElegida }
+
+/* ── Si el banco cambió a mitad de un intento ─────────────────────────────
+   El intento guarda POSICIONES del banco, no los reactivos. El banco va a
+   crecer (hoy trae 39 y hacen falta 80–120), y en cuanto se agregue o se
+   reordene uno, un intento a medias apuntaría a otros reactivos: las
+   respuestas ya dadas se calificarían contra preguntas que el candidato
+   nunca vio, o BANCO[i] saldría vacío y la pantalla tronaría.
+
+   Cada intento lleva la huella del banco con que se armó. Si no coincide,
+   ese intento a medias se descarta y se dice por qué. La aprobación, la
+   mejor calificación y el historial no se tocan: ya están calificados. */
+function huellaDelBanco() {
+  let h = 5381;
+  const txt = BANCO.map(r => r.pregunta + '|' + r.correcta).join('\n');
+  for (let k = 0; k < txt.length; k++) h = ((h << 5) + h + txt.charCodeAt(k)) | 0;
+  return `${BANCO.length}-${(h >>> 0).toString(36)}`;
+}
+const HUELLA = huellaDelBanco();
+const ordenValido = o => Array.isArray(o) && o.length > 0
+  && o.every(k => Number.isInteger(k) && k >= 0 && k < BANCO.length);
+let intentoDescartado = false;
+
+if (estado.enCurso && (!ordenValido(orden) || (estado.banco && estado.banco !== HUELLA))) {
+  orden = []; idx = 0; respuestas = {};
+  intentoDescartado = true;
+  Store.merge(MODULO, { orden: [], currentIndex: 0, answers: {}, enCurso: false });
+} else if (!ordenValido(orden) || (estado.banco && estado.banco !== HUELLA)) {
+  /* Un resultado hecho con otro banco (el preliminar de 39) no se puede
+     recalcular contra el oficial: se muestra con sus números guardados. */
+  orden = []; respuestas = {};
+}
+if (!(idx >= 0 && idx < orden.length)) idx = 0;
+
+$('descExamen').innerHTML =
+  `Son <strong>${N} reactivos</strong> de opción múltiple sobre el estándar EC1375.
+   Necesitas <strong>${UMBRAL}%</strong> para aprobar.
+   ${CONFIG.reglas.barajarExamen ? 'El orden cambia en cada intento. ' : ''}
+   Tu avance se guarda solo: si cierras, puedes retomar donde ibas.`;
+
+/* Evitar copiar/pegar durante el examen */
+['copy', 'cut', 'contextmenu'].forEach(ev =>
+  $('vReactivo').addEventListener(ev, e => e.preventDefault()));
+
+function guardar() {
+  Store.merge(MODULO, { orden, currentIndex: idx, answers: respuestas });
+}
+
+/* ── Empezar un intento ───────────────────────────────────────────────────
+   Antes esto hacía Store.set con un objeto nuevo, que BORRA todo el módulo.
+   Un candidato que ya había aprobado con 87% oprimía "Repetir" para
+   practicar y en ese instante perdía la aprobación: el módulo se reabría, su
+   avance bajaba, y si dejaba el intento a medias se quedaba reprobado.
+   Practicar lo castigaba.
+
+   Ahora solo se reinicia lo del intento en curso. La aprobación, la mejor
+   calificación y el historial de intentos no se tocan.                    */
+function iniciar() {
+  orden = seleccionarReactivos(N, CONFIG.reglas.barajarExamen);
+  idx = 0;
+  respuestas = {};
+  Store.merge(MODULO, { orden, currentIndex: 0, answers: {}, enCurso: true, banco: HUELLA });
+  mostrar('reactivo');
+  pintarReactivo();
+}
+
+function pintarReactivo() {
+  const iBanco = orden[idx];
+  const r = BANCO[iBanco];
+  const elegida = respuestas[iBanco];
+  const hechas = orden.filter(i => respuestas[i] !== undefined).length;
+
+  /* Como en la evaluación oficial: mientras contestas no se dice si
+     acertaste ni cuántas llevas bien. Solo cuántas llevas contestadas. */
+  $('contador').textContent = `Reactivo ${idx + 1} de ${orden.length}`;
+  $('marcador').textContent = `${hechas} de ${orden.length} contestados`;
+  $('barra').style.width = Math.round((hechas / orden.length) * 100) + '%';
+
+  $('categoria').textContent = r.categoria;
+  $('pregunta').textContent  = r.pregunta;
+
+  $('opciones').innerHTML = r.opciones.map((op, i) => `
+    <button class="ex-op ${elegida === i ? 'ex-op--elegida' : ''}" data-i="${i}" aria-pressed="${elegida === i}">
+      <span class="ex-op-letra">${LETRAS[i]}</span>
+      <span>${op}</span>
+    </button>`).join('');
+
+  $('feedback').innerHTML = '';
+  $('btnAnterior').disabled = idx === 0;
+  $('btnSiguiente').textContent = idx === orden.length - 1 ? 'Enviar evaluación →' : 'Siguiente →';
+  pintarMapa();
+}
+
+function pintarMapa() {
+  $('mapa').innerHTML = orden.map((iBanco, k) => `
+    <button data-k="${k}" class="${respuestas[iBanco] !== undefined ? 'hecho' : ''} ${k === idx ? 'actual' : ''}"
+      title="Reactivo ${k + 1}${respuestas[iBanco] !== undefined ? ' · contestado' : ' · sin contestar'}">${k + 1}</button>`).join('');
+}
+
+$('mapa').addEventListener('click', e => {
+  const b = e.target.closest('button[data-k]');
+  if (!b) return;
+  idx = +b.dataset.k; guardar(); pintarReactivo();
+});
+
+$('opciones').addEventListener('click', e => {
+  const btn = e.target.closest('.ex-op');
+  if (!btn) return;
+  respuestas[orden[idx]] = +btn.dataset.i;
+  guardar();
+  $('avisoFaltan').innerHTML = '';
+  pintarReactivo();
+});
+
+$('btnAnterior').onclick = () => { if (idx > 0) { idx--; guardar(); pintarReactivo(); } };
+
+$('btnSiguiente').onclick = () => {
+  if (idx < orden.length - 1) { idx++; guardar(); pintarReactivo(); return; }
+  /* No se envía incompleto: un reactivo en blanco es un error seguro. */
+  const faltan = orden.map((iBanco, k) => respuestas[iBanco] === undefined ? k : -1).filter(k => k >= 0);
+  if (faltan.length) {
+    $('avisoFaltan').innerHTML = `<div class="aviso aviso--warn" style="margin-top:12px">
+      <strong>Te faltan ${faltan.length} reactivo${faltan.length === 1 ? '' : 's'} por contestar.</strong>
+      Reactivos: ${faltan.map(k => k + 1).join(', ')}. Te llevamos al primero.</div>`;
+    idx = faltan[0]; guardar(); pintarReactivo();
+    return;
+  }
+  if (!confirm('¿Enviar la evaluación? Después de enviarla ya no podrás cambiar respuestas.')) return;
+  finalizar();
+};
+
+/* ── Terminar un intento ──────────────────────────────────────────────────
+   Pintar el resultado y REGISTRARLO eran una sola función, y como al abrir
+   la página se volvía a pintar, se volvía a registrar: la fecha del examen
+   pasaba a ser "la última vez que el candidato miró su calificación". Un
+   examen hecho el 1 de septiembre y consultado el 21 quedaba fechado el 21
+   en el expediente.
+
+   Ahora registrar ocurre una sola vez, al terminar un intento de verdad, y
+   mirar el resultado después no escribe nada.                            */
+function registrarIntento() {
+  const aciertos = orden.filter(i => respuestas[i] === BANCO[i].correcta).length;
+  const pct = Math.round((aciertos / orden.length) * 100);
+  const aprobo = pct >= UMBRAL;
+  const ahora = new Date().toISOString();
+
+  const previo = Store.get(MODULO, {});
+  const intento = { score: pct, aprobado: aprobo, correctas: aciertos,
+                    total: orden.length, fecha: ahora };
+
+  /* Los respaldos de antes no traen historial; su resultado cuenta como el
+     primer intento para no perderlo. */
+  const historial = previo.intentos ||
+    (previo.score != null && previo.completado
+      ? [{ score: previo.score, aprobado: previo.aprobado === true,
+           correctas: previo.correctas, total: previo.total, fecha: previo.fecha }]
+      : []);
+  const intentos = [...historial, intento];
+
+  /* La aprobación se queda: el estándar pide demostrar el conocimiento, y
+     una vez demostrado no se deshace porque un intento de práctica salga
+     peor. La calificación que cuenta es la mejor. */
+  const aprobados = intentos.filter(x => x.aprobado);
+  const mejor = intentos.reduce((a, b) => (b.score > a.score ? b : a));
+
+  completar(MODULO, {
+    orden, answers: respuestas, enCurso: false,
+    correctas: mejor.correctas, total: mejor.total,
+    score: mejor.score,
+    aprobado: aprobados.length > 0,
+    /* La fecha que importa para el expediente es la del primer intento
+       aprobado; mientras no apruebe, la del último. */
+    fecha: aprobados.length ? aprobados[0].fecha : ahora,
+    ultimo: intento,
+    intentos,
+  });
+}
+
+function finalizar({ registrar = true } = {}) {
+  if (registrar) registrarIntento();
+
+  /* Lo que se enseña es el intento que se acaba de hacer (o, al volver a la
+     página, el último que hizo) — no el mejor, que puede ser de otro día. */
+  const guardado = Store.get(MODULO, {});
+  const ult = guardado.ultimo || guardado;
+  const aciertos = orden.length
+    ? orden.filter(i => respuestas[i] === BANCO[i].correcta).length
+    : (ult.correctas ?? 0);
+  const pct = orden.length ? Math.round((aciertos / orden.length) * 100) : (ult.score ?? 0);
+  const aprobo = pct >= UMBRAL;
+
+  $('pct').textContent = pct + '%';
+  $('pctSub').textContent = `${aciertos} de ${orden.length} correctas`;
+  $('bloqueResultado').classList.toggle('resultado--bajo', !aprobo);
+
+  $('cardVeredicto').innerHTML = aprobo
+    ? `<h2>Aprobado ✓</h2>
+       <p style="color:var(--mid);line-height:1.7;font-size:.93rem">
+         Alcanzaste ${pct}%, por encima del ${UMBRAL}% requerido. Repasa de todos modos
+         las secciones más bajas del desglose antes de tu evaluación oficial.</p>`
+    : `<h2>Aún no alcanzas el mínimo</h2>
+       <p style="color:var(--mid);line-height:1.7;font-size:.93rem">
+         Obtuviste ${pct}% y se requiere ${UMBRAL}%. Revisa las áreas más bajas del
+         desglose, repasa el material de esas secciones y vuelve a intentarlo. El examen se
+         repite completo y en blanco: no se repiten solo los reactivos fallados ni se te dice
+         cuáles fueron, porque el objetivo es dominar el tema, no memorizar respuestas.</p>`;
+
+  /* Desempeño por categoría */
+  const areas = {};
+  orden.forEach(i => {
+    const c = BANCO[i].categoria;
+    areas[c] ??= { total: 0, ok: 0 };
+    areas[c].total++;
+    if (respuestas[i] === BANCO[i].correcta) areas[c].ok++;
+  });
+
+  $('porArea').innerHTML = Object.entries(areas)
+    .sort((a, b) => (a[1].ok / a[1].total) - (b[1].ok / b[1].total))
+    .map(([nombre, d]) => {
+      const p = Math.round((d.ok / d.total) * 100);
+      return `<div class="desglose-fila">
+        <div class="desglose-nom">${nombre}</div>
+        <div class="desglose-val" style="color:${p >= UMBRAL ? 'var(--spoke-deep)' : 'var(--warn)'}">
+          ${p}% <span style="color:var(--muted);font-weight:500">(${d.ok}/${d.total})</span>
+        </div></div>`;
+    }).join('');
+
+  /* Qué repasar: por sección, con el material que sustenta sus reactivos.
+     No se dice cuáles se fallaron (ni la respuesta correcta): así se
+     evita que el segundo intento sea memorizar el primero. */
+  const debiles = Object.entries(areas).filter(([, d]) => (d.ok / d.total) * 100 < UMBRAL);
+  const materialDe = nombre => [...new Set(orden.filter(i => BANCO[i].categoria === nombre)
+    .map(i => BANCO[i].repaso).filter(Boolean))];
+  const titulo = sid => (BIBLIOTECA.find(x => x.sid === sid) || {}).t || sid;
+  $('fallados').innerHTML = !orden.length
+    ? `<p style="color:var(--mid);font-size:.9rem;line-height:1.6">Este resultado es de la versión anterior del examen,
+       que no usaba los reactivos oficiales. Preséntalo de nuevo con los 37 reactivos oficiales.</p>`
+    : debiles.length
+    ? debiles.map(([nombre, d]) => `
+        <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+          <div class="ex-categoria">${nombre} · ${d.ok}/${d.total}</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+            ${materialDe(nombre).map(sid => `<a href="biblioteca.html#${sid}" target="_blank" rel="noopener"
+               style="font-size:.88rem">▶ ${titulo(sid)}</a>`).join('')}
+          </div>
+        </div>`).join('')
+    : `<p style="color:var(--spoke-deep);font-weight:600">Todas tus secciones están en ${UMBRAL}% o más.</p>`;
+
+  pintarHistorial();
+  pintarBarraFlujo($('pasos'), MODULO);
+  mostrar('resultado');
+}
+
+/* ── Historial de intentos ────────────────────────────────────────────────
+   Si ya aprobó alguna vez y el intento que acaba de hacer salió más bajo,
+   tiene que quedarle claro que NO perdió nada. Sin esto, ver "62%" después
+   de haber tenido 87% da un susto con razón. */
+function pintarHistorial() {
+  const g = Store.get(MODULO, {});
+  const intentos = g.intentos || [];
+  let caja = document.getElementById('historialExamen');
+  if (!caja) {
+    caja = document.createElement('div');
+    caja.id = 'historialExamen';
+    caja.className = 'card';
+    $('cardVeredicto').after(caja);
+  }
+  if (intentos.length < 2 && !g.aprobado) { caja.hidden = true; return; }
+  caja.hidden = false;
+
+  const fecha = f => new Date(f).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+  const ultimoBajo = g.aprobado && g.ultimo && !g.ultimo.aprobado;
+
+  caja.innerHTML = `
+    <h2 style="margin-top:0">Tus intentos</h2>
+    ${ultimoBajo ? `<p class="ev-sellada" style="margin-top:0">
+       Ya habías aprobado con ${g.score}%: este intento de práctica no te quita nada.</p>` : ''}
+    <div class="ex-hist">
+      ${intentos.map((x, i) => `
+        <div class="ex-int ${x.aprobado ? 'ex-int--ok' : ''}">
+          <span>Intento ${i + 1}</span>
+          <strong>${x.score}%</strong>
+          <small>${x.fecha ? fecha(x.fecha) : ''}</small>
+        </div>`).join('')}
+    </div>
+    <p class="pn-nota" style="margin-bottom:0">
+      Cuenta tu mejor calificación${g.aprobado ? `: <strong>${g.score}%</strong>, aprobado` : ''}.
+    </p>`;
+}
+
+$('btnComenzar').onclick = iniciar;
+$('btnRepetir').onclick  = () => { if (confirm('Se iniciará un intento nuevo. ¿Continuar?')) iniciar(); };
+$('btnImprimir').onclick = () => window.print();
+
+/* ── Arranque ──────────────────────────────────────────────────────────── */
+pintarBarraFlujo($('pasos'), MODULO);
+
+/* Un intento a medias se retoma. Un examen terminado se ENSEÑA, sin volver
+   a registrarlo: antes se registraba de nuevo cada vez que se abría la
+   página, y la fecha del examen pasaba a ser la de la última consulta. */
+if (intentoDescartado) {
+  $('descExamen').insertAdjacentHTML('afterend', `
+    <p class="ev-pendiente" role="status" style="margin-top:12px">
+      El banco de reactivos se actualizó desde que empezaste tu último intento,
+      así que ese intento a medias ya no se puede calificar y se descartó.
+      Tus intentos terminados y tu mejor calificación siguen igual.</p>`);
+}
+
+if (estado.enCurso && orden.length)  { mostrar('reactivo'); pintarReactivo(); }
+else if (estado.completado)            finalizar({ registrar: false });
+else if (orden.length)               { mostrar('reactivo'); pintarReactivo(); }
+else                                   mostrar('intro');
+</script>
+</body>
+</html>

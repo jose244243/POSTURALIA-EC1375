@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guión Maestro — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  .gm-videos { margin-top:14px; padding-top:12px; border-top:1px dashed var(--border) }
+  .gm-videos-t { font-size:.74rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted) }
+  @media print { .gm-videos { display:none } }
+  .gm-barra {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    padding: 12px 0; margin-bottom: 4px;
+    background: var(--bg);
+  }
+  .gm-buscar { flex: 1; min-width: 190px; font: inherit; font-size: .9rem; padding: 9px 13px }
+  .gm-modo {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 99px; font-size: .84rem; font-weight: 600;
+    background: var(--white); border: 1px solid var(--border);
+    color: var(--mid); cursor: pointer;
+  }
+  .gm-modo--on { background: var(--dark); color: var(--white); border-color: var(--dark) }
+
+  .gm-sec { margin-bottom: 26px }
+  .gm-sec-t {
+    display: flex; align-items: baseline; gap: 11px;
+    padding-bottom: 8px; margin-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .gm-sec-n {
+    flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center; font-size: .76rem; font-weight: 800;
+    background: var(--spoke); color: #fff;
+  }
+  .gm-sec-t h2 { margin: 0; font-size: 1.02rem }
+  .gm-sec-t small { color: var(--muted); font-size: .76rem; margin-left: auto }
+
+  .gm-item { display: flex; gap: 11px; padding: 9px 0; align-items: flex-start }
+  .gm-tag {
+    flex: 0 0 74px; font-size: .64rem; font-weight: 800; letter-spacing: .05em;
+    text-transform: uppercase; padding: 3px 0; color: var(--muted);
+  }
+  .gm-txt { flex: 1; font-size: .92rem; line-height: 1.7; color: var(--dark) }
+
+  .gm-item--dialogo .gm-tag { color: var(--spoke-deep) }
+  .gm-item--dialogo .gm-txt {
+    font-weight: 500; padding: 9px 13px; border-radius: 9px;
+    background: var(--spoke-pale); border-left: 3px solid var(--spoke);
+  }
+  .gm-item--usuario .gm-txt {
+    color: var(--mid); font-style: italic;
+    padding: 8px 13px; border-radius: 9px; background: var(--bg);
+  }
+  .gm-item--accion .gm-tag { color: #B45309 }
+  .gm-item--accion .gm-txt { color: var(--mid) }
+  .gm-item--nota .gm-txt {
+    font-size: .85rem; color: #92400E; background: #FFFBEB;
+    border: 1px solid #FDE68A; border-radius: 8px; padding: 9px 13px;
+  }
+  .gm-item--subtitulo { padding-top: 16px }
+  .gm-item--subtitulo .gm-txt {
+    font-weight: 700; font-size: .87rem; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--muted);
+  }
+  :root[data-tema="oscuro"] .gm-item--dialogo .gm-txt { background: #0E2A21 }
+  :root[data-tema="oscuro"] .gm-item--nota .gm-txt {
+    background: #2A210E; border-color: #78350F; color: #FCD34D;
+  }
+
+  /* Modo ensayo: el diálogo se tapa y se descubre al tocarlo */
+  .ensayo .gm-item--dialogo .gm-txt {
+    color: transparent; user-select: none; cursor: pointer;
+    background: var(--border); border-left-color: var(--muted);
+    position: relative;
+  }
+  .ensayo .gm-item--dialogo .gm-txt::after {
+    content: "toca para ver qué se dice aquí";
+    position: absolute; inset: 0; display: grid; place-items: center;
+    color: var(--muted); font-size: .78rem; font-style: italic;
+  }
+  .ensayo .gm-item--dialogo .gm-txt.abierto,
+  .ensayo .gm-item--dialogo .gm-txt.abierto::after { color: var(--dark); content: none }
+  .ensayo .gm-item--dialogo .gm-txt.abierto {
+    background: var(--spoke-pale); border-left-color: var(--spoke); user-select: text;
+  }
+  :root[data-tema="oscuro"] .ensayo .gm-item--dialogo .gm-txt.abierto { background: #0E2A21 }
+
+  mark { background: #FEF08A; color: #713F12; padding: 0 2px; border-radius: 3px }
+  :root[data-tema="oscuro"] mark { background: #854D0E; color: #FEF9C3 }
+
+  .gm-vacio { color: var(--muted); font-size: .9rem; padding: 26px 0; text-align: center }
+
+  @media print {
+    .plat-top, .shell, .shell-velo, .gm-barra, .gm-pie, .plat-pasos { display: none !important }
+    body.con-shell { margin: 0 !important; padding: 0 !important }
+    .gm-sec { break-inside: avoid }
+    .ensayo .gm-item--dialogo .gm-txt { color: var(--dark) !important; background: none !important }
+    .ensayo .gm-item--dialogo .gm-txt::after { content: none !important }
+  }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <div class="plat-head">
+    <div class="plat-icono" id="icoHead"></div>
+    <h1>Guión Maestro</h1>
+    <p>Lo que se dice y lo que se hace, en orden, de principio a fin de la sesión.</p>
+  </div>
+
+  <!-- Sala de evidencias: se muestra si el Centro publicó horarios o tienes uno -->
+  <div id="salaTarjeta"></div>
+
+  <div class="card card--acento">
+    <h2>Para qué sirve</h2>
+    <p style="color:var(--mid);font-size:.92rem;line-height:1.7;margin:0">
+      La Guía de Observación califica lo que el evaluador <strong>oye y ve</strong>.
+      Buena parte de los criterios son verbales: si no lo dices, no ocurrió, por más
+      que lo hayas hecho bien. Este guión es la versión completa de esa conversación.
+      Está abierto siempre — no esperes a la sesión para leerlo por primera vez.
+    </p>
+  </div>
+
+  <div class="gm-barra">
+    <input type="search" class="gm-buscar" id="buscar"
+           placeholder="Buscar una frase, una palabra…" aria-label="Buscar en el guión">
+    <button type="button" class="gm-modo" id="btnEnsayo"></button>
+    <button type="button" class="gm-modo" id="btnImprimir"></button>
+  </div>
+
+  <div id="resumen" class="pn-nota" style="margin-top:0"></div>
+
+  <div id="guion"></div>
+
+  <p class="pn-pie gm-pie">
+    ¿Vas a practicarlo paso por paso y marcarlo?
+    <a href="documentos.html">Hazlo en Documentos de Sesión</a>, ahí sí cuenta para tu avance.
+    · <a href="index.html">Volver a mi panel</a>
+  </p>
+
+</main>
+
+<script type="module">
+import('./js/sala-ui.js').then(m => m.montarTarjeta(document.getElementById('salaTarjeta'))).catch(() => {});
+import './js/shell.js';
+import { icono } from './js/iconos.js';
+import { GUION } from './js/data-guion.js';
+import { pintarBarraFlujo } from './js/flow.js';
+import { rejillaVideos, montarVideos, tarjetaPropia } from './js/videos.js';
+import { GUION_PROPIOS } from './js/data-medios.js';
+montarVideos();
+
+const $ = id => document.getElementById(id);
+pintarBarraFlujo($('pasos'), null);
+$('icoHead').innerHTML = icono('archivo', 30);
+
+const ETIQUETA = {
+  dialogo:   'Tú dices',
+  usuario:   'Él responde',
+  accion:    'Haces',
+  nota:      'Ojo',
+  subtitulo: '',
+};
+
+/* El modo ensayo se recuerda en el navegador, no en el expediente: es una
+   preferencia de cómo lee esta pantalla, no un dato de su certificación. */
+const CLAVE_ENSAYO = 'posturalia.guion.ensayo';
+let ensayo = false;
+try { ensayo = localStorage.getItem(CLAVE_ENSAYO) === 'si'; } catch {}
+
+let filtro = '';
+
+/* Resaltar sin romper el HTML: se escapa primero y se marca después. Sin
+   esto, un guión que contuviera un < o un & rompería el marcado entero. */
+const escapar = t => t.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+function resaltar(texto) {
+  const limpio = escapar(texto);
+  if (!filtro) return limpio;
+  const re = new RegExp(`(${filtro.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return limpio.replace(re, '<mark>$1</mark>');
+}
+
+const coincide = sec =>
+  !filtro || sec.items.some(i => i.x.toLowerCase().includes(filtro.toLowerCase()));
+
+function pintar() {
+  document.body.classList.toggle('ensayo', ensayo);
+
+  $('btnEnsayo').className = 'gm-modo' + (ensayo ? ' gm-modo--on' : '');
+  $('btnEnsayo').innerHTML = icono(ensayo ? 'ojo' : 'cerebro', 16) +
+    (ensayo ? ' Ensayo encendido' : ' Modo ensayo');
+  $('btnImprimir').innerHTML = icono('impresora', 16) + ' Imprimir';
+
+  const visibles = GUION.filter(coincide);
+
+  const dial = GUION.reduce((n, s) => n + s.items.filter(x => x.t === 'dialogo').length, 0);
+  const acc  = GUION.reduce((n, s) => n + s.items.filter(x => x.t === 'accion').length, 0);
+  $('resumen').textContent = filtro
+    ? `${visibles.length} de ${GUION.length} secciones contienen “${filtro}”.`
+    : `${GUION.length} secciones · ${dial} cosas que decir · ${acc} cosas que hacer.` +
+      (ensayo ? ' Los diálogos están tapados: destápalos cuando ya los hayas dicho de memoria.' : '');
+
+  if (!visibles.length) {
+    $('guion').innerHTML = `<p class="gm-vacio">Nada del guión dice “${escapar(filtro)}”.</p>`;
+    return;
+  }
+
+  $('guion').innerHTML = visibles.map(sec => {
+    const d = sec.items.filter(x => x.t === 'dialogo').length;
+    const a = sec.items.filter(x => x.t === 'accion').length;
+
+    return `<section class="gm-sec">
+      <div class="gm-sec-t">
+        <span class="gm-sec-n">${sec.seccionNum}</span>
+        <h2>${escapar(sec.nombre)}</h2>
+        <small>${d} diálogo${d === 1 ? '' : 's'} · ${a} acción${a === 1 ? '' : 'es'}</small>
+      </div>
+      ${sec.items.map(i => `
+        <div class="gm-item gm-item--${i.t}">
+          <span class="gm-tag">${ETIQUETA[i.t] ?? ''}</span>
+          <div class="gm-txt">${resaltar(i.x)}</div>
+        </div>`).join('')}
+      ${tarjetaPropia(GUION_PROPIOS[sec.clave]) ? `<div class="gm-videos">
+        <div class="gm-videos-t">Ejemplo de esta sección</div>
+        ${tarjetaPropia(GUION_PROPIOS[sec.clave], { titulo: sec.nombre })}</div>` : ''}
+      ${sec.videos?.length ? `<div class="gm-videos">
+        <div class="gm-videos-t">Video${sec.videos.length === 1 ? '' : 's'} de técnica de este bloque</div>
+        ${rejillaVideos(sec.videos)}</div>` : ''}
+    </section>`;
+  }).join('');
+}
+
+$('btnEnsayo').onclick = () => {
+  ensayo = !ensayo;
+  try { localStorage.setItem(CLAVE_ENSAYO, ensayo ? 'si' : 'no'); } catch {}
+  pintar();
+};
+
+$('btnImprimir').onclick = () => window.print();
+
+$('buscar').addEventListener('input', e => {
+  filtro = e.target.value.trim();
+  pintar();
+});
+
+/* En ensayo, tocar un diálogo lo descubre */
+$('guion').addEventListener('click', e => {
+  if (!ensayo) return;
+  const t = e.target.closest('.gm-item--dialogo .gm-txt');
+  if (t) t.classList.toggle('abierto');
+});
+
+pintar();
+</script>
+<script type="module" src="js/protege.js" data-imprimir></script>
+</body>
+</html>

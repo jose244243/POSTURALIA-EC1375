@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tutoriales y toolkit — Certificación EC1375 · POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <div class="plat-head">
+    <h1>Tutoriales y toolkit</h1>
+    <p>Cómo funciona cada parte de la plataforma, y qué hacer cuando algo no sale.</p>
+  </div>
+
+  <section class="card">
+    <h2>Lo que hay que entender primero</h2>
+    <div id="claves"></div>
+  </section>
+
+  <section class="card" id="tutoriales">
+    <h2>Cómo funciona la plataforma</h2>
+    <p class="pn-nota" style="margin-top:0">Videos cortos, grabados en la plataforma con una candidata de ejemplo (los datos son ficticios).
+      Cada paso tiene el suyo, y también lo abres con «Ver cómo se hace» desde la propia página.</p>
+    <div id="tutoGeneral" class="vid-grid"></div>
+  </section>
+
+  <section class="card">
+    <h2>Un tutorial por paso</h2>
+    <p class="pn-nota" style="margin-top:0">
+      El orden importa: cada módulo se abre cuando cierra el anterior. Los de
+      consulta no, ésos están abiertos siempre.
+    </p>
+    <div id="guias"></div>
+  </section>
+
+  <section class="card">
+    <h2>Recursos</h2>
+    <div id="guiasConsulta"></div>
+  </section>
+
+  <section class="card" id="videos-tecnica">
+    <h2>Videos de técnica</h2>
+    <p class="pn-nota" style="margin-top:0">
+      Los videos oficiales que acompañan la Alineación y el Guión Maestro. Los marcados
+      «Lo que observa el evaluador» son los procedimientos que se califican el día de la evaluación.
+    </p>
+    <div id="videosTecnica"></div>
+  </section>
+
+  <!-- Tu toolkit profesional (como Paideia): formatos para el consultorio del egresado -->
+  <section class="card" id="toolkit">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Tu toolkit profesional</h2><span id="tkChip" class="tk-chip"></span></div>
+    <p class="pn-nota">Formatos para tu consultorio basados en lo que el Estándar EC1375 pide: úsalos con cada paciente después de certificarte.
+      Salen con tus datos, listos para imprimir o guardar en PDF; el Word lo puedes adaptar a tu gusto.</p>
+    <div id="tkAviso"></div>
+    <div class="tk-datos">
+      <h3 style="margin:0 0 4px;font-size:.95rem">Tus datos en los formatos</h3>
+      <p class="pn-nota" style="margin:0 0 8px">Aparecen como responsable en el encabezado y en el Aviso de Privacidad. Puedes cambiarlos antes de descargar.</p>
+      <div class="tk-grid">
+        <label>Nombre del responsable<input id="tkResp"></label>
+        <label>Domicilio del consultorio<input id="tkDom"></label>
+        <label>Contacto (teléfono · correo)<input id="tkCont"></label>
+      </div>
+    </div>
+    <div class="tk-formatos" id="tkFormatos"></div>
+    <p class="pn-nota" style="margin-bottom:0">El Aviso de Privacidad es un texto modelo: revísalo con tu asesor antes de usarlo en tu consultorio.</p>
+  </section>
+
+  <section class="card">
+    <h2>Cuando algo no sale</h2>
+    <div id="problemas"></div>
+  </section>
+
+  <section class="card">
+    <h2>¿Sigue sin salir?</h2>
+    <p class="pn-nota" style="margin-top:0">
+      Escríbele al Centro Evaluador. Es más rápido preguntar que quedarse
+      atorado, y ninguna duda de proceso es demasiado pequeña.
+    </p>
+    <a class="btn-plat" id="wa" target="_blank" rel="noopener">Escribir por WhatsApp</a>
+  </section>
+
+  <p class="pn-pie"><a href="index.html">Volver a mi panel</a></p>
+
+</main>
+
+<script type="module">
+import './js/shell.js';
+import { CONFIG } from './js/config.js';
+import { icono, iconoDe } from './js/iconos.js';
+import { pintarBarraFlujo } from './js/flow.js';
+import { MEDIOS, GRUPOS_MEDIOS, TUTORIALES, TUTORIALES_INFO, duracionTexto } from './js/data-medios.js';
+import { tarjetaVideo, rejillaVideos, montarVideos } from './js/videos.js';
+montarVideos();
+
+const $ = id => document.getElementById(id);
+pintarBarraFlujo($('pasos'), null);
+
+/* ── Tu toolkit profesional ─────────────────────────────────────────────
+   Se desbloquea al terminar el proceso (el último paso del candidato son
+   las Evidencias), como en Paideia. El equipo lo ve siempre. */
+(async () => {
+  const [{ FORMATOS, htmlImprimible, blobWord, nombreArchivo }, { estaCompleto }, { Store }, { sesion }, { domicilioCompleto }] = await Promise.all([
+    import('./js/toolkit.js'), import('./js/flow.js'), import('./js/store.js'), import('./js/cuenta.js'), import('./js/registro.js')]);
+  const s = sesion?.() || null;
+  const libre = estaCompleto('evidencias') || s?.rol === 'admin' || s?.rol === 'evaluador' || Store.soloLectura;
+  const c = Store.get('candidato', {}) || {};
+  const st = document.createElement('style');
+  st.textContent = `.tk-chip{font-size:.74rem;font-weight:700;padding:3px 10px;border-radius:99px}.tk-chip.ok{background:#D1FAE5;color:#065F46}.tk-chip.lock{background:#E2E8F0;color:#334155}
+    .tk-datos{background:var(--bg);border-radius:10px;padding:12px 14px;margin:10px 0 14px}.tk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+    .tk-grid label{font-size:.78rem;font-weight:600;color:var(--mid)}.tk-grid input{display:block;width:100%;margin-top:4px;font:inherit;font-size:.9rem;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--white)}
+    .tk-formatos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:10px}
+    .tk-f{border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--white)}.tk-f h3{margin:0;font-size:.95rem}.tk-f p{margin:0;color:var(--mid);font-size:.84rem;line-height:1.5;flex:1}
+    .tk-f .acc{display:flex;gap:6px;flex-wrap:wrap}`;
+  document.head.appendChild(st);
+  $('tkChip').className = 'tk-chip ' + (libre ? 'ok' : 'lock');
+  $('tkChip').textContent = libre ? 'Disponible' : 'Se desbloquea al terminar tu proceso';
+  if (!libre) $('tkAviso').innerHTML = '<div class="aviso aviso--warn"><strong>Aún no disponible.</strong> Se desbloquea cuando termines tu proceso: el último paso es subir tus <a href="evidencias.html">Evidencias</a>.</div>';
+  $('tkResp').value = c.nombre || ''; $('tkDom').value = domicilioCompleto(c); $('tkCont').value = [c.telefonoCelular, c.email].filter(Boolean).join(' · ');
+  ['tkResp', 'tkDom', 'tkCont'].forEach(id => { $(id).disabled = !libre; });
+  const datos = () => ({ responsable: $('tkResp').value.trim(), domicilio: $('tkDom').value.trim(), contacto: $('tkCont').value.trim() });
+  $('tkFormatos').innerHTML = FORMATOS.map(f => `<div class="tk-f" data-f="${f.id}"><h3>${f.titulo}</h3><p>${f.desc}</p>
+    <div class="acc"><button class="btn-plat btn-plat--primario" data-pdf="${f.id}" ${libre ? '' : 'disabled'}>PDF</button>
+      <button class="btn-plat btn-plat--secundario" data-word="${f.id}" ${libre ? '' : 'disabled'}>Word editable</button></div></div>`).join('');
+  $('tkFormatos').addEventListener('click', e => {
+    const pdf = e.target.closest('[data-pdf]'), word = e.target.closest('[data-word]');
+    if (pdf && !pdf.disabled) {
+      const url = URL.createObjectURL(new Blob([htmlImprimible(pdf.dataset.pdf, datos())], { type: 'text/html' }));
+      const w = window.open(url, '_blank'); if (!w) location.href = url; setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+    if (word && !word.disabled) {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blobWord(word.dataset.word, datos()));
+      a.download = nombreArchivo(word.dataset.word, datos(), 'doc'); document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    }
+  });
+})();
+$('wa').href = `https://wa.me/${CONFIG.marca.whatsapp}`;
+
+/* ── Las tres cosas que la gente pregunta antes que nada ──────────────── */
+const CLAVES = [
+  ['escudo', 'Tu avance se guarda solo',
+   'No hay botón de "guardar". Cada respuesta queda registrada en cuanto la das. ' +
+   'Puedes cerrar la pestaña a media pregunta y retomar donde ibas.'],
+  ['archivo', 'Pero vive en este navegador',
+   'Mientras el Centro no encienda el respaldo en la nube, tu expediente está en ' +
+   'este dispositivo y en este navegador. Si vas a cambiar de equipo, o si limpias ' +
+   'el historial, descarga primero el respaldo desde tu panel: es un archivo que ' +
+   'restauras del otro lado y recuperas todo.'],
+  ['llave', 'Los candados no son un error',
+   'Un módulo con llave espera a que el Centro Evaluador libere esa fase. Uno con ' +
+   'candado espera a que termines el paso anterior. El material de estudio nunca ' +
+   'tiene candado: la Biblioteca y el Guión Maestro están abiertos desde el día uno.'],
+];
+
+$('claves').innerHTML = CLAVES.map(([ico, t, d]) => `
+  <div class="pn-aviso pn-aviso--info" style="align-items:flex-start">
+    <span class="pn-aviso-ico">${icono(ico, 18)}</span>
+    <span class="pn-aviso-txt"><strong>${t}</strong><br>${d}</span>
+  </div>`).join('');
+
+/* ── Una guía por módulo ──────────────────────────────────────────────────
+   Se recorre CONFIG.flujo en vez de escribir la lista a mano: si mañana se
+   agrega o se renombra un módulo, esta página lo sigue sin que nadie se
+   acuerde de venir a editarla.                                            */
+const GUIA = {
+  autodiagnostico: 'Primero firmas el acuerdo de confidencialidad y el acuse del Tríptico de Derechos y ' +
+    'Obligaciones. Después contestas Sí o No a los 142 reactivos oficiales del EC1375, elemento por ' +
+    'elemento. No es examen: arma tu Reforzamiento. Ojo: 17 reactivos son eliminatorios (por ejemplo el ' +
+    'lavado de manos); con uno solo en No, la plataforma te pide reforzar antes de evaluarte.',
+  reforzamiento: 'Aparecen solo los reactivos que marcaste en No, primero los eliminatorios y luego por ' +
+    'su peso. Cada uno te lleva directo a las pantallas de la Biblioteca de ese criterio. Se cierra ' +
+    'cuando los repasas todos.',
+  alineacion: 'La sesión en vivo con el instructor. Es lo que se cobra en esta fase. Antes de la sesión ' +
+    'puedes recorrer la ruta de alineación (50 pantallas) y la Biblioteca completa (126), así que ' +
+    'puedes llegar leído.',
+  plan: 'Acuerdas con tu evaluador la fecha, el lugar y las condiciones de tu evaluación, y firmas el ' +
+    'acuse. Sin este paso no hay fecha de evaluación.',
+  documentos: 'Los seis formatos del día de la evaluación: ficha de registro, consentimiento informado, ' +
+    'plan de sesión, plan de seguimiento, encuesta de satisfacción del usuario y verificación del ' +
+    'espacio. Cada uno trae los campos que revisa la lista de cotejo. Aquí mismo ensayas el Guión ' +
+    'Maestro, con los videos de cada bloque.',
+  practica: '20 temas: los conocimientos del EC1375 que entran en el cuestionario. Cada tema se ' +
+    'completa al acertar una pregunta; si fallas, repasas sus pantallas y contestas una pregunta de ' +
+    'verificación distinta. Fallar no penaliza. Al completar los 20 se abre el Examen.',
+  examen: `${CONFIG.reglas.reactivosExamen} reactivos oficiales. Se aprueba con ` +
+    `${CONFIG.reglas.umbralExamen}%. Mientras contestas no se dice si aciertas; puedes moverte entre ` +
+    'preguntas y cambiar respuestas, pero no se envía incompleto. Si no pasas, lo repites completo: ' +
+    'el resultado te dice qué secciones repasar.',
+  encuesta: 'Tu opinión del proceso. Es obligatoria para el expediente CONOCER.',
+  evidencias: 'La carpeta que se entrega: capturas de la sesión en Zoom, la liga al video completo, INE, ' +
+    'CURP y la foto para el diploma (de frente, fondo blanco, sin retoques), más la declaración de ' +
+    'autenticidad firmada.',
+  entrega: 'Este no lo cierras tú. Cuando todo lo demás está completo, el Centro Evaluador arma el ' +
+    'expediente y lo manda a CONOCER. Ahí es donde aparece tu certificado.',
+};
+
+const GUIA_CONSULTA = {
+  biblioteca: 'El temario completo de la Alineación: 126 pantallas. El índice marca cuáles forman la ' +
+    'ruta de alineación y cuáles son puntos críticos, y puedes buscar por tema.',
+  guion: 'Lo que se dice y se hace en la evaluación, de principio a fin, en 20 bloques. Cada bloque ' +
+    'trae sus videos. Con el modo ensayo tapas los diálogos para practicarlos de memoria.',
+  recursos: 'Esta página.',
+};
+
+const notaTuto = id => { const i = TUTORIALES_INFO[id] || {}; return [duracionTexto(i.dur), i.desc].filter(Boolean).join(' · '); };
+const video = id => tarjetaVideo(TUTORIALES[id], { titulo: TUTORIALES_INFO[id]?.titulo ? 'Tutorial: ' + TUTORIALES_INFO[id].titulo : 'Tutorial',
+  nota: TUTORIALES[id] ? duracionTexto(TUTORIALES_INFO[id]?.dur) : 'El video de este paso se publica pronto; mientras tanto, la guía escrita.' });
+
+$('tutoGeneral').innerHTML = ['inicio', 'general'].map(id =>
+  `<div id="tuto-${id}">${tarjetaVideo(TUTORIALES[id], { titulo: TUTORIALES_INFO[id].titulo, nota: notaTuto(id) })}</div>`).join('');
+
+const bloque = (id, n, nombre, texto, ico) => `
+  <div class="pn-doc" id="tuto-${id}" style="align-items:flex-start;cursor:default;padding:14px 12px;flex-wrap:wrap;gap:12px">
+    ${n ? `<span class="pn-paso-n">${n}</span>` : ''}
+    <span class="pn-doc-ico" style="margin-top:2px">${icono(ico, 18)}</span>
+    <span class="pn-doc-nom" style="flex:1;min-width:220px">
+      <strong style="display:block;margin-bottom:3px">${nombre}</strong>
+      <small style="color:var(--muted);line-height:1.6;font-size:.83rem">${texto}</small>
+    </span>
+    <span style="width:260px;max-width:100%">${video(id)}</span>
+  </div>`;
+
+$('guias').innerHTML = CONFIG.flujo.map((m, i) =>
+  bloque(m.id, i + 1, m.nombre, GUIA[m.id] || 'Módulo del proceso de certificación.', iconoDe(m.id))).join('');
+
+$('guiasConsulta').innerHTML = (CONFIG.consulta || []).filter(c => c.id !== 'recursos').map(c =>
+  bloque(c.id, 0, c.nombre, GUIA_CONSULTA[c.id] || c.desc || '', iconoDe(c.id) || 'archivo')).join('');
+
+$('videosTecnica').innerHTML = GRUPOS_MEDIOS.map(g => `
+  <h3 style="font-size:.92rem;margin:18px 0 4px">${g.titulo}</h3>${rejillaVideos(g.ids)}`).join('');
+
+/* Si se llega con #tuto-xxx (desde el enlace de cada página), se lleva ahí */
+if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth' }), 150);
+
+/* ── Problemas reales, con su salida ──────────────────────────────────── */
+const PROBLEMAS = [
+  ['Perdí mi avance / cambié de computadora',
+   'Si descargaste respaldo, restáuralo desde tu panel con "Restaurar respaldo". ' +
+   'Si no, el Centro Evaluador conserva lo que ya le entregaste; escríbeles y te dicen ' +
+   'desde dónde retomar.'],
+  ['La plataforma no guarda nada',
+   'Suele ser navegación privada o cookies bloqueadas. Ábrela en una ventana normal. ' +
+   'Si el aviso amarillo sigue apareciendo, revisa que el navegador permita ' +
+   'almacenamiento para este sitio.'],
+  ['Un módulo me aparece con llave y ya pagué',
+   'El Centro marca la fase a mano cuando confirma el pago; puede haber unas horas de ' +
+   'diferencia. Si pasó más de un día, mándales tu comprobante por WhatsApp.'],
+  ['Reprobé el examen',
+   `No es definitivo. Puedes volver a presentarlo, y lo sensato es pasar antes por ` +
+   `Reforzamiento y por la Biblioteca. Se aprueba con ${CONFIG.reglas.umbralExamen}%.`],
+  ['Quiero usarla desde el celular',
+   'Se instala como aplicación: abre el menú lateral y usa "Instalar como app". ' +
+   'En iPhone es desde Safari, con Compartir → Añadir a pantalla de inicio. ' +
+   'Instalada funciona aunque se caiga la señal.'],
+];
+
+$('problemas').innerHTML = PROBLEMAS.map(([t, d]) => `
+  <details class="pn-doc" style="display:block;padding:12px">
+    <summary style="cursor:pointer;font-weight:600;font-size:.9rem">${t}</summary>
+    <p style="margin:10px 0 0;color:var(--muted);font-size:.85rem;line-height:1.65">${d}</p>
+  </details>`).join('');
+</script>
+<script type="module" src="js/protege.js"></script>
+</body>
+</html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biblioteca de Recursos — POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POSTURALIA">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+/* Si una versión nueva de la página llega con un módulo viejo del caché
+   ("does not provide an export named…"), se recarga UNA vez: para entonces
+   el service worker ya tiene la versión nueva y la página abre bien. Sin
+   esto, la primera visita después de publicar podía quedarse en blanco. */
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  .bib-tabs { display:flex; gap:4px; margin-bottom:16px; border-bottom:2px solid var(--border); flex-wrap:wrap }
+  .tab-btn {
+    padding:12px 18px; background:none; border:none; border-bottom:3px solid transparent;
+    color:var(--muted); cursor:pointer; font-weight:500; transition:all .2s
+  }
+  .tab-btn:hover { color:var(--dark) }
+  .tab-btn.active { color:var(--spoke); border-bottom-color:var(--spoke) }
+
+  .visor-wrap {
+    height:min(72vh,640px); margin:0 0 12px; border:1px solid var(--border);
+    border-radius:8px; overflow:hidden; background:#0F172A
+  }
+  .visor-wrap iframe { width:100%; height:100%; border:none; display:block }
+
+  .visor-bar {
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    padding:12px; background:var(--bg); border-radius:8px; margin-bottom:12px
+  }
+  .visor-bar select { flex:1; min-width:220px }
+  .visor-bar .btn-nav {
+    padding:9px 14px; background:var(--spoke); color:#fff; border-radius:6px; font-weight:500
+  }
+  .visor-bar .btn-nav:hover { background:var(--spoke-deep) }
+  .visor-bar .btn-nav:disabled { background:var(--border); color:var(--muted); cursor:not-allowed }
+  #slidePos { color:var(--muted); font-weight:600; font-size:.9rem; min-width:80px; text-align:center }
+
+  .mod-group { margin-bottom:26px }
+  .mod-head {
+    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+    padding-bottom:8px; margin-bottom:12px; border-bottom:2px solid var(--border)
+  }
+  .mod-head h3 { margin:0; color:var(--dark); font-size:1.02rem }
+  .mod-count { color:var(--muted); font-size:.8rem; white-space:nowrap }
+
+  .slide-row {
+    display:flex; gap:12px; align-items:flex-start; width:100%; text-align:left;
+    padding:11px 12px; border:1px solid var(--border); border-radius:7px;
+    background:var(--white); margin-bottom:6px; cursor:pointer; transition:all .15s
+  }
+  .slide-row:hover { border-color:var(--spoke); background:#F0FDF9 }
+  .slide-n {
+    flex:0 0 34px; height:26px; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); color:var(--muted); border-radius:5px; font-size:.75rem; font-weight:700
+  }
+  .slide-t { flex:1; color:var(--dark); font-size:.9rem; line-height:1.45 }
+  .slide-meta { display:flex; gap:5px; flex-wrap:wrap; margin-top:5px }
+  .chip {
+    display:inline-block; padding:2px 7px; border-radius:4px;
+    font-size:.68rem; font-weight:600; letter-spacing:.02em
+  }
+  .chip--crit { background:#FEE2E2; color:#991B1B }
+  .chip--cr   { background:#E0F2FE; color:#075985 }
+  .chip--falta{ background:#F1F5F9; color:#64748B }
+  .slide-row--falta { cursor:default; opacity:.6; background:var(--bg) }
+  .slide-row--falta:hover { border-color:var(--border); background:var(--bg) }
+
+  .bib-filtros { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px }
+  .bib-filtros input { flex:1; min-width:220px }
+  .chk { display:flex; align-items:center; gap:7px; color:var(--mid); font-size:.87rem; cursor:pointer }
+  .vacio { color:var(--muted); text-align:center; padding:36px 0 }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+
+  <div class="plat-head">
+    <div class="plat-icono"><svg class="ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2.5 3.5h5A4 4 0 0 1 12 7.5v13a3.2 3.2 0 0 0-3.2-2.6H2.5z"/><path d="M21.5 3.5h-5A4 4 0 0 0 12 7.5v13a3.2 3.2 0 0 1 3.2-2.6h6.3z"/></svg></div>
+    <h1>Biblioteca de Recursos EC1375</h1>
+    <p id="subtitulo">Cargando…</p>
+  </div>
+
+  <div id="avisoFase"></div>
+
+  <div class="card">
+    <div class="bib-tabs">
+      <button class="tab-btn active" data-tab="visor"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 3.5h16a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 14V5A1.5 1.5 0 0 1 4 3.5z"/><path d="M8.5 20.5h7"/><path d="M12 15.5v5"/></svg> Visor</button>
+      <button class="tab-btn" data-tab="parati"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg> Para ti <span class="chip chip--cr" id="cuentaParaTi" hidden></span></button>
+      <button class="tab-btn" data-tab="indice"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/></svg> Índice completo</button>
+      <button class="tab-btn" data-tab="criticos"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4"/><path d="M12 17.2h.01"/></svg> Puntos críticos</button>
+    </div>
+
+    <!-- ── VISOR ── -->
+    <div id="tab-visor">
+      <div class="visor-bar">
+        <button class="btn-nav" id="btnAnterior">←</button>
+        <span id="slidePos">–</span>
+        <button class="btn-nav" id="btnSiguiente">→</button>
+        <select id="selSlide" aria-label="Ir a recurso"></select>
+      </div>
+      <div class="visor-wrap"><iframe id="visor" title="Visor de la Biblioteca"></iframe></div>
+      <p style="color:var(--muted);font-size:.83rem;margin:0">
+        El selector solo lista los recursos que el material entregado incluye. En el
+        <strong>Índice completo</strong> ves el temario entero y cuáles aún no traen pantalla.
+        También puedes abrir el material
+        <a href="biblioteca-deck.html" target="_blank" rel="noopener">en una pestaña aparte</a>.
+      </p>
+    </div>
+
+    <!-- ── PARA TI ── -->
+    <div id="tab-parati" hidden>
+      <p style="color:var(--mid);font-size:.9rem;line-height:1.6;margin:0 0 14px">
+        Las pantallas que te tocan según <strong>lo que marcaste en No en tu Autodiagnóstico</strong>
+        y <strong>los temas del Examen que fallaste al primer intento</strong>. Cada una dice por qué está aquí.
+      </p>
+      <div id="paratiLista"></div>
+    </div>
+
+    <!-- ── ÍNDICE ── -->
+    <div id="tab-indice" hidden>
+      <div class="bib-filtros">
+        <input type="search" id="busqueda" placeholder="Buscar en títulos, criterios (ej. E2·D3) y dentro del contenido…">
+        <label class="chk"><input type="checkbox" id="soloCrit"> Solo puntos críticos</label>
+        <label class="chk"><input type="checkbox" id="soloParaTi"> Solo para ti</label>
+      </div>
+      <div id="indiceLista"></div>
+    </div>
+
+    <!-- ── CRÍTICOS ── -->
+    <div id="tab-criticos" hidden>
+      <div class="aviso aviso--warn" style="margin-bottom:18px">
+        <strong>Estos son los recursos marcados como críticos en el estándar.</strong>
+        Corresponden a criterios donde un error en la evaluación suele significar
+        “no competente” directo. Revísalos antes de tu evaluación.
+        <br><br>
+        Los marcados <strong>SIN MATERIAL</strong> están en el temario pero el material
+        entregado todavía no trae su pantalla: pregúntale a tu evaluador por ese tema.
+      </div>
+      <div id="criticosLista"></div>
+    </div>
+  </div>
+
+</main>
+
+<script type="module">
+import './js/shell.js';
+import { CONFIG } from './js/config.js';
+import { Store, comoLista } from './js/store.js';
+import { pintarBarraFlujo, faseAutorizada } from './js/flow.js';
+import { esc } from './js/seguro.js';
+import { BIBLIOTECA, MODULOS, CRITICOS, DISPONIBLES } from './js/data-biblioteca.js';
+import { recomendadas, normaliza, textosDelDeck } from './js/biblioteca-para-ti.js';
+import { brechasDelAutodiagnostico } from './js/brechas.js';
+import { PREGUNTAS, REPASO, temaDe } from './js/examen-guiado.js';
+
+/* Lo leído en la Biblioteca vive en su propia llave.
+
+   Antes vivía en 'alineacion' y, al terminar de ver los críticos, llamaba a
+   completar('alineacion'): leer el material cerraba la fase de Alineación
+   —la sesión en vivo, 30% del avance— sin haber tomado la sesión. Y
+   `completar` guardaba `vistos: <número>` encima de la lista de pantallas
+   vistas, así que al recargar se perdía lo leído. */
+const MODULO = 'biblioteca';
+
+(function migrar() {
+  const vieja = Store.get('alineacion', {});
+  if (!('vistos' in vieja) && !('idx' in vieja) && !('criticos' in vieja)) return;
+  if (Store.soloLectura) return;
+  const { vistos, idx: i, criticos, ...resto } = vieja;
+  const actual = Store.get(MODULO, {});
+  Store.merge(MODULO, {
+    idx: Number.isInteger(actual.idx) ? actual.idx : (Number.isInteger(i) ? i : 0),
+    vistos: [...new Set([...comoLista(actual.vistos), ...comoLista(vistos)])],
+    ...(criticos != null ? { criticos } : {}),
+  });
+  /* Un completado sin fecha de "ya tomé mi sesión" lo puso la Biblioteca,
+     no el candidato. */
+  if (resto.completado === true && !resto.tomadaEl) resto.completado = false;
+  Store.set('alineacion', resto);
+})();
+const $ = id => document.getElementById(id);
+
+/* ── La Biblioteca es consulta abierta ────────────────────────────────────
+   Antes esta pantalla vivía detrás del candado del módulo de Alineación: un
+   candidato nuevo no la veía y ni sabía que existía.
+
+   Se separaron los dos conceptos, que no son el mismo:
+
+     Biblioteca   el material de estudio. Abierta siempre, como los libros
+                  de una materia. Estudiar no se cobra.
+     Alineación   la sesión con instructor y la evaluación. Eso es lo que el
+                  Centro libera al confirmar el pago de esa fase.
+
+   Mantenerlas juntas cobraba el estudio y escondía justo lo que le enseña al
+   candidato qué está comprando.                                            */
+const LIBERADA = faseAutorizada('alineacion');
+
+let datos = Store.get(MODULO, {});
+let idx = Number.isInteger(datos.idx) ? datos.idx : 0;
+const vistos = new Set(comoLista(datos.vistos));
+
+/* Quien todavía no tiene liberada la fase puede estudiar igual; lo que se le
+   dice es qué falta para la sesión, no que se vaya. */
+if (!LIBERADA) {
+  $('avisoFase').innerHTML = `
+    <div class="card" style="border-left:4px solid #2563EB">
+      <h2 style="margin-top:0">Estudia desde ahora</h2>
+      <p style="color:var(--mid);font-size:.92rem;line-height:1.7;margin-bottom:10px">
+        Todo el material está abierto: los ${BIBLIOTECA.length} temas del temario y los
+        ${CRITICOS.length} puntos críticos, que son donde un error en la evaluación
+        suele costar el "no competente".
+      </p>
+      <p style="color:var(--muted);font-size:.87rem;line-height:1.6;margin:0">
+        Lo que espera a que tu Centro Evaluador libere esa fase es la
+        <strong>sesión de Alineación</strong> con instructor, no el material.
+        <a href="https://wa.me/${CONFIG.marca.whatsapp}" target="_blank" rel="noopener">Pregunta por ella</a>.
+      </p>
+    </div>`;
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────────── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('[id^="tab-"]').forEach(el => el.hidden = true);
+    btn.classList.add('active');
+    $('tab-' + btn.dataset.tab).hidden = false;
+  };
+});
+
+/* ── Visor ────────────────────────────────────────────────────────────── */
+/* El selector solo ofrece las pantallas que existen en el deck: ofrecer las
+   otras llevaría a una pantalla en blanco sin explicación. */
+const NAVEGABLES = BIBLIOTECA.map((s, i) => ({ ...s, i })).filter(s => s.enDeck);
+
+$('subtitulo').textContent =
+  `${DISPONIBLES.length} recursos disponibles en el material, de ${BIBLIOTECA.length} del temario completo.`;
+
+$('selSlide').innerHTML = MODULOS.map(m => {
+  const items = NAVEGABLES
+    .filter(s => s.m === m)
+    .map(s => `<option value="${s.i}">${s.t}${s.risk === 'critico' ? '  (crítico)' : ''}</option>`)
+    .join('');
+  return items ? `<optgroup label="${m}">${items}</optgroup>` : '';
+}).join('');
+
+const CRIT_CON_MATERIAL = CRITICOS.filter(c => c.enDeck);
+
+function verSlide(n) {
+  // n es índice dentro de BIBLIOTECA; nos movemos por la lista navegable
+  const pos = Math.max(0, NAVEGABLES.findIndex(s => s.i === n));
+  const s = NAVEGABLES[pos];
+  if (!s) return;
+  idx = s.i;
+
+  $('visor').src = `biblioteca-deck.html#${s.sid}`;
+  $('slidePos').textContent = `${pos + 1} / ${NAVEGABLES.length}`;
+  $('selSlide').value = String(idx);
+  $('btnAnterior').disabled = pos === 0;
+  $('btnSiguiente').disabled = pos === NAVEGABLES.length - 1;
+
+  vistos.add(s.sid);
+  Store.merge(MODULO, { idx, vistos: [...vistos] });
+
+  /* Cuántos críticos con material lleva vistos. Solo informa (la pantalla
+     de Alineación lo usa en su lista de preparación); no cierra nada. */
+  const critVistos = CRIT_CON_MATERIAL.filter(c => vistos.has(c.sid)).length;
+  Store.merge(MODULO, { criticos: critVistos, criticosTotal: CRIT_CON_MATERIAL.length });
+}
+
+const mover = paso => {
+  const pos = NAVEGABLES.findIndex(s => s.i === idx);
+  const sig = NAVEGABLES[pos + paso];
+  if (sig) verSlide(sig.i);
+};
+$('btnAnterior').onclick = () => mover(-1);
+$('btnSiguiente').onclick = () => mover(+1);
+$('selSlide').onchange = e => verSlide(Number(e.target.value));
+
+/* ── Índice ───────────────────────────────────────────────────────────── */
+function fila(s) {
+  const i = BIBLIOTECA.indexOf(s);
+  const chips = [
+    s.risk === 'critico' ? '<span class="chip chip--crit">CRÍTICO</span>' : '',
+    s.core ? '<span class="chip chip--cr">RUTA DE ALINEACIÓN</span>' : '',
+    ...(s.crit || []).map(c => `<span class="chip chip--cr">${c}</span>`),
+    s.enDeck ? '' : '<span class="chip chip--falta">SIN MATERIAL</span>',
+    PARA_TI.has(s.sid) ? '<span class="chip chip--crit" style="background:#EEF2FF;color:#3730A3">PARA TI</span>' : '',
+  ].filter(Boolean).join('');
+
+  const cuerpo = `<span class="slide-n">${s.enDeck ? '▶' : '—'}</span>
+    <span class="slide-t">${s.t}${chips ? `<span class="slide-meta">${chips}</span>` : ''}</span>`;
+
+  return s.enDeck
+    ? `<button class="slide-row" data-i="${i}">${cuerpo}</button>`
+    : `<span class="slide-row slide-row--falta"
+             title="Este tema está en el temario, pero el material entregado aún no trae su pantalla."
+             >${cuerpo}</span>`;
+}
+
+/* Búsqueda dentro del contenido: el texto de cada pantalla se lee del deck
+   la primera vez que se busca algo de 3 letras o más. */
+let TEXTOS = null, cargandoTextos = null;
+function cargarTextos() {
+  cargandoTextos ||= fetch('biblioteca-deck.html').then(r => r.text()).then(h => { TEXTOS = textosDelDeck(h); pintarIndice(); })
+    .catch(() => { TEXTOS = {}; });
+  return cargandoTextos;
+}
+const enContenido = (s, qn) => !!(TEXTOS && qn.length >= 3 && (TEXTOS[s.sid] || '').includes(qn));
+
+function pintarIndice() {
+  const q = $('busqueda').value.trim().toLowerCase();
+  const qn = normaliza(q);
+  const soloCrit = $('soloCrit').checked;
+  const soloParaTi = $('soloParaTi').checked;
+  if (qn.length >= 3 && !TEXTOS) cargarTextos();
+
+  const filtrados = BIBLIOTECA.filter(s => {
+    if (soloCrit && s.risk !== 'critico') return false;
+    if (soloParaTi && !PARA_TI.has(s.sid)) return false;
+    if (!q) return true;
+    return normaliza(s.t).includes(qn)
+        || (s.crit || []).some(c => c.toLowerCase().includes(q))
+        || normaliza(s.m).includes(qn)
+        || enContenido(s, qn);
+  });
+
+  if (!filtrados.length) {
+    $('indiceLista').innerHTML = `<p class="vacio">${soloParaTi && !PARA_TI.size ? 'Todavía no hay pantallas recomendadas para ti: salen al contestar tu Autodiagnóstico y tu Examen.' : `Sin resultados para “${esc(q)}”.${qn.length >= 3 && !TEXTOS ? ' Buscando dentro del contenido…' : ''}`}</p>`;
+    return;
+  }
+
+  $('indiceLista').innerHTML = MODULOS.map(m => {
+    const items = filtrados.filter(s => s.m === m);
+    if (!items.length) return '';
+    return `<div class="mod-group">
+      <div class="mod-head">
+        <h3>${m}</h3>
+        <span class="mod-count">${items.length} recurso${items.length === 1 ? '' : 's'}</span>
+      </div>
+      ${items.map(fila).join('')}
+    </div>`;
+  }).join('');
+}
+
+$('busqueda').oninput = pintarIndice;
+$('soloCrit').onchange = pintarIndice;
+$('soloParaTi').onchange = pintarIndice;
+
+/* Delegación: abrir en el visor desde cualquier lista */
+document.addEventListener('click', e => {
+  const row = e.target.closest('.slide-row');
+  if (!row) return;
+  document.querySelector('[data-tab="visor"]').click();
+  verSlide(Number(row.dataset.i));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/* ── Para ti ──────────────────────────────────────────────────────────── */
+const PARA_TI = recomendadas({
+  biblioteca: BIBLIOTECA,
+  brechas: brechasDelAutodiagnostico(),
+  examen: (Store.get('examen', {}) || {}).guiado || null,
+  preguntas: PREGUNTAS, repaso: REPASO, temaDe,
+});
+function pintarParaTi() {
+  const items = BIBLIOTECA.filter(s => PARA_TI.has(s.sid));
+  $('cuentaParaTi').hidden = !items.length;
+  $('cuentaParaTi').textContent = items.length;
+  if (!items.length) {
+    $('paratiLista').innerHTML = `<p class="vacio">Todavía no hay pantallas recomendadas para ti. Salen solas cuando contestas tu
+      <a href="autodiagnostico.html">Autodiagnóstico</a> (lo que marques en No) y tu <a href="examen.html">Examen de Conocimientos</a> (lo que falles al primer intento).</p>`;
+    return;
+  }
+  $('paratiLista').innerHTML = MODULOS.map(m => {
+    const del = items.filter(s => s.m === m);
+    if (!del.length) return '';
+    return `<div class="mod-group"><div class="mod-head"><h3>${m}</h3><span class="mod-count">${del.length} pantalla${del.length === 1 ? '' : 's'}</span></div>
+      ${del.map(s => fila(s) + `<div style="margin:-2px 0 8px 34px;color:var(--muted);font-size:.8rem">${PARA_TI.get(s.sid).map(esc).join(' · ')}</div>`).join('')}</div>`;
+  }).join('');
+}
+
+/* ── Críticos ─────────────────────────────────────────────────────────── */
+$('criticosLista').innerHTML = MODULOS.map(m => {
+  const items = CRITICOS.filter(s => s.m === m);
+  if (!items.length) return '';
+  return `<div class="mod-group">
+    <div class="mod-head">
+      <h3>${m}</h3>
+      <span class="mod-count">${items.length} crítico${items.length === 1 ? '' : 's'}</span>
+    </div>
+    ${items.map(fila).join('')}
+  </div>`;
+}).join('');
+
+/* ── Arranque ─────────────────────────────────────────────────────────── */
+pintarBarraFlujo($('pasos'), null);
+pintarParaTi();
+pintarIndice();
+
+/* Reforzamiento y Práctica enlazan aquí con #sid para mandar al candidato a
+   un tema concreto: ese enlace manda sobre la última pantalla vista. */
+const pedido = decodeURIComponent(location.hash.slice(1));
+const porHash = pedido ? NAVEGABLES.find(s => s.sid === pedido) : null;
+verSlide(porHash ? porHash.i : idx);
+</script>
+<script type="module" src="js/protege.js"></script>
+</body>
+</html>

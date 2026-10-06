@@ -1,0 +1,283 @@
+/* ============================================================================
+   POSTURALIA · Panel del Centro Evaluador
+   admin-styles.css — Estilos compartidos de las seis secciones
+   ========================================================================== */
+
+:root {
+  --ash-w: 260px;
+  --ash-bg: linear-gradient(180deg, #0d2a6e 0%, #0a1f52 100%);
+  --ash-text: rgba(255,255,255,.85);
+  --ash-line: rgba(255,255,255,.14);
+  --ash-cta: #FFD700;
+  --ash-cta-text: #050a1a;
+}
+
+/* ── Menú lateral ── */
+.ashell {
+  position: fixed; top: 0; left: 0; z-index: 120;
+  width: var(--ash-w); height: 100vh;
+  display: flex; flex-direction: column;
+  background: var(--ash-bg); color: var(--ash-text);
+  border-right: 1px solid var(--ash-line);
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.ash-marca { padding: 18px 18px 14px; border-bottom: 1px solid var(--ash-line) }
+.ash-marca a { text-decoration: none; display: block }
+.ash-marca strong { display: block; color: #fff; font-size: .98rem; letter-spacing: .09em; font-weight: 800 }
+.ash-marca span { display: block; color: rgba(255,255,255,.55); font-size: .74rem; margin-top: 2px }
+
+.ash-resumen { padding: 14px 18px; border-bottom: 1px solid var(--ash-line) }
+.ash-res-fila { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0 }
+.ash-res-fila span { color: rgba(255,255,255,.6); font-size: .78rem }
+.ash-res-fila strong { color: var(--ash-cta); font-size: 1.05rem; font-variant-numeric: tabular-nums }
+
+.ash-nav { flex: 1; padding: 10px }
+.ash-nav-label {
+  font-size: .66rem; letter-spacing: .08em; text-transform: uppercase;
+  opacity: .55; padding: 10px 12px 6px
+}
+.ash-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; margin-bottom: 2px; border-radius: 7px;
+  color: var(--ash-text); font-size: .86rem; text-decoration: none; transition: background .15s
+}
+.ash-item:hover { background: rgba(255,255,255,.10); color: #fff; text-decoration: none }
+.ash-item--activo {
+  background: rgba(255,255,255,.18); color: #fff; font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--ash-cta)
+}
+.ash-ico { flex: 0 0 20px; text-align: center }
+.ash-nom { flex: 1 }
+.ash-badge {
+  background: var(--ash-cta); color: var(--ash-cta-text);
+  border-radius: 99px; padding: 1px 8px; font-size: .7rem; font-weight: 800
+}
+
+.ash-pie { padding: 14px 18px 18px; border-top: 1px solid var(--ash-line) }
+.ash-volver {
+  display: block; text-align: center; padding: 9px 11px; border-radius: 7px;
+  background: rgba(255,255,255,.10); color: var(--ash-text); font-size: .8rem; text-decoration: none
+}
+.ash-volver:hover { background: rgba(255,255,255,.18); color: #fff; text-decoration: none }
+.ash-ciudad { color: rgba(255,255,255,.4); font-size: .7rem; margin-top: 10px; text-align: center }
+
+/* ── Contenido ── */
+body.con-ashell .ad-top  { margin-left: var(--ash-w) }
+body.con-ashell .ad-wrap { margin-left: var(--ash-w) }
+
+.ad-top { background: #fff; border-bottom: 1px solid var(--border); padding: 13px 22px; position: sticky; top: 0; z-index: 50 }
+.ad-top-in { max-width: 1180px; margin: 0 auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap }
+.ad-titulo { font-size: 1.05rem; font-weight: 700; color: var(--dark) }
+.ad-sub { color: var(--muted); font-size: .8rem }
+.ad-wrap { max-width: 1180px; margin: 0 auto; padding: 24px 22px 70px }
+
+.ashell-toggle { display: none; flex-direction: column; gap: 4px; padding: 8px; margin-right: 4px; background: none; border: none; cursor: pointer }
+.ashell-toggle span { display: block; width: 19px; height: 2px; background: var(--dark); border-radius: 2px }
+.ashell-velo { position: fixed; inset: 0; z-index: 110; background: rgba(15,23,42,.5); border: none }
+
+/* ── Piezas comunes ── */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px }
+.kpi { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 15px }
+.kpi b { display: block; font-size: 1.65rem; line-height: 1.15; color: var(--dark); font-variant-numeric: tabular-nums }
+.kpi span { color: var(--muted); font-size: .76rem; display: block; margin-top: 3px }
+.kpi--ok b { color: var(--spoke-deep) }
+.kpi--warn b { color: var(--warn) }
+.kpi--dinero b { color: #0d2a6e }
+
+table.tbl { width: 100%; border-collapse: collapse; font-size: .87rem }
+table.tbl th {
+  background: var(--bg); padding: 10px 9px; text-align: left; border-bottom: 2px solid var(--border);
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); white-space: nowrap
+}
+table.tbl td { padding: 11px 9px; border-bottom: 1px solid var(--border); vertical-align: middle }
+table.tbl tbody tr:hover { background: #F8FAFC }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap }
+
+.pastilla { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: .7rem; font-weight: 700 }
+.p-ok    { background: #ECFDF5; color: #065F46 }
+.p-alto  { background: #FEE2E2; color: #991B1B }
+.p-medio { background: #FEF3C7; color: #92400E }
+.p-info  { background: #E0F2FE; color: #075985 }
+.p-gris  { background: #F1F5F9; color: #475569 }
+
+.acc { display: flex; gap: 9px; flex-wrap: wrap }
+.btn-a { padding: 8px 14px; border-radius: 7px; font-size: .84rem; font-weight: 600; cursor: pointer; border: none }
+.btn-a--pri { background: #0d2a6e; color: #fff }
+.btn-a--pri:hover { background: #0a1f52 }
+.btn-a--sec { background: var(--border); color: var(--dark) }
+.btn-a--sec:hover { background: #CBD5E1 }
+.btn-a--peligro { background: #FEE2E2; color: #991B1B }
+.btn-a--peligro:hover { background: #FECACA }
+
+.vacio { text-align: center; padding: 42px 20px; color: var(--muted) }
+
+/* «Cargar candidatos de prueba» cuando el panel está vacío (v44) */
+.prueba-rapida { border: 2px dashed #0d2a6e; border-radius: 12px; padding: 18px 20px; margin: 0 0 18px;
+  background: color-mix(in srgb, #0d2a6e 5%, transparent); line-height: 1.55; font-size: .9rem }
+.prueba-rapida strong { display: block; font-size: 1.02rem; margin-bottom: 4px }
+.prueba-rapida p { margin: 0 0 12px; color: var(--muted) }
+.prueba-rapida .prueba-nota { margin: 10px 0 0; font-size: .8rem }
+
+@media (max-width: 900px) {
+  .ashell { transform: translateX(-100%); transition: transform .25s ease }
+  .ashell.abierto { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.3) }
+  body.con-ashell .ad-top, body.con-ashell .ad-wrap { margin-left: 0 }
+  .ashell-toggle { display: flex }
+  .ocultar-movil { display: none }
+}
+@media (min-width: 901px) { .ashell-velo { display: none } }
+
+/* ── Modo oscuro ───────────────────────────────────────────────────────────
+   Los tokens del tema oscuro viven ahora en posturalia-styles.css, que cargan
+   todas las páginas: el candidato también tiene modo oscuro, no solo el panel.
+   Aquí quedan únicamente los ajustes propios del panel, que son los bloques de
+   aviso con fondo escrito a mano.                                          */
+
+/* Los fondos de aviso venían escritos a mano y sobre oscuro quedaban como
+   parches blancos. Se reasignan con el mismo significado, no con el mismo
+   color. */
+:root[data-tema="oscuro"] .suma--ok   { background:#0E2A21; color:#86EFAC; border-left-color:#34D399 }
+:root[data-tema="oscuro"] .suma--bajo { background:#2A210E; color:#FCD34D; border-left-color:#D97706 }
+:root[data-tema="oscuro"] .suma--alto { background:#2A1315; color:#FCA5A5; border-left-color:#DC2626 }
+:root[data-tema="oscuro"] .err-fila   { background:#2A1315; color:#FCA5A5 }
+:root[data-tema="oscuro"] .zona:hover,
+:root[data-tema="oscuro"] .zona.sobre { background:#18233A; border-color:#4C7DF0 }
+:root[data-tema="oscuro"] .fase-chip.on { background:#0E2A21; border-color:#34D399; color:#86EFAC }
+:root[data-tema="oscuro"] .fase-chip.mp { background:#13203A; border-color:#60A5FA; color:#BFDBFE }
+:root[data-tema="oscuro"] .lote-tab.activo,
+:root[data-tema="oscuro"] .filtro.activo,
+:root[data-tema="oscuro"] .pest.activa { background:#1D4ED8; border-color:#1D4ED8 }
+
+/* Botón del tema, en el pie del menú lateral */
+.ash-tema {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; margin-bottom: 8px; padding: 8px 10px; border-radius: 7px;
+  border: 1px solid var(--ash-line); background: rgba(255,255,255,.06);
+  color: var(--ash-text); font: inherit; font-size: .8rem; cursor: pointer;
+}
+.ash-tema:hover { background: rgba(255,255,255,.14); color: #fff }
+
+/* ============================================================================
+   LO QUE EL CANDIDATO ENTREGÓ, dentro de su ficha
+   ----------------------------------------------------------------------------
+   La ficha decía "2 de 4 documentos". Un número no sirve para revisar: para
+   aceptar una foto de diploma hay que ver que esté de frente, y para aceptar
+   un INE hay que poder leerlo.
+   ========================================================================== */
+.fa-bloque {
+  margin-bottom: 18px; padding: 14px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+}
+.fa-titulo {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  font-weight: 700; font-size: .9rem; color: var(--dark); margin-bottom: 11px;
+}
+.fa-titulo small { font-weight: 500; font-size: .78rem; color: var(--muted) }
+
+.fa-grid { display: grid; gap: 9px; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)) }
+
+.fa-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 8px; border-radius: 9px; text-align: center;
+  background: var(--white); border: 1px solid var(--border);
+  font: inherit; color: var(--dark); cursor: default;
+}
+button.fa-card { cursor: zoom-in }
+button.fa-card:hover { border-color: var(--mid); box-shadow: var(--shadow-sm) }
+
+.fa-card img {
+  width: 100%; aspect-ratio: 1; object-fit: cover;
+  border-radius: 6px; background: var(--bg);
+}
+.fa-sin {
+  width: 100%; aspect-ratio: 1; display: grid; place-items: center;
+  border-radius: 6px; background: var(--bg); color: var(--muted);
+}
+.fa-card strong {
+  font-size: .74rem; font-weight: 600; line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.fa-ok, .fa-ojo {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .68rem; font-weight: 700;
+}
+.fa-ok  { color: var(--spoke-deep, #047857) }
+.fa-ojo { color: #B45309 }
+:root[data-tema="oscuro"] .fa-ok  { color: #86EFAC }
+:root[data-tema="oscuro"] .fa-ojo { color: #FCD34D }
+
+.fa-firma {
+  display: flex; align-items: center; gap: 13px; margin-top: 12px;
+  padding: 11px; background: var(--white);
+  border: 1px solid var(--border); border-radius: 9px;
+}
+.fa-firma img { height: 40px; max-width: 170px; object-fit: contain }
+:root[data-tema="oscuro"] .fa-firma img { filter: invert(1) brightness(1.6) }
+.fa-firma strong { display: block; font-size: .84rem }
+.fa-firma small  { color: var(--muted); font-size: .76rem }
+
+/* Visor a tamaño completo */
+.visor-archivo {
+  border: 0; border-radius: 14px; padding: 0; max-width: 92vw; max-height: 92vh;
+  background: var(--white); box-shadow: var(--shadow-lg);
+}
+.visor-archivo::backdrop { background: rgba(2,6,23,.72) }
+.va-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 13px 16px; border-bottom: 1px solid var(--border);
+}
+.va-top strong { font-size: .92rem; color: var(--dark) }
+.visor-archivo img {
+  display: block; max-width: 88vw; max-height: 76vh; object-fit: contain;
+  background: var(--bg);
+}
+.fa-leer { flex-shrink: 0; font-size: .74rem; padding: 6px 11px }
+#visorTexto { padding: 20px 24px; max-width: 620px }
+.va-parrafo { margin: 0; font-size: .92rem; line-height: 1.75; color: var(--dark) }
+.va-pie { margin: 16px 0 0; font-size: .8rem; color: var(--muted) }
+.fa-cargando { background: var(--bg); animation: fa-late 1.1s ease-in-out infinite }
+@keyframes fa-late { 0%,100% { opacity:.45 } 50% { opacity:.85 } }
+@media (prefers-reduced-motion: reduce) { .fa-cargando { animation: none } }
+
+/* El título de cada página del panel pasó de <div> a <h1> para que un lector
+   de pantalla lo encuentre como título. Aquí se le quitan solo los márgenes
+   que el navegador le pone a todo <h1>.
+
+   Ojo con NO poner aquí font-size: `h1.ad-titulo` pesa más que `.ad-titulo`,
+   así que cualquier tamaño escrito en esta regla pisaría el 1.05rem de
+   arriba en vez de respetarlo. Por eso el tamaño se repite, explícito. */
+h1.ad-titulo { margin: 0; font-size: 1.05rem; font-weight: 700; line-height: 1.3 }
+
+/* ── Saldos de socios ─────────────────────────────────────────────────────
+   Un pago de más se ve distinto de un pendiente y de un saldo en cero. Antes
+   no se veía de ninguna forma: el cálculo lo convertía en "$0 pendiente". */
+.saldo-mas   { color: #B91C1C !important; font-weight: 700 }
+.saldo-falta { color: #B45309 }
+.saldo-cero  { color: var(--muted) }
+td.saldo-mas small, td.saldo-falta small {
+  display: block; font-size: .68rem; font-weight: 600; opacity: .85;
+}
+:root[data-tema="oscuro"] .saldo-mas   { color: #FCA5A5 !important }
+:root[data-tema="oscuro"] .saldo-falta { color: #FCD34D }
+
+.aviso-dinero {
+  padding: 12px 15px; margin-bottom: 14px; border-radius: 9px;
+  background: #FFFBEB; border: 1px solid #FDE68A; border-left: 4px solid #D97706;
+  color: #78350F; font-size: .86rem; line-height: 1.6;
+}
+.aviso-dinero--mal { background: #FEF2F2; border-color: #FECACA; border-left-color: #DC2626; color: #7F1D1D }
+.aviso-dinero strong { display: block; margin-bottom: 2px }
+:root[data-tema="oscuro"] .aviso-dinero      { background:#2A210E; border-color:#78350F; color:#FCD34D }
+:root[data-tema="oscuro"] .aviso-dinero--mal { background:#2A1315; border-color:#7F1D1D; color:#FCA5A5 }
+
+.kpi--peligro b { color: #B91C1C }
+:root[data-tema="oscuro"] .kpi--peligro b { color: #FCA5A5 }
+
+/* «Ver como candidato» arriba y a la vista, igual que «Volver al panel de
+   administrador» del lado del candidato. */
+.ash-nav.ash-nav--vistas { flex: 0 0 auto; padding: 10px 10px 0 }
+.ash-nav--vistas .ash-nav-label { display: none }
+.ash-nav--vistas .ash-item { background: #FFD700; color: #0a1f52; font-weight: 700; border-radius: 8px }
+.ash-nav--vistas .ash-item:hover { background: #ffe34d; color: #0a1f52 }
+.ash-nav--vistas .ash-item .ash-ico { color: #0a1f52 }

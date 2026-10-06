@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Cédula de Evaluación — Certificación EC1375 · POSTURALIA</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d2a6e">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+addEventListener('error', function (e) {
+  var m = String(e && e.message || '');
+  if (!/does not provide an export|import not found|Importing binding name|Failed to fetch dynamically imported module/i.test(m)) return;
+  try { if (sessionStorage.getItem('posturalia.recargaModulos')) return;
+        sessionStorage.setItem('posturalia.recargaModulos', '1'); } catch (_) { return; }
+  location.reload();
+});
+addEventListener('load', function () {
+  setTimeout(function () { try { sessionStorage.removeItem('posturalia.recargaModulos'); } catch (_) {} }, 4000);
+});
+</script>
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  .ced-kv { display:grid; grid-template-columns: 150px 1fr; gap:6px 14px; margin:0 0 14px; font-size:.92rem }
+  .ced-kv dt { color:var(--muted); font-weight:600 } .ced-kv dd { margin:0 }
+  .ced-campo { padding:10px 0; border-top:1px solid var(--border) } .ced-campo strong { display:block; margin-bottom:4px }
+  .ced-campo p { margin:0; color:var(--mid); line-height:1.6; white-space:pre-line }
+  .juicio { display:inline-block; margin-top:4px; padding:6px 14px; border-radius:999px; font-weight:800; letter-spacing:.03em }
+  .juicio.ok { background:#ECFDF5; color:#047857 } .juicio.no { background:#FEF2F2; color:#B91C1C }
+  .ok-box { background:#ECFDF5; border:1px solid #A7F3D0; color:#065F46; border-radius:12px; padding:12px 14px; margin-bottom:18px }
+  .ok-box img { max-height:60px; display:block; margin-top:8px; background:#fff; border-radius:6px; padding:4px }
+  .acuerdo { background:var(--bg); border-left:4px solid var(--spoke); padding:10px 12px; border-radius:8px; font-weight:600 }
+  .btn-a { font:inherit; font-size:.86rem; font-weight:700; padding:8px 14px; border-radius:9px; cursor:pointer; border:1.5px solid var(--border); background:var(--white); color:var(--dark) }
+  .btn-a--pri { background:#0d2a6e; border-color:#0d2a6e; color:#fff }
+  .etapas { list-style:none; margin:0; padding:0 } .etapas li { display:flex; gap:12px; align-items:flex-start; padding:9px 0; border-bottom:1px dashed var(--border) }
+  .etapas .i { flex:none; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.85rem; background:var(--bg); color:var(--muted) }
+  .etapas li.hecha .i { background:#047857; color:#fff } .etapas li.actual .i { background:#FFD700; color:#0a1f52 }
+  .etapas li.bloq { opacity:.45 } .etapas small { display:block; color:var(--muted) }
+  .msg-error { color:#B91C1C; font-weight:600; margin-top:8px }
+</style>
+</head>
+<body class="plataforma">
+
+<header class="plat-top">
+  <div class="plat-top-inner">
+    <a class="plat-marca" href="index.html">POSTURALIA <span>Certificación</span></a>
+    <nav class="plat-pasos" id="pasos" aria-label="Pasos del proceso"></nav>
+  </div>
+</header>
+
+<main class="plat-wrap">
+  <div class="plat-head">
+    <h1>Mi Cédula de Evaluación</h1>
+    <p id="sub">Tu resultado de evaluación y el avance de tu certificado.</p>
+  </div>
+  <div id="app"><section class="card"><p>Cargando…</p></section></div>
+  <section class="card" id="cardEtapas" hidden>
+    <h2>Tu certificación, etapa por etapa</h2>
+    <ol class="etapas" id="etapas"></ol>
+  </section>
+</main>
+
+<script type="module">
+/* Réplica de cedula.html de Paideia: el candidato lee su Cédula publicada,
+   ve «¿Qué sigue?» y firma «Estoy de acuerdo con el juicio…». */
+import './js/shell.js';
+import { pintarBarraFlujo } from './js/flow.js';
+import { CAMPOS_CEDULA, TEXTO_ACUERDO, dictamenDe, cedulaPublicada, juicioOficial } from './js/evaluacion.js';
+import { miEvaluacion, firmarMiCedula, misEtapas, enNube } from './js/resultado.js';
+import { montarFirmaSimple } from './js/firma-simple.js';
+import { firmaGuardada } from './js/firma.js';
+import { faseAutorizada } from './js/flow.js';
+import { Store } from './js/store.js';
+import { CONFIG } from './js/config.js';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fecha = iso => { if (!iso) return ''; const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso); const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(iso);
+  return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); };
+const vistaFirma = f => !f ? '' : f.mode === 'draw' && /^data:image\//.test(f.dataUrl || '') ? `<img src="${f.dataUrl}" alt="Tu firma">` : `<div style="font:italic 1.5rem 'Brush Script MT','Segoe Script',cursive">${esc(f.typedName || '')}</div>`;
+pintarBarraFlujo($('pasos'), null);
+
+let ev = null, firma = null;
+const nombre = () => Store.get('candidato', {}).nombre || '';
+
+function cedulaHtml(c) {
+  const comp = c.juicio === 'COMPETENTE';
+  return `<section class="card"><h2>Cédula de Evaluación</h2>
+    <dl class="ced-kv"><dt>Evaluador(a)</dt><dd>${esc(c.evaluadora || '')}</dd><dt>Candidato/a</dt><dd>${esc(nombre())}</dd>
+      <dt>Centro de Evaluación</dt><dd>${esc(CONFIG.centroEvaluacion?.clave || '')} ${esc(CONFIG.centroEvaluacion?.nombre || '')}</dd>
+      <dt>Estándar</dt><dd>${esc(CONFIG.marca.estandar)} · ${esc(CONFIG.marca.estandarNombre)}</dd><dt>Fecha</dt><dd>${esc(fecha(c.fecha))}</dd></dl>
+    <div class="ced-campo"><strong>Juicio de evaluación</strong><span class="juicio ${comp ? 'ok' : 'no'}">${esc(juicioOficial(c.juicio))}</span></div>
+    ${CAMPOS_CEDULA.filter(k => String(c[k.id] || '').trim()).map(k => `<div class="ced-campo"><strong>${esc(k.label)}</strong><p>${esc(c[k.id])}</p></div>`).join('')}
+    ${String(c.incidencias || '').trim() ? `<div class="ced-campo"><strong>Incidencias</strong><p>${esc(c.incidencias)}</p></div>` : ''}</section>
+    ${String(c.observacionesCandidato || '').trim() ? `<section class="card"><h2>Observaciones de tu evaluador(a)</h2>
+      <p style="color:var(--mid);line-height:1.7;white-space:pre-line">${esc(c.observacionesCandidato)}</p>
+      <p style="color:var(--muted);font-size:.82rem;margin:0">Son solo para ti: no forman parte de tu portafolio.</p></section>` : ''}`;
+}
+
+function siguienteHtml(dictamen) {
+  if (dictamen === 'no_competente') return `<section class="card"><h2>¿Qué sigue?</h2>
+    <p>Revisa los comentarios de tu evaluador(a) y sube una nueva evidencia. Cuando la revise, te llega una Cédula nueva.</p>
+    <div class="acciones"><a class="btn-plat btn-plat--primario" href="evidencias.html">Subir nueva evidencia</a><a class="btn-plat btn-plat--secundario" href="index.html">Ir a mi panel</a></div></section>`;
+  if (!faseAutorizada('entrega')) return `<section class="card"><h2>¿Qué sigue?</h2>
+    <p>Con tu resultado <strong>COMPETENTE</strong>, el último paso es el pago de Entrega para tramitar tu certificado ante la SEP.</p>
+    <div class="acciones"><a class="btn-plat btn-plat--primario" href="entrega.html">Ir a Entrega</a><a class="btn-plat btn-plat--secundario" href="index.html">Ir a mi panel</a></div></section>`;
+  return `<section class="card"><h2>¿Qué sigue?</h2><p>Tu evaluador(a) envía tu portafolio a la SEP. Sigue el avance aquí abajo y en tu panel.</p>
+    <a class="btn-plat btn-plat--secundario" href="index.html">Ir a mi panel</a></section>`;
+}
+
+function formularioFirma() {
+  return `<section class="card"><h2>Tu firma</h2>
+    <p class="acuerdo">${esc(TEXTO_ACUERDO)}</p>
+    <div id="firmaCed" style="margin-top:12px"></div>
+    <button type="button" class="btn-plat btn-plat--primario" id="btnFirmar" style="margin-top:14px">Firmar mi Cédula</button>
+    <div class="msg-error" id="errorFirma" role="alert"></div></section>`;
+}
+
+function render() {
+  const c = cedulaPublicada(ev);
+  const firmada = ev.firma_candidato;
+  $('sub').textContent = firmada ? 'Ya firmaste tu Cédula de Evaluación.' : 'Lee tu Cédula de Evaluación y fírmala al final.';
+  $('app').innerHTML = (firmada ? `<div class="ok-box">✓ Firmaste de acuerdo${firmada.fecha ? ' el ' + esc(fecha(firmada.fecha)) : ''}.${vistaFirma(firmada)}</div>` : '')
+    + cedulaHtml(c) + (firmada ? siguienteHtml(dictamenDe(ev)) : formularioFirma());
+  if (!firmada) {
+    /* Si ya firmó otros documentos, se le ofrece la misma firma */
+    const g = firmaGuardada();
+    firma = g?.dato ? { mode: 'draw', dataUrl: g.dato } : null;
+    montarFirmaSimple($('firmaCed'), { valor: firma, nombreSugerido: nombre, onCambio: f => { firma = f; } });
+    $('btnFirmar').onclick = async () => {
+      $('errorFirma').textContent = '';
+      if (!firma) { $('errorFirma').textContent = 'Dibuja tu firma (y toca «Usar esta firma») o escribe tu nombre completo.'; return; }
+      $('btnFirmar').disabled = true; $('btnFirmar').textContent = 'Guardando tu firma…';
+      try { ev.firma_candidato = await firmarMiCedula(firma); render(); pintarEtapas(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      catch (e) { $('errorFirma').textContent = 'No se pudo guardar tu firma: ' + (e.message || e) + '. Intenta de nuevo.'; $('btnFirmar').disabled = false; $('btnFirmar').textContent = 'Firmar mi Cédula'; }
+    };
+  }
+}
+
+function pintarEtapas() {
+  const t = misEtapas(ev);
+  $('cardEtapas').hidden = false;
+  $('etapas').innerHTML = t.etapas.map((x, i) => `<li class="${x.hecha ? 'hecha' : ''} ${t.actual === x.clave ? 'actual' : ''} ${x.bloqueada ? 'bloq' : ''}">
+    <span class="i">${x.hecha ? '✓' : i + 1}</span><span>${esc(x.label)}<small>${x.hecha ? (x.fecha ? esc(fecha(x.fecha)) : 'Listo') : t.actual === x.clave ? 'En esta etapa' : x.bloqueada ? 'No aplica con este dictamen' : 'Pendiente'}</small></span></li>`).join('');
+}
+
+async function boot() {
+  ev = await miEvaluacion();
+  pintarEtapas();
+  if (!ev || !cedulaPublicada(ev)) {
+    $('app').innerHTML = `<section class="card"><h2>Tu Cédula todavía no está lista</h2>
+      <p>Tu evaluador(a) la publica después de revisar tu video y tus evidencias. Sigue el avance aquí abajo y en tu panel.</p>
+      ${enNube() ? '' : '<p class="pn-nota">La plataforma está en modo local: tu evaluador(a) te muestra la Cédula para firmarla en persona.</p>'}
+      <a class="btn-plat btn-plat--secundario" href="index.html">Ir a mi panel</a></section>`;
+    return;
+  }
+  render();
+}
+boot().catch(e => {
+  console.error('cedula.html:', e);
+  $('app').innerHTML = `<section class="card"><h2>Algo salió mal</h2><p>No pudimos cargar tu Cédula. Recarga la página.</p>
+    <button class="btn-plat btn-plat--primario" onclick="location.reload()">Recargar</button></section>`;
+});
+</script>
+</body>
+</html>
