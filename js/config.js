@@ -66,8 +66,8 @@ export const CONFIG = {
      Déjalo vacío para operar en modo local (localStorage).
      Cuando crees TU proyecto de Supabase, pega aquí URL y anon key.        */
   supabase: {
-    url:     '',   // ej. 'https://xxxxxxxxxxxx.supabase.co'
-    anonKey: '',   // la clave pública "anon", NUNCA la service_role
+      url: 'https://oazbreajkjpkajbpzfrp.supabase.co',
+     anonKey: 'sb_publishable_bw4yBQBWbZ0u8OtcMuPDSQ_s9teczuI',
   },
 
   /* ── Aviso de reembolsos (el mismo de Paideia) ─────────────────────────
