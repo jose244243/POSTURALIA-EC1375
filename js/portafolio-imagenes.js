@@ -23,7 +23,7 @@ export async function imagenesDe(c, avance = () => {}) {
     const srcs = [];
     for (const a of lista) {
       let src = a.dato || '';
-      if (!src && a.enAlmacen) { try { const g = await recuperar(a); src = g?.dato || ''; } catch {} }
+      if (!src && (a.enAlmacen || a.nube)) { try { const g = await recuperar(a); src = g?.dato || ''; } catch {} }
       if (!src) src = /^data:image\//.test(a.miniatura || '') && !a.paginas ? a.miniatura : '';
       if (/^data:image\//.test(src)) srcs.push(src);
       else if (/^data:application\/pdf/.test(src)) {
