@@ -28,7 +28,7 @@ const fecha = f => {
   return isNaN(d) ? String(f) : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 const lista = v => (Array.isArray(v) ? v : v ? [v] : []).filter(a => a && typeof a === 'object');
-const conArchivo = a => !!(a && (a.dato || (a.enAlmacen && a.clave)));
+const conArchivo = a => !!(a && (a.dato || (a.enAlmacen && a.clave) || a.nube));
 const archivos = v => lista(v).filter(a => !a.liga && !a.generado && !a.enLinea && !a.lleno && !a.firmado);
 
 /* expediente: el de leerRespaldo (candidato) o el del panel (Centro).
