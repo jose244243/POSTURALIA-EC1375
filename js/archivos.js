@@ -302,7 +302,7 @@ export function leerArchivos(modulo, clave) {
 }
 
 /* ¿Llega el archivo al Centro? (dato aquí, o en IndexedDB de este equipo) */
-export const archivoCompleto = a => !!(a && (a.dato || (a.enAlmacen && a.clave) || a.liga));
+export const archivoCompleto = a => !!(a && (a.dato || (a.enAlmacen && a.clave) || a.nube || a.liga));
 
 /* ¿Cuánto del respaldo se está yendo en archivos? */
 export function pesoDeArchivos(modulo) {
