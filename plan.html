@@ -64,6 +64,14 @@ addEventListener('load', function () {
   }
   .acuerdo input { flex:0 0 18px; width:18px; height:18px; margin-top:2px; accent-color:var(--spoke) }
   .acuerdo span { flex:1; color:var(--mid); font-size:.87rem; line-height:1.6 }
+
+  .pl-req { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:8px }
+  .pl-req-i {
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:9px 12px; border:1px solid var(--border); border-radius:10px;
+    color:var(--dark); font-size:.88rem
+  }
+  .pl-req-i a { flex:0 0 auto; font-size:.8rem; font-weight:700; white-space:nowrap }
 </style>
 </head>
 <body class="plataforma">
@@ -117,6 +125,19 @@ addEventListener('load', function () {
   <div class="card">
     <h2>Con qué instrumento se evalúa cada tipo</h2>
     <div id="instrumentos"></div>
+  </div>
+
+  <div class="card">
+    <h2>Requerimientos para tu evaluación</h2>
+    <p style="color:var(--mid);font-size:.9rem;line-height:1.7">
+      Lo que el EC1375 pide en el espacio donde vas a atender a tu usuario el día que grabes tu sesión
+      (es la misma lista de tu Plan de Evaluación). Confirma con tu Centro Evaluador cuáles te toca llevar a ti.
+      Donde dice «Buscar» se abre una búsqueda en Amazon México para que compares opciones.
+    </p>
+    <div class="pl-req" id="requerimientos"></div>
+    <p style="color:var(--muted);font-size:.78rem;margin:10px 0 0">
+      Son sugerencias para conseguirlos: no forman parte del estándar EC1375 y no recomendamos una marca.
+    </p>
   </div>
 
   <div class="card">
@@ -228,6 +249,7 @@ import { pintarBarraFlujo, completar } from './js/flow.js';
 import { PLAN } from './js/data-portafolio.js';
 import { CONFIG } from './js/config.js';
 import { htmlPlanOficial, abrirDocumento } from './js/doc-plan-oficial.js';
+import { REQUERIMIENTOS_PLAN } from './js/data-plan-oficial.js';
 import { puntajeDelAutodiagnostico, PUNTAJE_MAXIMO } from './js/brechas.js';
 
 const MODULO = 'plan';
@@ -280,6 +302,26 @@ $('instrumentos').innerHTML = Object.entries(PLAN.instrumentoPorTipo).map(([tipo
       <div class="inst-d">${DESC[inst] || ''}</div>
     </div>
   </div>`).join('');
+
+/* ── Requerimientos (como Paideia, con «Comprar»): la lista oficial del
+   Plan, y para el equipo que se compra, una búsqueda en Amazon México.
+   Búsqueda y no producto fijo: no se rompe si un producto se agota y no
+   lleva a nadie a una marca o a una liga de afiliado. ── */
+const COMPRA = {
+  'Banco de altura': 'banco taburete plegable',
+  'Báscula': 'báscula digital corporal',
+  'Baumanómetro': 'baumanómetro digital de brazo',
+  'Oxímetro': 'oxímetro de pulso',
+  'Estandímetro': 'estadímetro de pared',
+  'Termómetro digital': 'termómetro digital infrarrojo',
+  'Perchero': 'perchero de pared',
+};
+$('requerimientos').innerHTML = REQUERIMIENTOS_PLAN.map(r => {
+  const nombre = r.replace(/\.$/, '');
+  const q = COMPRA[nombre];
+  return `<div class="pl-req-i"><span>${esc(nombre)}</span>${q
+    ? `<a href="https://www.amazon.com.mx/s?k=${encodeURIComponent(q)}" target="_blank" rel="noopener">Buscar ↗</a>` : ''}</div>`;
+}).join('');
 
 /* ── Formulario ───────────────────────────────────────────────────────── */
 const datos = Store.get(MODULO, {});

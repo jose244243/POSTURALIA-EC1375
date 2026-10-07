@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¿Estás listo para certificarte? — EC1375 · POSTURALIA</title>
+<meta name="description" content="Seis preguntas para saber qué tienes y qué te falta para empezar tu certificación SEP-CONOCER EC1375 con el Centro Evaluador POSTURALIA.">
+<meta name="theme-color" content="#0d2a6e">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="posturalia-styles.css">
+<link rel="stylesheet" href="plataforma-styles.css">
+<style>
+  /* quiz.html — cuestionario de captación, como el «¿Eres Terapeuta sin
+     Validación?» de Paideia, pero sin afirmaciones que POSTURALIA no pueda
+     sostener (multas, plazos garantizados, «sin cédula»). Es orientativo:
+     no guarda ni manda nada hasta que la persona decide escribir. */
+  body.qz {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 28px 16px;
+    background:
+      radial-gradient(1100px 620px at 15% -5%, rgba(13,42,110,.10), transparent 62%),
+      radial-gradient(900px 520px at 105% 108%, rgba(255,215,0,.11), transparent 58%),
+      var(--bg);
+  }
+  .qz-caja { width: 100%; max-width: 640px }
+  .qz-cab { text-align: center; margin-bottom: 22px }
+  .qz-cab h1 { margin: 0 0 8px; font-size: clamp(1.35rem, 4.6vw, 1.8rem); color: var(--dark); letter-spacing: -.015em }
+  .qz-cab p { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.6 }
+  .qz-norma { display: inline-block; margin-bottom: 12px; padding: 4px 12px; background: rgba(13,42,110,.08);
+    color: #0d2a6e; border-radius: 99px; font-size: .74rem; font-weight: 700; letter-spacing: .03em }
+  :root[data-tema="oscuro"] .qz-norma { background: rgba(255,255,255,.09); color: var(--dark) }
+  .qz-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px 22px; box-shadow: 0 1px 3px rgba(15,23,42,.05) }
+  .qz-prog { display: flex; justify-content: space-between; color: var(--muted); font-size: .8rem; margin-bottom: 8px }
+  .qz-barra { height: 6px; background: var(--bg); border-radius: 99px; overflow: hidden; margin-bottom: 20px }
+  .qz-barra i { display: block; height: 100%; width: 0; background: #0d2a6e; border-radius: 99px; transition: width .25s }
+  :root[data-tema="oscuro"] .qz-barra i { background: var(--primary) }
+  .qz-p { margin: 0 0 6px; font-size: 1.12rem; color: var(--dark); line-height: 1.4 }
+  .qz-ayuda { margin: 0 0 16px; color: var(--muted); font-size: .84rem; line-height: 1.5 }
+  .qz-ops { display: grid; gap: 8px; border: 0; padding: 0; margin: 0 }
+  .qz-op { display: flex; gap: 11px; align-items: center; padding: 13px 14px; border: 1.5px solid var(--border);
+    border-radius: 11px; cursor: pointer; color: var(--dark); font-size: .92rem; line-height: 1.4; transition: border-color .15s, background .15s }
+  .qz-op:hover { border-color: #0d2a6e }
+  .qz-op input { flex: 0 0 18px; width: 18px; height: 18px; margin: 0; accent-color: #0d2a6e }
+  .qz-op:has(input:checked) { border-color: #0d2a6e; background: rgba(13,42,110,.06) }
+  :root[data-tema="oscuro"] .qz-op:has(input:checked) { background: rgba(255,255,255,.06) }
+  .qz-op:focus-within { outline: 3px solid rgba(13,42,110,.35); outline-offset: 2px }
+  .qz-botones { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px }
+  .qz-btn { padding: 11px 18px; border-radius: 10px; border: 1.5px solid #0d2a6e; font: inherit; font-weight: 700;
+    font-size: .9rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; justify-content: center }
+  .qz-btn--pri { background: #0d2a6e; color: #fff }
+  .qz-btn--pri:hover { background: #0a1f52 }
+  .qz-btn--pri:disabled { opacity: .45; cursor: not-allowed }
+  .qz-btn--sec { background: transparent; color: #0d2a6e }
+  :root[data-tema="oscuro"] .qz-btn--sec { color: var(--dark); border-color: var(--border) }
+  .qz-btn[hidden] { display: none }
+  .qz-veredicto { margin: 0 0 6px; font-size: 1.25rem; color: var(--dark) }
+  .qz-lista { list-style: none; margin: 16px 0; padding: 0; display: grid; gap: 9px }
+  .qz-lista li { display: flex; gap: 10px; align-items: flex-start; font-size: .9rem; color: var(--mid); line-height: 1.55 }
+  .qz-lista b { color: var(--dark) }
+  .qz-marca { flex: 0 0 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: .8rem; font-weight: 800; margin-top: 1px }
+  .qz-marca--ok { background: rgba(22,163,74,.14); color: #15803D }
+  .qz-marca--pend { background: rgba(217,119,6,.16); color: #B45309 }
+  .qz-pasos { margin: 18px 0 0; padding: 14px 16px; background: var(--bg); border-radius: 12px; font-size: .86rem; color: var(--mid); line-height: 1.6 }
+  .qz-pasos ol { margin: 6px 0 0 18px; padding: 0 }
+  .qz-ctas { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-top: 20px }
+  .qz-pie { margin-top: 18px; text-align: center; color: var(--muted); font-size: .78rem; line-height: 1.6 }
+  .qz-pie a { color: var(--muted) }
+</style>
+</head>
+<body class="qz">
+<main class="qz-caja">
+  <div class="qz-cab">
+    <span class="qz-norma">SEP · CONOCER · EC1375</span>
+    <h1>¿Estás listo para certificarte?</h1>
+    <p>Seis preguntas, dos minutos. Al final te decimos qué ya tienes y qué te falta para empezar
+       tu certificación con el Centro Evaluador POSTURALIA.</p>
+  </div>
+
+  <section class="qz-card" id="preguntas" aria-live="polite">
+    <div class="qz-prog"><span id="cuenta"></span><span id="estado"></span></div>
+    <div class="qz-barra" aria-hidden="true"><i id="barra"></i></div>
+    <h2 class="qz-p" id="pregunta"></h2>
+    <p class="qz-ayuda" id="ayuda"></p>
+    <fieldset class="qz-ops" id="opciones"></fieldset>
+    <div class="qz-botones">
+      <button type="button" class="qz-btn qz-btn--sec" id="atras">← Atrás</button>
+      <button type="button" class="qz-btn qz-btn--pri" id="siguiente" disabled>Siguiente →</button>
+    </div>
+  </section>
+
+  <section class="qz-card" id="resultado" hidden aria-live="polite"></section>
+
+  <p class="qz-pie">
+    Es orientativo: no sustituye el Autodiagnóstico oficial ni adelanta el resultado de tu evaluación.
+    Tus respuestas no se guardan ni se envían a nadie, salvo que tú decidas escribirnos.<br>
+    <a href="index.html">Ya tengo cuenta</a> · <a href="portada.html">Inicio</a>
+  </p>
+</main>
+
+<script type="module">
+import './js/tema.js';
+import { CONFIG } from './js/config.js';
+
+const PREGUNTAS = [
+  { id: 'servicio', p: '¿Qué servicio ofreces?', ayuda: 'El EC1375 certifica a quien presta servicios auxiliares tradicionales y complementarios para el bienestar físico y socioemocional.',
+    ops: ['Masaje (terapéutico, relajante o deportivo)', 'Terapia manual o quiropráctica', 'Acupuntura, holística u otra terapia complementaria', 'Todavía no atiendo, me estoy preparando'] },
+  { id: 'experiencia', p: '¿Cuánto tiempo llevas atendiendo personas?', ayuda: 'En la evaluación atiendes a un usuario de principio a fin mientras se graba tu sesión.',
+    ops: ['Más de 2 años', 'Entre 6 meses y 2 años', 'Menos de 6 meses', 'Todavía no atiendo'] },
+  { id: 'espacio', p: '¿Dónde atiendes a tus usuarios?', ayuda: 'Tu sesión de evaluación se graba en un espacio con requerimientos mínimos (lavabo, báscula, baumanómetro, oxímetro, termómetro…).',
+    ops: ['Tengo consultorio o cabina propia', 'Rento o comparto un espacio', 'A domicilio', 'Todavía no tengo dónde atender'] },
+  { id: 'documentos', p: '¿Tienes a la mano tu CURP y tu INE vigente?', ayuda: 'Son parte de tu expediente: se suben a la plataforma durante el proceso.',
+    ops: ['Sí, las dos', 'Me falta una', 'No tengo ninguna a la mano'] },
+  { id: 'objetivo', p: '¿Qué buscas con la certificación?', ayuda: 'No hay respuesta mala: nos ayuda a orientarte.',
+    ops: ['Un respaldo oficial de mi competencia', 'Que mis pacientes confíen más en mí', 'Abrir o hacer crecer mi consultorio', 'Me la piden para un trabajo'] },
+  { id: 'tiempo', p: '¿Cuánto tiempo a la semana le puedes dedicar?', ayuda: 'El proceso es en línea y a tu ritmo, con una sesión en vivo de Alineación y una sesión grabada con tu usuario.',
+    ops: ['Más de 4 horas', 'Entre 2 y 4 horas', 'Menos de 2 horas'] },
+];
+
+const r = {};          // respuestas: id → índice de la opción
+let i = 0;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function pintar() {
+  const q = PREGUNTAS[i];
+  $('cuenta').textContent = `Pregunta ${i + 1} de ${PREGUNTAS.length}`;
+  $('barra').style.width = `${((i + 1) / PREGUNTAS.length) * 100}%`;
+  $('pregunta').textContent = q.p;
+  $('ayuda').textContent = q.ayuda;
+  $('opciones').innerHTML = `<legend class="sr-only" style="position:absolute;left:-9999px">${esc(q.p)}</legend>` +
+    q.ops.map((o, k) => `<label class="qz-op"><input type="radio" name="op" value="${k}" ${r[q.id] === k ? 'checked' : ''}><span>${esc(o)}</span></label>`).join('');
+  $('atras').hidden = i === 0;
+  $('siguiente').textContent = i === PREGUNTAS.length - 1 ? 'Ver mi resultado →' : 'Siguiente →';
+  actualizar();
+}
+function actualizar() {
+  const ok = r[PREGUNTAS[i].id] !== undefined;
+  $('siguiente').disabled = !ok;
+  $('estado').textContent = ok ? '✓ Respondida' : 'Elige una opción';
+}
+$('opciones').addEventListener('change', e => {
+  if (e.target.name !== 'op') return;
+  r[PREGUNTAS[i].id] = Number(e.target.value);
+  actualizar();
+});
+$('atras').onclick = () => { if (i > 0) { i--; pintar(); } };
+$('siguiente').onclick = () => {
+  if (r[PREGUNTAS[i].id] === undefined) return;
+  if (i < PREGUNTAS.length - 1) { i++; pintar(); }
+  else resultado();
+};
+
+/* ── Resultado: qué tiene y qué le falta, sin prometer nada ── */
+function evaluar(resp) {
+  const sinPractica = resp.servicio === 3 || resp.experiencia === 3;
+  const puntos = [
+    sinPractica
+      ? { ok: false, t: 'Práctica con usuarios', d: 'Te conviene atender personas antes de evaluarte: el EC1375 se evalúa observando cómo atiendes a un usuario de principio a fin.' }
+      : resp.experiencia === 2
+        ? { ok: false, t: 'Práctica con usuarios', d: 'Ya atiendes, pero con poco tiempo. Durante la Alineación repasas punto por punto lo que se observa; practícalo con tus usuarios antes de grabar.' }
+        : { ok: true, t: 'Práctica con usuarios', d: 'Tu experiencia es la base de lo que se evalúa.' },
+    resp.espacio <= 1
+      ? { ok: true, t: 'Espacio para atender', d: 'Revisa en tu Plan de Evaluación la lista de requerimientos para grabar tu sesión.' }
+      : resp.espacio === 2
+        ? { ok: false, t: 'Espacio para atender', d: 'A domicilio puede servir si lo acondicionas con los requerimientos del estándar; te orientamos sobre qué necesitas.' }
+        : { ok: false, t: 'Espacio para atender', d: 'Necesitas un espacio con los requerimientos del estándar para grabar tu sesión; pregúntanos por opciones.' },
+    resp.documentos === 0
+      ? { ok: true, t: 'CURP e INE', d: 'Los subes a tu expediente cuando la plataforma te los pida.' }
+      : { ok: false, t: 'CURP e INE', d: 'Ve tramitándolos: la CURP la descargas gratis en gob.mx/curp y la INE se tramita en un módulo del INE.' },
+    resp.tiempo <= 1
+      ? { ok: true, t: 'Tiempo disponible', d: 'Con ese tiempo puedes avanzar de forma constante a tu ritmo.' }
+      : { ok: false, t: 'Tiempo disponible', d: 'Con menos de 2 horas a la semana se puede, pero el proceso se alarga; aparta un bloque fijo.' },
+  ];
+  const pendientes = puntos.filter(p => !p.ok).length;
+  const veredicto = sinPractica
+    ? { t: 'Primero gana práctica', d: 'La certificación reconoce lo que ya sabes hacer. Cuando atiendas usuarios con regularidad, este es tu camino; mientras, podemos orientarte.' }
+    : pendientes === 0
+      ? { t: 'Tienes lo necesario para empezar', d: 'Cumples lo básico para iniciar tu proceso. Lo siguiente es registrarte y contestar tu Autodiagnóstico.' }
+      : { t: 'Puedes empezar', d: `Tienes ${pendientes === 1 ? 'un punto' : `${pendientes} puntos`} por resolver; ${pendientes === 1 ? 'lo vas resolviendo' : 'los vas resolviendo'} mientras avanzas.` };
+  return { puntos, pendientes, veredicto, sinPractica };
+}
+
+function resultado() {
+  const ev = evaluar(r);
+  const resumen = PREGUNTAS.map(q => `• ${q.p} ${q.ops[r[q.id]]}`).join('\n');
+  const msg = `Hola, hice el cuestionario de la certificación EC1375 en la plataforma de POSTURALIA.\nResultado: ${ev.veredicto.t}.\n\n${resumen}\n\n¿Me dan informes?`;
+  const wa = `https://wa.me/${CONFIG.marca.whatsapp}?text=${encodeURIComponent(msg)}`;
+  $('preguntas').hidden = true;
+  const res = $('resultado');
+  res.hidden = false;
+  res.innerHTML = `
+    <h2 class="qz-veredicto">${esc(ev.veredicto.t)}</h2>
+    <p class="qz-ayuda" style="margin:0">${esc(ev.veredicto.d)}</p>
+    <ul class="qz-lista">${ev.puntos.map(p => `
+      <li><span class="qz-marca ${p.ok ? 'qz-marca--ok' : 'qz-marca--pend'}" aria-hidden="true">${p.ok ? '✓' : '!'}</span>
+          <span><b>${esc(p.t)}.</b> ${esc(p.d)}</span></li>`).join('')}</ul>
+    <div class="qz-pasos"><b>Cómo es el proceso</b>
+      <ol>
+        <li><b>Registro:</b> creas tu cuenta y contestas tu Autodiagnóstico (142 preguntas de sí o no).</li>
+        <li><b>Alineación:</b> material de capacitación y una sesión en vivo con el Centro Evaluador.</li>
+        <li><b>Evaluación:</b> grabas una sesión con tu usuario, presentas tu examen y subes tus evidencias.</li>
+        <li><b>Entrega:</b> el Centro integra tu portafolio y tramita tu certificado SEP-CONOCER si resultas competente.</li>
+      </ol>
+    </div>
+    <div class="qz-ctas">
+      ${ev.sinPractica ? '' : '<a class="qz-btn qz-btn--pri" href="registro.html">Empezar mi registro →</a>'}
+      <a class="qz-btn ${ev.sinPractica ? 'qz-btn--pri' : 'qz-btn--sec'}" href="${esc(wa)}" target="_blank" rel="noopener">Preguntar por WhatsApp</a>
+      <button type="button" class="qz-btn qz-btn--sec" id="otraVez">Contestar de nuevo</button>
+    </div>`;
+  $('otraVez').onclick = () => { Object.keys(r).forEach(k => delete r[k]); i = 0; res.hidden = true; $('preguntas').hidden = false; pintar(); };
+  res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+pintar();
+</script>
+</body>
+</html>

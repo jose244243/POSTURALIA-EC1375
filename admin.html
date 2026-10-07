@@ -52,6 +52,13 @@ addEventListener('load', function () {
   .ses-fila:last-child { border-bottom:none }
   .ses-f { font-weight:700; color:var(--dark) }
   .ses-meta { color:var(--muted); font-size:.82rem; flex:1 }
+  .sala-cuenta { float:right; font-size:.8rem; font-weight:600; color:var(--muted) }
+  .sala-g { margin:14px 0 2px; font-size:.78rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted) }
+  .sala-g:first-child { margin-top:0 }
+  .sala-chip { flex:0 0 auto; font-size:.74rem; font-weight:700; padding:2px 9px; border-radius:99px }
+  .sala-chip--ok { background:rgba(22,163,74,.12); color:#15803D }
+  .sala-chip--warn { background:rgba(217,119,6,.14); color:#B45309 }
+  .sala-vacio { color:var(--muted); font-size:.86rem; margin:6px 0 }
 
   .ut-lote { padding:12px 0; border-bottom:1px solid var(--border) }
   .ut-lote:last-child { border-bottom:none }
@@ -123,6 +130,15 @@ addEventListener('load', function () {
   <div class="card">
     <h2>Próximas sesiones de Alineación</h2>
     <div id="sesiones"></div>
+  </div>
+
+  <div class="card" id="cardSala">
+    <h2>Sala de evidencias: quién agendó <span class="sala-cuenta" id="salaCuenta"></span></h2>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">
+      De quienes ya pagaron Alineación: quién reservó su horario para grabar su sesión y quién falta.
+      Quien no asistió vuelve a «Sin agendar», porque tiene que reservar otro.
+    </p>
+    <div id="salaAgenda"><p class="sala-vacio">Cargando reservas…</p></div>
   </div>
 
   <div class="card">
@@ -199,8 +215,9 @@ import './js/admin-shell.js';
 import { CONFIG } from './js/config.js';
 import { hoyLocal } from './js/fechas.js';
 import { esc, ligaSegura } from './js/seguro.js';
-import { cargar, candidatos, contables, activos, kpis, pesos, atencion,
+import { cargar, candidatos, contables, activos, kpis, pesos, atencion, salaAgenda,
          utilidadesGlobal, lotes, FASES, FASE_LABEL } from './js/admin-data.js';
+import { fechaCorta, horarioTexto } from './js/sala.js';
 
 const $ = id => document.getElementById(id);
 
@@ -248,14 +265,7 @@ function pintar() {
     <div class="kpi ${k.desistieron ? 'kpi--warn' : ''}"><b>${k.desistieron}</b><span>desistieron · ${k.cambioLote} cambio de lote</span></div>`;
 
   /* Requieren atención */
-  const alertas = atencion(datos);
-  $('cardAtencion').hidden = !alertas.length;
-  /* Cada alerta lleva a donde se resuelve (como Paideia) */
-  $('atencion').innerHTML = alertas.map(a => `
-    <${a.href ? `a href="${esc(a.href)}"` : 'div'} class="at-fila" style="${a.href ? 'text-decoration:none;color:inherit' : ''}">
-      <span class="at-punto at-${a.nivel}"></span>
-      <span class="at-txt">${esc(a.txt)}${a.href ? ' <span style="color:var(--muted)">→</span>' : ''}</span>
-    </${a.href ? 'a' : 'div'}>`).join('');
+  pintarAtencion(datos);
 
   const max = Math.max(1, ...FASES.map(f => k.porFase[f]));
   $('embudo').innerHTML = FASES.map((f, i) => `
@@ -445,8 +455,62 @@ import('./js/demo-paideia.js').then(({ cargarDemoPaideia, cargarEscenarioComplet
   $('btnQuitarDemo').onclick = () => { if (confirm('¿Quitar todos los datos de prueba?')) { quitarDemo(); est(); } };
   window.addEventListener('admin:cambio', est); est();
 });
-window.addEventListener('admin:cambio', pintar);
+/* Requieren atención: cada alerta lleva a donde se resuelve (como Paideia) */
+function pintarAtencion(datos) {
+  const alertas = atencion(datos);
+  $('cardAtencion').hidden = !alertas.length;
+  $('atencion').innerHTML = alertas.map(a => `
+    <${a.href ? `a href="${esc(a.href)}"` : 'div'} class="at-fila" style="${a.href ? 'text-decoration:none;color:inherit' : ''}">
+      <span class="at-punto at-${a.nivel}"></span>
+      <span class="at-txt">${esc(a.txt)}${a.href ? ' <span style="color:var(--muted)">→</span>' : ''}</span>
+    </${a.href ? 'a' : 'div'}>`).join('');
+}
+
+/* Sala de evidencias: quién agendó (como el panel de Paideia, 7-oct). Las
+   reservas viven en la nube (o en este equipo sin nube); se traen aparte
+   para no frenar el resto del panel. Con ellas también se recalculan las
+   alertas de la sala («grabó y falta ligar la grabación»), que sin esto
+   solo veían las reservas guardadas en este navegador. */
+const ESTADO_SALA = { reservada: 'Agendada', asistio: 'Asistió' };
+async function pintarSala() {
+  let eq;
+  try { eq = await (await import('./js/sala-datos.js')).cargarEquipo(); }
+  catch (e) { eq = { error: e.message || String(e) }; }
+  if (eq.error) {
+    $('salaCuenta').textContent = '';
+    $('salaAgenda').innerHTML = `<p class="sala-vacio">No se pudieron cargar las reservas de la sala. ${esc(eq.error)}</p>`;
+    return;
+  }
+  const datos = cargar();
+  const { agendaron, faltan } = salaAgenda(datos, eq.reservas, eq.horarios);
+  const total = agendaron.length + faltan.length;
+  $('salaCuenta').textContent = total ? `${agendaron.length} / ${total}` : '';
+  const quien = c => `<a class="ses-f" href="admin-candidatos.html?q=${encodeURIComponent(c.email)}">${esc(c.nombre || c.email)}</a>`;
+  $('salaAgenda').innerHTML = !total
+    ? '<p class="sala-vacio">Nadie tiene Alineación pagada todavía.</p>'
+    : `<h3 class="sala-g">Ya agendaron (${agendaron.length})</h3>` +
+      (agendaron.length ? agendaron.map(c => `
+        <div class="ses-fila">${quien(c)}
+          <span class="ses-meta">${c.inicio ? `${esc(fechaCorta(c.inicio))} · ${esc(horarioTexto(c.inicio, c.fin))}` : 'horario anterior a dos semanas'}</span>
+          <span class="sala-chip ${c.estado === 'asistio' ? 'sala-chip--ok' : 'sala-chip--warn'}">${ESTADO_SALA[c.estado] || esc(c.estado)}</span>
+        </div>`).join('') : '<p class="sala-vacio">Nadie todavía.</p>') +
+      `<h3 class="sala-g">Sin agendar (${faltan.length})</h3>` +
+      (faltan.length ? faltan.map(c => `
+        <div class="ses-fila">${quien(c)}<span class="ses-meta">${esc(c.email)}</span></div>`).join('')
+        : '<p class="sala-vacio">Todos agendaron.</p>');
+
+  /* Las reservas de la nube completan las alertas de la sala */
+  const locales = datos.reservasEvidencia || [];
+  if (!locales.length && (eq.reservas || []).length) {
+    const hor = Object.fromEntries((eq.horarios || []).map(h => [h.id, h]));
+    pintarAtencion({ ...datos, reservasEvidencia: eq.reservas.map(r => ({
+      ...r, inicio: r.inicio || hor[r.horario_id]?.inicio, fin: r.fin || hor[r.horario_id]?.fin })) });
+  }
+}
+
+window.addEventListener('admin:cambio', () => { pintar(); pintarSala(); });
 pintar();
+pintarSala();
 </script>
 </body>
 </html>
