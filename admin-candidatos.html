@@ -561,7 +561,7 @@ async function cargarMiniaturas() {
   const huecos = [...document.querySelectorAll('[data-mini]')];
   for (const img of huecos) {
     const a = archivosAbiertos[+img.dataset.mini];
-    const g = await recuperar(a);
+    const g = await recuperar(a, { soloMiniatura: true });
     const fuente = g?.miniatura || (/^data:image\//.test(g?.dato || '') ? g.dato : '');
 
     if (fuente) {
@@ -615,7 +615,7 @@ function archivosEntregados(c) {
   /* `dato` para los expedientes de antes de que los archivos se movieran a
      IndexedDB, `enAlmacen` para los de ahora. Contar solo `dato` haría que
      una ficha con sus cuatro archivos completos dijera "0 de 4". */
-  const completos = piezas.filter(a => a.dato || a.enAlmacen).length;
+  const completos = piezas.filter(a => a.dato || a.enAlmacen || a.nube).length;
 
   const tarjetas = piezas.map((a, i) => {
     /* La miniatura vive en IndexedDB desde que los expedientes traen fotos:
@@ -626,7 +626,7 @@ function archivosEntregados(c) {
        como imagen y tire ERR_INVALID_URL en la consola — cuatro por ficha.
        No rompe nada, pero es ruido que después tapa un error de verdad. El
        hueco es un <span> y se convierte en <img> cuando hay qué mostrar. */
-    const vista = a.enAlmacen
+    const vista = (a.enAlmacen || a.nube)
       ? `<span class="fa-sin fa-cargando" data-mini="${i}"></span>`
       : a.miniatura
         ? `<img src="${imagenSegura(a.miniatura)}" alt="${esc(a.nombreDoc)}">`
@@ -635,16 +635,16 @@ function archivosEntregados(c) {
     const nota = a.revision?.nivel === 'aviso'
       ? `<span class="fa-ojo" title="${esc((a.revision.notas || []).join(' · '))}">${icono('alerta', 12)} ${esc((a.revision.notas || []).find(t => !/^(PDF de|Foto de)/.test(t)) || 'revisar')}</span>` : '';
     const pie = a.perdido ? `<span class="fa-ojo">${icono('alerta', 12)} el archivo se perdió en su navegador: pídeselo</span>`
-              : (a.dato || a.enAlmacen)
+              : (a.dato || a.enAlmacen || a.nube)
                          ? `<span class="fa-ok">${icono('cheque', 12)} completo${a.paginas ? ` · PDF ${a.paginas} pág.` : ''}</span>${nota}`
               : a.liga   ? `<span class="fa-ok">liga</span>`
               : a.marca === 'viejo'
                          ? `<span class="fa-ojo">solo marcado</span>`
                          : `<span class="fa-ojo">${icono('alerta', 12)} pídeselo aparte</span>`;
 
-    const abrible = a.dato || a.enAlmacen || a.liga;
+    const abrible = a.dato || a.enAlmacen || a.nube || a.liga;
     return `<${abrible ? 'button' : 'div'} class="fa-card"
-              ${(a.dato || a.enAlmacen) ? `data-ver="${i}"` : ''}
+              ${(a.dato || a.enAlmacen || a.nube) ? `data-ver="${i}"` : ''}
               ${a.liga ? `data-liga="${esc(a.liga)}"` : ''}
               title="${esc(a.nombre || a.nombreDoc)}">
         ${vista}
