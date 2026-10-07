@@ -953,6 +953,35 @@ export function atencion(datos, ahora = Date.now()) {
   return out.sort((a, b) => peso[a.nivel] - peso[b.nivel]);
 }
 
+/* ── Sala de evidencias: quién agendó (como Paideia, 7-oct-2026) ─────────
+   De los candidatos activos con Alineación pagada: quién ya tiene horario
+   reservado para grabar su sesión (o ya asistió) y quién todavía no. Quien
+   no asistió vuelve a «sin agendar», porque tiene que reservar otro.
+   `reservas` trae { email, estado, horario_id, inicio?, fin? }: las de la
+   nube llegan sin fecha y `horarios` la completa. */
+export function salaAgenda(datos, reservas = [], horarios = []) {
+  const hor = Object.fromEntries((horarios || []).map(h => [h.id, h]));
+  const porEmail = {};
+  (reservas || []).forEach(r => {
+    if (!r || !['reservada', 'asistio'].includes(r.estado)) return;
+    const email = String(r.email || '').trim().toLowerCase();
+    if (!email) return;
+    const h = hor[r.horario_id] || {};
+    const inicio = r.inicio || h.inicio || null, fin = r.fin || h.fin || null;
+    const antes = porEmail[email];
+    if (!antes || (Date.parse(inicio) || 0) > (Date.parse(antes.inicio) || 0)) porEmail[email] = { estado: r.estado, inicio, fin };
+  });
+  const agendaron = [], faltan = [];
+  activos(candidatos(datos)).filter(c => pagoHecho(datos, c.email, 'alineacion')).forEach(c => {
+    const r = porEmail[String(c.email).trim().toLowerCase()];
+    if (r) agendaron.push({ email: c.email, nombre: c.nombre, ...r });
+    else faltan.push({ email: c.email, nombre: c.nombre });
+  });
+  agendaron.sort((a, b) => (Date.parse(a.inicio) || 0) - (Date.parse(b.inicio) || 0));
+  faltan.sort((a, b) => String(a.nombre || a.email).localeCompare(String(b.nombre || b.email), 'es'));
+  return { agendaron, faltan };
+}
+
 /* ── Formato ──────────────────────────────────────────────────────────── */
 export const pesos = n => new Intl.NumberFormat('es-MX', {
   style: 'currency', currency: 'MXN', maximumFractionDigits: 0,

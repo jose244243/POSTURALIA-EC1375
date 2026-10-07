@@ -116,18 +116,43 @@ function exigirAccesoEquipo() {
     if (s2?.rol === 'admin') marcarAdmin();   // verá «Volver al panel de administrador» en la vista del candidato
     refrescarAdminShell();
     traerDeLaNube();
+    vigilarNube();
   });
+}
+
+/* ── Como el «realtime» de Paideia: mientras el panel está abierto, vuelve a
+   preguntarle a la nube cada 2 minutos y al regresar a la pestaña (si pasó
+   más de un minuto). Nunca recarga encima de lo que estás capturando: si
+   llegó algo nuevo, avisa con «Ver». */
+let vigilando = false, ultimaVuelta = Date.now();
+async function vigilarNube() {
+  if (vigilando) return;
+  const { CONFIG } = await import('./config.js');
+  if (!(CONFIG.supabase?.url && CONFIG.supabase?.anonKey)) return;
+  vigilando = true;
+  const vuelta = () => {
+    if (document.hidden || Date.now() - ultimaVuelta < 60000) return;
+    /* Si está tecleando, se espera a la siguiente vuelta: traer datos nuevos
+       vuelve a pintar la página y se perdería lo que lleva escrito. */
+    if (document.activeElement?.matches?.('input, textarea, select, [contenteditable]')) return;
+    ultimaVuelta = Date.now();
+    traerDeLaNube({ soloAviso: true });
+  };
+  setInterval(vuelta, 120000);
+  document.addEventListener('visibilitychange', vuelta);
 }
 
 /* ── Con Supabase: lo que capturaron los otros socios y los candidatos que
    se registraron solos (v43). Si llega algo nuevo en cuanto abre la página,
    se recarga una vez para pintarlo; si ya estaba trabajando, se le avisa
    en vez de recargarle encima de lo que teclea. */
-async function traerDeLaNube() {
+async function traerDeLaNube({ soloAviso = false } = {}) {
   const { CONFIG } = await import('./config.js');
   if (!(CONFIG.supabase?.url && CONFIG.supabase?.anonKey)) return;
   const { sincronizarCentro } = await import('./admin-data.js');
   const r = await sincronizarCentro().catch(e => ({ ok: false, motivo: e.message }));
+  /* En las vueltas de fondo, un corte de red no merece aviso: se reintenta */
+  if (soloAviso) { if (r.ok && r.cambios) avisoNube('Llegaron datos nuevos de la nube.', true); return; }
   if (!r.ok) return avisoNube(`No se pudo traer lo de la nube (${r.motivo || 'sin conexión'}). Lo que captures se guarda aquí y sube al volver la conexión.`);
   if (!r.cambios) return;
   const clave = 'posturalia.centro.recarga.' + location.pathname;
