@@ -26,7 +26,7 @@
    computadoras se comparten.
    ========================================================================== */
 
-const VERSION = 'posturalia-v47';
+const VERSION = 'posturalia-v48';
 const CACHE_APP    = `${VERSION}-app`;
 const CACHE_PESADO = `${VERSION}-material`;
 
@@ -86,6 +86,7 @@ const ARMAZON = [
   './js/firma.js',
   './js/archivos.js',
   './js/almacen-grande.js',
+  './js/archivos-nube.js',
   './js/seguro.js',
   './js/store.js',
   './js/flow.js',
