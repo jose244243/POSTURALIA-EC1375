@@ -188,14 +188,20 @@ export async function respaldosDeLaNube() {
   if (!enNube()) return { ok: false, motivo: 'local' };
   const c = await cliente(); if (!c) return { ok: false, motivo: 'sin-cliente' };
   const { aModulos } = await import('./mapeo-nube.js');
-  const [cands, prog] = await Promise.all([
+  const [cands, prog, equipo] = await Promise.all([
     c.from('candidatos').select('usuario_id, correo, nombre, creado_en'),
     c.from('progreso').select('*'),
+    c.from('evaluadores').select('usuario_id'),
   ]);
   if (cands.error) return { ok: false, motivo: cands.error.message };
   if (prog.error) return { ok: false, motivo: prog.error.message };
   const porUsuario = new Map((prog.data || []).map(f => [f.user_id, f]));
-  const respaldos = (cands.data || []).filter(x => x.correo).map(x => {
+  /* El equipo (admin y evaluadores) también tiene cuenta, y el alta
+     automática lo mete a `candidatos`. No es alumno: se queda fuera de la
+     lista, de los conteos y de «Requieren atención». Si la consulta falla,
+     no se filtra nada (mejor ver de más que esconder a un candidato). */
+  const delEquipo = new Set(equipo.error ? [] : (equipo.data || []).map(e => e.usuario_id));
+  const respaldos = (cands.data || []).filter(x => x.correo && !delEquipo.has(x.usuario_id)).map(x => {
     const fila = porUsuario.get(x.usuario_id);
     const modulos = fila ? aModulos(fila) : {};
     delete modulos.__autorizaciones; delete modulos.__limite;
@@ -203,9 +209,12 @@ export async function respaldosDeLaNube() {
     return {
       _ns: NS, _version: 2, _origen: 'nube',
       _fecha: fila?.updated_at || x.creado_en || new Date().toISOString(),
-      candidato: { nombre: String(cand.nombre || fila?.nombre || x.nombre || '').trim(), correo: String(x.correo).toLowerCase() },
+      /* Sin nombre todavía (recién registrado): se muestra su correo, no el
+         nombre interno del respaldo («nube-correo»). */
+      candidato: { nombre: String(cand.nombre || fila?.nombre || x.nombre || x.correo || '').trim(), correo: String(x.correo).toLowerCase() },
       modulos,
     };
   });
-  return { ok: true, respaldos };
+  const equipoCorreos = (cands.data || []).filter(x => x.correo && delEquipo.has(x.usuario_id)).map(x => String(x.correo).toLowerCase());
+  return { ok: true, respaldos, equipoCorreos };
 }
