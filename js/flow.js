@@ -28,13 +28,13 @@ export const ETIQUETA = {
   [ESTADO.BLOQUEADO]:  'Bloqueado',
   [ESTADO.PENDIENTE]:  'Próximamente',
   [ESTADO.ESPERANDO]:  'Con tu evaluador',
-  [ESTADO.SIN_PAGO]:   'Por habilitar',
+  [ESTADO.SIN_PAGO]:   'Pago pendiente',
 };
 
 export const MOTIVO = {
   [ESTADO.BLOQUEADO]: 'Se abre al terminar el paso anterior',
   [ESTADO.ESPERANDO]: 'Lo marca tu evaluador, no tú',
-  [ESTADO.SIN_PAGO]:  'Tu Centro Evaluador habilita esta fase',
+  [ESTADO.SIN_PAGO]:  'Se abre con el pago de su fase',
   [ESTADO.PENDIENTE]: 'Aún no disponible',
 };
 
@@ -147,6 +147,18 @@ function fueIniciado(id) {
   return Object.keys(d).length > 0 && !estaCompleto(id);
 }
 
+/* ¿Le falta pagar la fase que abre este paso? (v50, como Paideia) */
+export const faltaPago = mod => !!mod?.pago && !faseAutorizada(mod.pago);
+export const etiquetaDeFase = id => (CONFIG.fases.find(f => f.id === id) || {}).label || id;
+
+/* Páginas de consulta que también se abren con un pago (Paideia las abre
+   con la Alineación: Biblioteca, Ruta de Alineación y Guion Maestro). */
+export const PAGO_DE_PAGINA = {
+  'biblioteca.html': 'alineacion',
+  'alineacion-deck.html': 'alineacion',
+  'guion-maestro.html': 'alineacion',
+};
+
 /* ── Estado de cada módulo, en orden ────────────────────────────────────── */
 export function estadoDelFlujo() {
   let anteriorCompleto = true;
@@ -154,6 +166,7 @@ export function estadoDelFlujo() {
   return CONFIG.flujo.map(mod => {
     let estado;
     let porPrevio = false;
+    const sinPago = faltaPago(mod) || (mod.requiere === 'pago' && !faseAutorizada(mod.fase));
 
     if (!mod.listo) {
       estado = ESTADO.PENDIENTE;
@@ -161,7 +174,10 @@ export function estadoDelFlujo() {
       estado = ESTADO.COMPLETADO;
     } else if (mod.requiere === 'evaluador') {
       estado = ESTADO.ESPERANDO;
-    } else if (mod.requiere === 'pago' && !faseAutorizada(mod.fase)) {
+    } else if (sinPago && (anteriorCompleto || mod.libre || fueIniciado(mod.id))) {
+      /* Le toca (o ya lo había abierto) pero su fase no está pagada: candado
+         con la caja de pago. Si todavía le falta el paso anterior, gana el
+         «Se abre al terminar el paso anterior» de abajo, como en Paideia. */
       estado = ESTADO.SIN_PAGO;
     } else if (fueIniciado(mod.id)) {
       /* Ojo con el orden: "ya lo empezó" va ANTES que "está bloqueado".
@@ -187,13 +203,17 @@ export function estadoDelFlujo() {
     }
 
     // Ni los módulos de consulta ni los que dependen del Centro frenan la fila
-    if (mod.listo && !mod.libre && mod.requiere !== 'evaluador') {
-      anteriorCompleto = estaCompleto(mod.id);
+    if (mod.listo && (!mod.libre || mod.frena) && mod.requiere !== 'evaluador') {
+      /* Alineación deja pasar al Plan en cuanto está pagada (en Paideia el
+         paso cuenta como hecho al pagarlo); para el avance sigue contando
+         hasta que tomes la sesión. */
+      anteriorCompleto = mod.id === 'alineacion' ? (estaCompleto(mod.id) || faseAutorizada('alineacion')) : estaCompleto(mod.id);
     }
 
     /* Un examen contestado y reprobado se queda EN_CURSO. "En curso" a secas
        no explica nada; aquí sí se dice por qué sigue abierto. */
     let motivo = MOTIVO[estado] || null;
+    if (estado === ESTADO.SIN_PAGO) motivo = `Se abre con tu pago de ${etiquetaDeFase(mod.pago || mod.fase)}`;
     const previoFalta = mod.previos?.find(p => !estaCompleto(p));
     if (estado === ESTADO.BLOQUEADO && porPrevio && previoFalta) {
       const nom = CONFIG.flujo.find(x => x.id === previoFalta)?.nombre || previoFalta;

@@ -13,7 +13,7 @@
 import { CONFIG } from './config.js';
 import { Store }  from './store.js';
 import { estadoDelFlujo, avanceGlobal, avancePorFase, siguientePaso,
-         navegable, ESTADO } from './flow.js';
+         navegable, ESTADO, faseAutorizada, etiquetaDeFase, PAGO_DE_PAGINA } from './flow.js';
 import { conectarConmutador, espejo, botonVolverAdmin } from './sesion.js';
 import { alternarTema, etiquetaBoton } from './tema.js';
 import { montarInstalador } from './instalar.js';
@@ -194,49 +194,80 @@ function enlaceTutorial() {
   head.appendChild(a);
 }
 
-/* ── Página bloqueada abierta por su dirección ─────────────────────────────
-   El menú no deja entrar a un paso con candado, pero escribir la URL sí
-   dejaba: el examen se podía presentar sin haber hecho la práctica. Ahora
-   la página se tapa con el motivo y un camino de regreso. El evaluador en
-   vista espejo (solo lectura) sí puede verla.                            */
 /* ── Caja de pago (como Paideia) ──────────────────────────────────────────
-   En los pasos de una fase que todavía no está pagada: cuánto, cómo pagar y
-   a dónde mandar el comprobante. La fase la libera el Centro. */
+   Documentos de Sesión lleva al final la caja de la Evaluación (y Entrega
+   la suya), como en Paideia: el paso ya está abierto, pero lo que sigue se
+   paga ahí mismo. La fase la libera el Centro al confirmar el pago. */
 function cajaDePago() {
   const m = [...CONFIG.flujo].find(x => x.archivo === archivoActual());
-  if (!m || !m.fase || m.fase === 'registro' || document.getElementById('shPago')) return;
-  import('./flow.js').then(async ({ faseAutorizada }) => {
-    if (faseAutorizada(m.fase)) return;
-    const head = document.querySelector('.plat-head'); if (!head || document.getElementById('shPago')) return;
-    const { datosPago, montoPara, montarPago } = await import('./pagos.js');
+  if (!m?.cajaPago || document.getElementById('shPago') || document.querySelector('.sh-guarda')) return;
+  if (faseAutorizada(m.cajaPago)) return;
+  import('./pagos.js').then(async ({ datosPago, montoPara, montarPago }) => {
+    const main = document.querySelector('main') || document.body;
+    if (document.getElementById('shPago')) return;
     const cfg = await datosPago();
     const c = Store.get('candidato', {}) || {};
-    const el = document.createElement('div'); el.id = 'shPago';
-    head.after(el);
-    montarPago(el, m.fase, cfg, { monto: montoPara(c.email || sesion()?.correo, m.fase, cfg), nombre: c.nombre || '' });
+    const el = document.createElement('div'); el.id = 'shPago'; el.style.marginTop = '18px';
+    main.appendChild(el);
+    montarPago(el, m.cajaPago, cfg, { monto: montoPara(c.email || sesion()?.correo, m.cajaPago, cfg), nombre: c.nombre || '' });
   }).catch(() => {});
 }
 
+/* ── Candados (como Paideia) ──────────────────────────────────────────────
+   Un paso con candado no se abre aunque se escriba su dirección:
+     · falta el paso anterior → «Se abre al terminar…» y el camino de regreso;
+     · falta el PAGO de su fase → la caja de pago (Mercado Pago o
+       transferencia, y «Enviar comprobante por WhatsApp»). Así nadie entra
+       a la Alineación, al Plan, a la Biblioteca… sin haber pagado.
+   El equipo en «Ver como candidato» ve lo mismo que el candidato (para
+   revisar los candados), con un botón «Entrar como equipo» para seguir.
+   El evaluador en vista espejo (solo lectura) entra directo. */
+function candadoDePagina() {
+  if (Store.soloLectura) return null;
+  const archivo = archivoActual();
+  const m = estadoDelFlujo().find(x => x.archivo === archivo);
+  const faseConsulta = PAGO_DE_PAGINA[archivo];
+  if (m && m.estado === ESTADO.BLOQUEADO) return { titulo: `${m.nombre} todavía no está abierto`, motivo: m.motivo || 'Se abre al terminar el paso anterior.', fasePago: null };
+  if (m && m.estado === ESTADO.SIN_PAGO) { const f = m.pago || m.fase, et = etiquetaDeFase(f); return { titulo: et === m.nombre ? `Tu ${m.nombre} se abre con tu pago` : `${m.nombre} se abre con tu pago de ${et}`, motivo: '', fasePago: f }; }
+  if (!m && faseConsulta && !faseAutorizada(faseConsulta))
+    return { titulo: `${(document.querySelector('.plat-head h1, h1')?.textContent || 'Este material').trim()} se abre con tu pago de ${etiquetaDeFase(faseConsulta)}`, motivo: '', fasePago: faseConsulta };
+  return null;
+}
 function guardaDePagina() {
-  if (Store.soloLectura) return;
-  /* El equipo en "Ver como candidato" puede abrir cualquier paso para
-     revisarlo (el bypass de administrador de Paideia). */
+  if (document.querySelector('.sh-guarda')) return;
+  const c = candadoDePagina();
+  if (!c) return;
+  const { titulo, motivo, fasePago } = c;
   const s = sesion();
-  if (s?.rol === 'admin' || s?.rol === 'evaluador') return;
-  const m = estadoDelFlujo().find(x => x.archivo === archivoActual());
-  if (!m || m.estado !== ESTADO.BLOQUEADO) return;
+  const equipo = s?.rol === 'admin' || s?.rol === 'evaluador';
   const sig = siguientePaso();
   const velo = document.createElement('div');
   velo.className = 'sh-guarda';
-  velo.style.cssText = 'position:fixed;inset:0;z-index:50;display:grid;place-items:center;' +
-    'background:rgba(15,23,42,.55);backdrop-filter:blur(3px);padding:16px';
-  velo.innerHTML = `<div style="max-width:440px;background:var(--white,#fff);border-radius:16px;padding:26px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.25)">
-    <div style="font-size:1.6rem;margin-bottom:6px">${icono('candado', 28)}</div>
-    <h2 style="margin:0 0 8px;font-size:1.15rem">${m.nombre} todavía no está abierto</h2>
-    <p style="color:var(--muted,#64748b);line-height:1.6;font-size:.92rem;margin:0 0 18px">${m.motivo || 'Se abre al terminar el paso anterior.'}</p>
-    ${sig ? `<a class="btn-plat btn-plat--primario" href="${sig.archivo}">Ir a ${sig.nombre} →</a>` : ''}
-    <div style="margin-top:12px"><a href="index.html" style="font-size:.86rem">Volver a mi panel</a></div></div>`;
+  velo.style.cssText = 'position:fixed;inset:0;z-index:50;display:grid;place-items:center;overflow:auto;' +
+    'background:rgba(15,23,42,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:16px';
+  velo.innerHTML = `<div style="max-width:520px;width:100%;max-height:calc(100vh - 32px);overflow:auto;background:var(--white,#fff);border-radius:16px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.25)">
+    <div style="text-align:center">
+      <div style="font-size:1.6rem;margin-bottom:6px">${icono('candado', 28)}</div>
+      <h2 style="margin:0 0 8px;font-size:1.15rem">${titulo}</h2>
+      ${motivo ? `<p style="color:var(--muted,#64748b);line-height:1.6;font-size:.92rem;margin:0 0 18px">${motivo}</p>` : ''}
+    </div>
+    <div id="shGuardaPago"></div>
+    <div style="text-align:center;margin-top:8px">
+      ${!fasePago && sig ? `<a class="btn-plat btn-plat--primario" href="${sig.archivo}">Ir a ${sig.nombre} →</a>` : ''}
+      <div style="margin-top:12px"><a href="index.html" style="font-size:.86rem">Volver a mi panel</a></div>
+      ${equipo ? `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border,#e2e8f0)">
+        <p style="font-size:.8rem;color:var(--muted,#64748b);margin:0 0 8px">Así lo ve un candidato. Tú entras por ser del equipo.</p>
+        <button type="button" class="btn-plat btn-plat--secundario" id="shEntrarEquipo">Entrar como equipo</button></div>` : ''}
+    </div></div>`;
   document.body.appendChild(velo);
+  document.documentElement.style.overflow = 'hidden';
+  velo.querySelector('#shEntrarEquipo')?.addEventListener('click', () => {
+    velo.hidden = true; velo.style.display = 'none'; velo.dataset.equipo = '1'; document.documentElement.style.overflow = ''; });
+  if (fasePago) import('./pagos.js').then(async ({ datosPago, montoPara, montarPago }) => {
+    const cfg = await datosPago();
+    const c = Store.get('candidato', {}) || {};
+    montarPago(velo.querySelector('#shGuardaPago'), fasePago, cfg, { monto: montoPara(c.email || s?.correo, fasePago, cfg), nombre: c.nombre || '' });
+  }).catch(() => {});
 }
 
 /* ── Montaje ──────────────────────────────────────────────────────────── */
@@ -345,6 +376,11 @@ export function montarShell() {
 export function refrescarShell() {
   const aside = document.getElementById('shell');
   if (!aside) return;
+  /* Si llegó el pago (o se terminó el paso anterior) mientras estaba abierta,
+     el candado se quita solo; si se perdió, aparece. */
+  const velo = document.querySelector('.sh-guarda');
+  if (velo && !velo.dataset.equipo && !candadoDePagina()) { velo.remove(); document.documentElement.style.overflow = ''; }
+  else if (!velo) guardaDePagina();
   aside.innerHTML = construir();
   /* Repintar tira el botón de instalar con su escucha: se vuelve a conectar.
      Sin esto, el botón desaparecía en cuanto el candidato completaba un

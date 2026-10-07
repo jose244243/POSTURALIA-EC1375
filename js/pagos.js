@@ -58,10 +58,19 @@ export function validarDatosPago(v = {}) {
 /* ── Datos ───────────────────────────────────────────────────────────── */
 const leerEquipo = () => { try { return JSON.parse(localStorage.getItem(CLAVE_EQUIPO)) || {}; } catch { return {}; } };
 export async function datosPago() {
+  let cfg = null;
   if (enNube()) {
-    try { const { clienteNube } = await import('./nube.js'); const { data } = await (await clienteNube()).from('config_pagos').select('*').eq('id', 1).maybeSingle(); if (data) return data; } catch {}
+    try { const { clienteNube } = await import('./nube.js'); const { data } = await (await clienteNube()).from('config_pagos').select('*').eq('id', 1).maybeSingle(); if (data) cfg = data; } catch {}
   }
-  return leerEquipo().pagosConfig || null;
+  cfg = cfg || leerEquipo().pagosConfig || null;
+  return conRespaldo(cfg);
+}
+/* Sin cuenta capturada en «Datos de pago», la de respaldo (config.js): así
+   nunca queda una fase cerrada sin decirle al candidato cómo pagarla. */
+export function conRespaldo(cfg) {
+  const r = CONFIG.pagosRespaldo || {};
+  if (cfg?.clabe || cfg?.cuenta || !(r.clabe || r.cuenta)) return cfg;
+  return { ...(cfg || {}), banco: r.banco || '', titular: r.titular || '', cuenta: r.cuenta || '', clabe: r.clabe || '' };
 }
 export async function guardarDatosPago(entrada) {
   const r = validarDatosPago(entrada);

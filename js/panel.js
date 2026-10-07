@@ -214,11 +214,13 @@ export function avisos() {
   /* Fase sin liberar que ya está frenando el paso siguiente */
   const frenado = flujo.find(m => m.estado === ESTADO.SIN_PAGO);
   if (frenado) {
-    const fase = CONFIG.fases.find(f => f.id === frenado.fase);
+    const fase = CONFIG.fases.find(f => f.id === (frenado.pago || frenado.fase));
+    /* v50: el aviso lleva a la caja de pago (transferencia o Mercado Pago),
+       no a preguntar: el Centro libera la fase al recibir el comprobante. */
     add('medio',
-      `${frenado.nombre} espera a que el Centro Evaluador libere la fase de ` +
-      `${fase?.label || frenado.fase}.`,
-      `https://wa.me/${CONFIG.marca.whatsapp}`, 'Preguntar por WhatsApp');
+      `${frenado.nombre} se abre con tu pago de ${fase?.label || frenado.fase}. ` +
+      'Paga por transferencia y manda tu comprobante por WhatsApp; el Centro lo confirma y se abre.',
+      frenado.archivo, `Pagar ${fase?.label || ''}`.trim());
   }
 
   /* Terminó todo y la pelota está del otro lado */

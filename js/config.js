@@ -96,6 +96,19 @@ export const CONFIG = {
     retroalimentacionInmediata: false,
   },
 
+  /* ── Transferencia mientras no hay Mercado Pago (v50) ───────────────────
+     Los mismos datos que Paideia muestra en su tarjeta «Transferencia
+     Bancaria» (cuenta de Fernando). Se usan solo si en Precios y pagos →
+     «Datos de pago» no hay cuenta capturada; lo que se capture ahí manda.
+     Cuando exista la cuenta de Mercado Pago, su link de cada fase se pega
+     en «Datos de pago» y aparece el botón «Pagar con Mercado Pago». */
+  pagosRespaldo: {
+    banco:   'BBVA',
+    titular: 'Jose Fernando Villarreal Flores',
+    cuenta:  '1520824867',
+    clabe:   '012180015208248677',
+  },
+
   /* ── Fases del proceso ────────────────────────────────────────────────
      El avance NO es "módulos terminados / módulos totales": cada fase pesa
      distinto. Terminar el autodiagnóstico no equivale a terminar la
@@ -115,6 +128,15 @@ export const CONFIG = {
      requiere  qué desbloquea el módulo:
                  'pago'      el Centro autoriza al confirmar el pago de la fase
                  'evaluador' solo el Centro lo marca; el candidato no puede
+     pago      (v50, como Paideia) la fase que tiene que estar PAGADA para
+               entrar: sin ella el paso sale con candado y la caja de pago.
+               Alineación, Plan, Documentos, Biblioteca y Guion → Alineación;
+               Práctica, Examen, Encuesta y Evidencias → Evaluación;
+               Entrega → Entrega.
+     frena     aunque sea libre (se puede abrir antes, p. ej. para pagarla),
+               el paso siguiente espera a que esté pagada (Alineación).
+     cajaPago  fase cuya caja de pago se muestra al final de la página aunque
+               el paso ya esté abierto (Documentos de Sesión → Evaluación).
      docs      archivos que deben quedar entregados para darlo por cerrado.
      aprueba   no basta con contestarlo: tiene que quedar aprobado.
 
@@ -126,19 +148,19 @@ export const CONFIG = {
   flujo: [
     { id: 'autodiagnostico', nombre: 'Autodiagnóstico',         archivo: 'autodiagnostico.html', listo: true, fase: 'registro' },
     { id: 'reforzamiento',   nombre: 'Reforzamiento',           archivo: 'reforzamiento.html',   listo: true, fase: 'registro' },
-    { id: 'alineacion',      nombre: 'Alineación',              archivo: 'alineacion.html',      listo: true, fase: 'alineacion', libre: true, requiere: 'pago' },
-    { id: 'plan',            nombre: 'Plan de Evaluación',      archivo: 'plan.html',            listo: true, fase: 'evaluacion',
+    { id: 'alineacion',      nombre: 'Alineación',              archivo: 'alineacion.html',      listo: true, fase: 'alineacion', libre: true, frena: true, requiere: 'pago', pago: 'alineacion' },
+    { id: 'plan',            nombre: 'Plan de Evaluación',      archivo: 'plan.html',            listo: true, fase: 'evaluacion', pago: 'alineacion',
       docs: ['planEvaluacion', 'acusePlanEvaluacion'] },
-    { id: 'documentos',      nombre: 'Documentos de Sesión',    archivo: 'documentos.html',      listo: true, fase: 'evaluacion', libre: true,
+    { id: 'documentos',      nombre: 'Documentos de Sesión',    archivo: 'documentos.html',      listo: true, fase: 'evaluacion', libre: true, pago: 'alineacion', cajaPago: 'evaluacion',
       docs: ['ficha', 'consentimiento', 'plan_sesion', 'plan_seguimiento', 'encuesta_usuario', 'verificacion_espacio'] },
-    { id: 'practica',        nombre: 'Práctica',                archivo: 'practica.html',        listo: true, fase: 'evaluacion', libre: true },
-    { id: 'examen',          nombre: 'Examen de Conocimientos', archivo: 'examen.html',          listo: true, fase: 'evaluacion', aprueba: true,
+    { id: 'practica',        nombre: 'Práctica',                archivo: 'practica.html',        listo: true, fase: 'evaluacion', libre: true, pago: 'evaluacion' },
+    { id: 'examen',          nombre: 'Examen de Conocimientos', archivo: 'examen.html',          listo: true, fase: 'evaluacion', aprueba: true, pago: 'evaluacion',
       previos: ['practica'] },
-    { id: 'encuesta',        nombre: 'Encuesta de Satisfacción',archivo: 'encuesta.html',        listo: true, fase: 'evaluacion',
+    { id: 'encuesta',        nombre: 'Encuesta de Satisfacción',archivo: 'encuesta.html',        listo: true, fase: 'evaluacion', pago: 'evaluacion',
       docs: ['encuesta'] },
-    { id: 'evidencias',      nombre: 'Evidencias',              archivo: 'evidencias.html',      listo: true, fase: 'entrega',
+    { id: 'evidencias',      nombre: 'Evidencias',              archivo: 'evidencias.html',      listo: true, fase: 'entrega', pago: 'evaluacion',
       docs: ['zoom', 'video', 'ine', 'curp', 'fotoDiploma'] },
-    { id: 'entrega',         nombre: 'Entrega',                 archivo: 'entrega.html',         listo: true, fase: 'entrega', requiere: 'evaluador' },
+    { id: 'entrega',         nombre: 'Entrega',                 archivo: 'entrega.html',         listo: true, fase: 'entrega', requiere: 'evaluador', cajaPago: 'entrega' },
   ],
 
   /* ── Recursos (así se llama en Paideia) ─────────────────────────────────────────────

@@ -149,6 +149,26 @@ function arrancar() {
   activar(s?.correo || 'sesión', { permitirImprimir, conMarca: !enVisor });
 }
 
+/* v50 · Las presentaciones completas (Biblioteca de 126 pantallas y Ruta de
+   Alineación) se abren con el pago de la Alineación, como en Paideia. Este
+   archivo es lo único de la plataforma que cargan, así que el candado vive
+   aquí: abiertas solas por su dirección y sin pago, regresan a Alineación,
+   donde está la caja de pago. Dentro de Reforzamiento (visor de un tema) y
+   para el equipo o el espejo del evaluador, no aplica. */
+async function candadoDelMaterial() {
+  const pagina = location.pathname.split('/').pop();
+  if (!/^(alineacion|biblioteca)-deck\.html$/.test(pagina)) return;
+  let enVisor = false;
+  try { enVisor = window.top !== window.self; } catch { enVisor = true; }
+  if (enVisor || enEspejo()) return;
+  const s = sesion();
+  if (!s) { location.replace('alineacion.html'); return; }   // ahí pide entrar
+  if (esAdmin() || ['admin', 'evaluador'].includes(s.rol)) return;
+  const { faseAutorizada } = await import('./flow.js');
+  if (!faseAutorizada('alineacion')) location.replace('alineacion.html');
+}
+
 if (typeof document !== 'undefined') {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arrancar); else arrancar();
+  candadoDelMaterial().catch(() => {});
 }

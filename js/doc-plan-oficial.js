@@ -9,8 +9,9 @@
    criterios de juicio, acuerdos, notas, firmas y acuse; pie del Centro
    Evaluador en cada hoja.
 
-   Se abre en una pestaña lista para "Imprimir → Guardar como PDF" en tamaño
-   carta. El encabezado y el pie se repiten solos en cada hoja (thead/tfoot).
+   Se abre en el visor de la plataforma (abrirDocumento) con «Descargar PDF»
+   e «Imprimir», en tamaño carta. Al imprimir, el encabezado y el pie se
+   repiten solos en cada hoja (thead/tfoot).
    ========================================================================== */
 import { CONFIG } from './config.js';
 import { firmaHtml } from './firma-simple.js';
@@ -205,12 +206,142 @@ export function hojaPlanOficial(d = {}) {
   return html.slice(html.indexOf('<table class="hoja">'), html.lastIndexOf('</div></body>'));
 }
 
-/* Abre el documento en una pestaña nueva (desde un clic, para que el
-   navegador no la bloquee). */
-export function abrirDocumento(html) {
-  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-  const w = window.open(url, '_blank');
-  if (!w) location.href = url;
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-  return w;
+/* ── Visor de documentos (v50) ────────────────────────────────────────────
+   Antes el documento se abría en otra pestaña (una dirección blob:) sin
+   forma de volver: en el celular o con la plataforma instalada como app se
+   quedaba uno ahí. Ahora se abre ENCIMA de la plataforma, con
+   «← Regresar a la plataforma», «Descargar PDF» (un archivo .pdf de verdad,
+   como los de Paideia) e «Imprimir». El botón «atrás» del celular y Esc
+   también cierran el visor. */
+const VISOR_CSS = `
+  #docVisor { position:fixed; inset:0; z-index:2147483600; display:flex; flex-direction:column; background:#e5e7eb }
+  #docVisor .dv-barra { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 14px; background:#0d2a6e; color:#fff;
+    font:600 14px system-ui,-apple-system,'Segoe UI',sans-serif }
+  #docVisor .dv-t { flex:1 1 200px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; opacity:.92 }
+  #docVisor button { font:inherit; padding:9px 16px; border-radius:9px; border:0; cursor:pointer }
+  #docVisor .dv-volver { background:#fff; color:#0d2a6e }
+  #docVisor .dv-pdf { background:#FFD700; color:#0a1f52 }
+  #docVisor .dv-imp { background:transparent; color:#fff; border:1px solid rgba(255,255,255,.55) }
+  #docVisor button:disabled { opacity:.6; cursor:wait }
+  #docVisor .dv-acc { display:flex; gap:8px; flex-wrap:wrap }
+  #docVisor iframe { flex:1; width:100%; border:0; background:#e5e7eb }
+  #docVisor .dv-estado { position:absolute; left:50%; bottom:20px; transform:translateX(-50%); background:#0F172A; color:#fff;
+    padding:10px 16px; border-radius:10px; font:500 14px system-ui,sans-serif; box-shadow:0 10px 30px rgba(0,0,0,.3); max-width:calc(100vw - 32px) }
+  @media (max-width:560px) { #docVisor .dv-t { display:none } #docVisor .dv-barra { justify-content:space-between } #docVisor button { padding:9px 12px } }`;
+
+const nombreArchivo = t => (String(t || 'Documento').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^\w\s.-]+/g, ' ').replace(/\s+/g, '_').replace(/^_+|_+$/g, '').slice(0, 90) || 'Documento') + '.pdf';
+
+export function abrirDocumento(html, { nombre = '' } = {}) {
+  const titulo = ((String(html).match(/<title>([^<]*)<\/title>/i) || [])[1] || 'Documento')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+  document.getElementById('docVisor')?.remove();
+  const v = document.createElement('div');
+  v.id = 'docVisor';
+  v.setAttribute('role', 'dialog'); v.setAttribute('aria-modal', 'true'); v.setAttribute('aria-label', titulo);
+  v.innerHTML = `<style>${VISOR_CSS}</style>
+    <div class="dv-barra">
+      <button type="button" class="dv-volver">← Regresar a la plataforma</button>
+      <span class="dv-t">${esc(titulo)}</span>
+      <div class="dv-acc"><button type="button" class="dv-pdf">Descargar PDF</button><button type="button" class="dv-imp">Imprimir</button></div>
+    </div>
+    <iframe class="dv-marco" title="${esc(titulo)}"></iframe>
+    <div class="dv-estado" hidden></div>`;
+  document.body.appendChild(v);
+  const overflowAntes = document.documentElement.style.overflow;
+  document.documentElement.style.overflow = 'hidden';
+  const fr = v.querySelector('iframe');
+  /* La barra propia del documento sobra: el visor ya trae la suya. */
+  fr.srcdoc = String(html).replace(/<\/head>/i, '<style>.barra{display:none!important}</style></head>');
+
+  let abierto = true, conHistoria = false;
+  const cerrar = (desdeAtras = false) => {
+    if (!abierto) return; abierto = false;
+    removeEventListener('popstate', alAtras); removeEventListener('keydown', alTecla, true);
+    v.remove(); document.documentElement.style.overflow = overflowAntes;
+    if (conHistoria && !desdeAtras) history.back();
+  };
+  const alAtras = () => cerrar(true);
+  const alTecla = e => { if (e.key === 'Escape') { e.preventDefault(); cerrar(); } };
+  try { history.pushState({ docVisor: 1 }, ''); conHistoria = true; addEventListener('popstate', alAtras); } catch {}
+  addEventListener('keydown', alTecla, true);
+  fr.addEventListener('load', () => { try { fr.contentWindow.addEventListener('keydown', alTecla, true); } catch {} });
+
+  v.querySelector('.dv-volver').onclick = () => cerrar();
+  v.querySelector('.dv-imp').onclick = () => { try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch { window.print(); } };
+  const bPdf = v.querySelector('.dv-pdf'), estado = v.querySelector('.dv-estado');
+  const avisar = (txt, ms) => { estado.textContent = txt; estado.hidden = !txt; if (ms) setTimeout(() => { estado.hidden = true; }, ms); };
+  bPdf.onclick = async () => {
+    bPdf.disabled = true; const txt = bPdf.textContent; bPdf.textContent = 'Preparando PDF…';
+    avisar('Armando tu PDF en tamaño carta. Tarda unos segundos…');
+    try {
+      await descargarPdf(fr, nombreArchivo(nombre ? `${titulo} ${nombre}` : titulo));
+      avisar('✓ PDF descargado. Lo encuentras en tus Descargas.', 4000);
+    } catch (e) {
+      console.warn('PDF:', e);
+      avisar('No se pudo armar el PDF aquí. Se abre «Imprimir»: elige «Guardar como PDF».', 6000);
+      try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch {}
+    } finally { bPdf.disabled = false; bPdf.textContent = txt; }
+  };
+  return { cerrar, marco: fr };
+}
+
+/* ── PDF de verdad ─────────────────────────────────────────────────────────
+   jsPDF + html2canvas (licencia MIT) se cargan solo al tocar «Descargar
+   PDF». Cada sección (.hoja) se pinta a tamaño carta y se corta en hojas
+   por renglones completos: nunca a la mitad de una línea. */
+const LIBS = [
+  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+];
+function cargarScript(doc, src) {
+  return new Promise((ok, mal) => {
+    const sc = doc.createElement('script'); sc.src = src; sc.crossOrigin = 'anonymous';
+    sc.onload = ok; sc.onerror = () => mal(new Error('No cargó ' + src));
+    doc.head.appendChild(sc);
+  });
+}
+async function descargarPdf(fr, archivo) {
+  const w = fr.contentWindow, doc = fr.contentDocument;
+  if (!doc?.body) throw new Error('Documento sin cargar');
+  if (!w.html2canvas || !w.jspdf) for (const src of LIBS) await cargarScript(doc, src);
+  /* Ancho carta para que el PDF salga igual en el celular que en la compu */
+  const st = doc.createElement('style');
+  st.textContent = '.papel{width:216mm!important;max-width:none!important;margin:0!important;box-shadow:none!important}.hoja{margin-bottom:0!important}body{min-width:216mm!important;background:#fff!important}';
+  doc.head.appendChild(st);
+  try {
+    await Promise.all([...doc.images].map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; })));
+    const { jsPDF } = w.jspdf;
+    const pdf = new jsPDF({ unit: 'mm', format: 'letter', orientation: 'portrait', compress: true });
+    const MX = 16, MY = 12, ANCHO = 215.9 - 2 * MX, ALTO = 279.4 - 2 * MY;
+    const hojas = [...doc.querySelectorAll('.papel > .hoja')];
+    const bloques = hojas.length ? hojas : [doc.querySelector('.papel') || doc.body];
+    let primera = true;
+    for (const h of bloques) {
+      const r = h.getBoundingClientRect();
+      const pxMm = r.width / ANCHO, altoPag = ALTO * pxMm;
+      /* Dónde se puede cortar: al final de cada renglón o bloque */
+      const cortes = [...h.querySelectorAll('tr, p, li, h1, h2, h3, .firmas, .nota, img, .enc, .pie')]
+        .map(el => el.getBoundingClientRect().bottom - r.top).filter(y => y > 0).sort((a, b) => a - b);
+      let escala = 2;
+      while (escala > 1 && (r.height * escala > 30000 || r.width * r.height * escala * escala > 16e6)) escala -= 0.25;
+      const lienzo = await w.html2canvas(h, { scale: escala, backgroundColor: '#ffffff', useCORS: true, logging: false,
+        windowWidth: Math.max(900, doc.documentElement.scrollWidth) });
+      const k = lienzo.width / r.width;
+      let y0 = 0;
+      while (y0 < r.height - 2) {
+        let y1 = Math.min(r.height, y0 + altoPag);
+        if (y1 < r.height) { const c = cortes.filter(y => y > y0 + altoPag * 0.35 && y <= y1).pop(); if (c) y1 = c; }
+        const trozo = doc.createElement('canvas');
+        trozo.width = lienzo.width; trozo.height = Math.max(1, Math.round((y1 - y0) * k));
+        const cx = trozo.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, trozo.width, trozo.height);
+        cx.drawImage(lienzo, 0, Math.round(y0 * k), lienzo.width, trozo.height, 0, 0, trozo.width, trozo.height);
+        if (!primera) pdf.addPage('letter', 'portrait');
+        primera = false;
+        pdf.addImage(trozo.toDataURL('image/jpeg', 0.92), 'JPEG', MX, MY, ANCHO, (y1 - y0) / pxMm, undefined, 'FAST');
+        y0 = y1;
+      }
+    }
+    pdf.save(archivo);
+  } finally { st.remove(); }
 }
