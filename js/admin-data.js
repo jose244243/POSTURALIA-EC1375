@@ -188,6 +188,17 @@ export function sincronizarCentro() {
     m.mezclar(d, r.colecciones);
     guardar(d);                       // sin actualizar(): no se vuelve a subir lo que se acaba de bajar
     const cands = await m.respaldosDeLaNube();
+    /* Quien es del equipo pudo haber entrado a la lista antes de este
+       filtro (llegó de la nube como «nube-correo»): se quita. Solo lo que
+       vino de la nube; un expediente que el Centro dio de alta a mano se
+       respeta. */
+    if (cands.ok && cands.equipoCorreos?.length) {
+      const fuera = new Set(cands.equipoCorreos);
+      const d2 = cargar();
+      const antesN = d2.expedientes.length;
+      d2.expedientes = d2.expedientes.filter(x => !(fuera.has((x.correo || '').toLowerCase()) && /^nube-/.test(x.archivo || '')));
+      if (d2.expedientes.length !== antesN) guardar(d2);
+    }
     if (cands.ok && cands.respaldos.length) {
       const { incorporarRespaldos } = await import('./incorporar.js');
       await incorporarRespaldos(cands.respaldos.map(x => ({ nombre: `nube-${x.candidato.correo}.json`, texto: JSON.stringify(x) })));
