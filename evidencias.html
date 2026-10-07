@@ -83,6 +83,7 @@ import { deFechaLocal } from './js/fechas.js';
 import { icono, iconoDe } from './js/iconos.js';
 import { CONFIG } from './js/config.js';
 import { Store } from './js/store.js';
+import { yaEnLaNube } from './js/archivos-nube.js';
 import { pintarBarraFlujo, estaCompleto } from './js/flow.js';
 import { EVIDENCIAS } from './js/data-portafolio.js';
 import { prepararArchivo, guardarArchivo, quitarArchivo, leerArchivo, leerArchivos, archivoCompleto, mandarAlAlmacen,
@@ -193,10 +194,10 @@ function tarjeta(ev) {
       const notas = (a.revision?.notas || []).filter(t => !/^(PDF de|Foto de)/.test(t));
       const aviso = !completo
         ? `<span class="ev-tag ev-tag--ojo">${icono('alerta', 13)} De este archivo solo quedó el nombre: quítalo y vuelve a subirlo.</span>`
-        /* Con la nube encendida, un archivo de más de 900 KB se queda en este
-           navegador: al Centro le llega con el respaldo, no solo. */
-        : a.enAlmacen && !Store.esLocal
-          ? `<span class="ev-tag ev-tag--ojo">${icono('alerta', 13)} Es un archivo grande y se quedó en este equipo: descarga tu respaldo (abajo) y mándaselo a tu evaluador.</span>`
+        /* v48: con la nube encendida, el archivo sube a Supabase Storage al
+           sincronizar. El aviso queda solo mientras no ha subido. */
+        : a.enAlmacen && !Store.esLocal && !yaEnLaNube(a)
+          ? `<span class="ev-tag ev-tag--ojo">${icono('alerta', 13)} Se está subiendo a tu expediente en línea. Si este aviso sigue al volver a abrir la página, descarga tu respaldo (abajo) y mándaselo a tu evaluador.</span>`
         : a.revision?.nivel === 'aviso'
           ? `<span class="ev-tag ev-tag--ojo">${icono('alerta', 13)} ${esc(notas.join(' '))}</span>`
           : `<span class="ev-tag ev-tag--ok">${icono('cheque', 13)} Revisado${notas.length ? ' · ' + esc(notas.join(' ')) : ''}</span>`;
