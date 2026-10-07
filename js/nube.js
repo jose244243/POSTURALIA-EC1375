@@ -188,8 +188,17 @@ export const Nube = {
       .from(TABLA).select('*').eq('user_id', s.user.id).maybeSingle();
     if (errLeer) return { ok: false, motivo: errLeer.message };
 
+    /* Los archivos viajan aparte, a Supabase Storage; en la fila va solo su
+       ficha con la ruta. Ver archivos-nube.js. Si algo falla, viajan como
+       antes, dentro de la fila. */
+    let paraSubir = resto;
+    try {
+      const { prepararParaNube } = await import('./archivos-nube.js');
+      paraSubir = await prepararParaNube(c, s.user.id, resto);
+    } catch {}
+
     const remotos = actual ? aModulos(actual) : {};
-    const completa = aFila({ ...remotos, ...resto }, { user_id: s.user.id });
+    const completa = aFila({ ...remotos, ...paraSubir }, { user_id: s.user.id });
 
     const fila = { user_id: s.user.id, updated_at: completa.updated_at };
     const columnas = new Set(Object.keys(resto).map(columnaDe).filter(Boolean));
