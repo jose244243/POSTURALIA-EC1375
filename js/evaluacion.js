@@ -376,7 +376,7 @@ export function avisosPortafolio(expediente, ev = {}) {
     const archivos = (Array.isArray(v) ? v : [v]).filter(a => a && typeof a === 'object' && !a.liga && !a.generado && !a.enLinea && !a.lleno && !a.firmado);
     const nombre = NOMBRES[k] || (k.startsWith('cert_') ? 'Certificado de la Ficha de Registro' : k.startsWith('firmado_') ? `Formato firmado (${k.slice(8)})` : k);
     archivos.forEach(a => {
-      if (a.perdido || !(a.dato || a.enAlmacen))
+      if (a.perdido || !(a.dato || a.enAlmacen || a.nube))
         avisos.push(`«${nombre}» (${a.nombre || 'archivo'}) no llegó completo: pídeselo al candidato y que lo vuelva a subir`);
       else if (a.revision?.nivel === 'aviso')
         avisos.push(`«${nombre}»: ${(a.revision.notas || []).filter(t => !/^(PDF de|Foto de)/.test(t)).join(' ')}`);
