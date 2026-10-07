@@ -196,7 +196,7 @@ function pintarHero() {
            </a>`
         : frenado
         ? `<a class="pn-cta" href="${frenado.archivo}">
-             <span>Pagar ${esc(CONFIG.fases.find(f => f.id === frenado.fase)?.label || frenado.fase)}</span>${icono('flecha', 20)}
+             <span>Pagar ${esc(CONFIG.fases.find(f => f.id === (frenado.pago || frenado.fase))?.label || frenado.pago || frenado.fase)}</span>${icono('flecha', 20)}
            </a>`
         : listo
         ? `<span class="pn-cta pn-cta--off">

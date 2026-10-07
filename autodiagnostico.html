@@ -119,26 +119,39 @@ addEventListener('load', function () {
 
     <div class="card" id="cardRecomendacion"></div>
 
-    <div class="card">
-      <h2>Desglose por elemento</h2>
-      <div class="desglose" id="desglose"></div>
-    </div>
+    <!-- Lo que falta (sin contestar, sin firmar) se avisa aquí arriba -->
+    <div id="avisosResultado"></div>
 
-    <div class="card">
-      <h2>Dónde reforzar</h2>
-      <p style="color:var(--muted);font-size:.87rem;margin-bottom:14px">
-        Estos son los puntos que marcaste como <strong>No</strong>. Son exactamente los
-        temas que conviene trabajar antes de tu evaluación.
-      </p>
-      <div id="brechas"></div>
-    </div>
-
+    <!-- Como Paideia (v50): documentos → regresar a una sección →
+         «Siguiente paso: Reforzamiento» → «Después del Reforzamiento». La
+         lista de lo que marcaste en NO ya no se repite aquí: es la lista de
+         temas de tu Reforzamiento. El detalle queda plegado por si lo buscas. -->
     <div class="card" id="cardDocsRegistro"></div>
 
-    <div class="acciones">
-      <button class="btn-plat btn-plat--secundario" id="btnRevisar">← Revisar respuestas</button>
-      <button class="btn-plat btn-plat--secundario" id="btnImprimir"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.5 9V3.5h11V9"/><path d="M6.5 17.5H5A2 2 0 0 1 3 15.5v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1.5"/><path d="M6.5 14h11v6.5h-11z"/></svg> Imprimir / PDF</button>
-      <a class="btn-plat btn-plat--primario" href="index.html">Continuar al siguiente paso →</a>
+    <div class="card">
+      <h2>Regresar a una sección</h2>
+      <p style="color:var(--muted);font-size:.87rem;margin-bottom:12px">Para revisar o corregir algo. Si cambias algo, tus documentos de Registro se actualizan solos.</p>
+      <div class="acciones" style="justify-content:flex-start;margin-top:0">
+        <button class="btn-plat btn-plat--secundario" id="btnRevisar">Mis respuestas (142 reactivos)</button>
+        <button class="btn-plat btn-plat--secundario" id="btnDatos">Mis datos, acuerdo y firmas</button>
+      </div>
+      <details class="det-resultado" style="margin-top:14px">
+        <summary style="cursor:pointer;font-weight:600;color:var(--spoke-deep)">Ver mi resultado por elemento y los reactivos que marqué en No</summary>
+        <div class="desglose" id="desglose" style="margin-top:12px"></div>
+        <div id="brechas" style="margin-top:14px"></div>
+      </details>
+    </div>
+
+    <div class="card" id="cardSiguiente">
+      <h2>Siguiente paso: Reforzamiento</h2>
+      <p style="color:var(--mid);font-size:.9rem;line-height:1.7;margin-bottom:14px">Refuerza los temas donde marcaste <strong>No</strong>, a tu ritmo: se enfoca solo en tus brechas.</p>
+      <a class="btn-plat btn-plat--primario" href="reforzamiento.html" style="display:block;text-align:center">Ir a mi Reforzamiento →</a>
+    </div>
+
+    <div class="card">
+      <h2>Después del Reforzamiento</h2>
+      <p style="color:var(--mid);font-size:.9rem;line-height:1.7;margin-bottom:14px">Sigue con tu Alineación (capacitación): la sesión con instructor y el material de preparación antes de tu evaluación práctica.</p>
+      <a class="btn-plat btn-plat--secundario" href="alineacion.html" style="display:block;text-align:center">Ir a mi Alineación</a>
     </div>
   </section>
 
@@ -530,6 +543,11 @@ function finalizar() {
   }
 
   $('brechas').innerHTML = htmlBrechas;
+  /* Lo que impide cerrar el paso no puede quedar escondido en el detalle */
+  $('avisosResultado').innerHTML = sinContestar.length
+    ? `<div class="aviso aviso--warn" style="margin-bottom:16px"><strong>Quedaron ${sinContestar.length} reactivos sin contestar.</strong>
+        Este paso se cierra con los 142. <button class="btn-plat btn-plat--secundario" id="btnFaltantes" style="margin-top:10px">Contestar los que faltan</button></div>` : '';
+  setTimeout(() => { const b = $('btnFaltantes'); if (b) b.onclick = () => $('btnRevisar').click(); });
 
   /* Antes se cerraba con lo que hubiera: 1 reactivo contestado y 141 en
      blanco daban el paso por terminado, abrían Reforzamiento con un plan
@@ -549,7 +567,7 @@ function finalizar() {
      aquí mismo, desde la portada del autodiagnóstico). */
   const firmasOk = datosCompletos() && ndaFirmado() && tripticoFirmado();
   if (!firmasOk) {
-    $('brechas').insertAdjacentHTML('afterbegin', `<div class="aviso aviso--warn" style="margin-bottom:16px">
+    $('avisosResultado').insertAdjacentHTML('afterbegin', `<div class="aviso aviso--warn" style="margin-bottom:16px">
       <strong>Falta ${!datosCompletos() ? 'completar tus datos generales (' + faltantes().join(', ') + ')'
         : !ndaFirmado() ? 'firmar el acuerdo de confidencialidad' : 'firmar el acuse del Tríptico de Derechos y Obligaciones'}.</strong>
       Tu resultado ya está guardado; el paso se cierra al firmar.
@@ -585,14 +603,15 @@ let ctxDocsListo = null;
 async function pintarDocsRegistro() {
   const ctx = ctxDocsListo = await ctxDocs();
   $('cardDocsRegistro').innerHTML = `<h2>Tus documentos de Registro</h2>
-    <p style="color:var(--muted);font-size:.87rem;margin-bottom:12px">En el formato oficial del Centro, como van en tu portafolio. Ábrelos y usa «Imprimir / Guardar PDF» para quedarte con tu copia.</p>
+    <p style="color:var(--muted);font-size:.87rem;margin-bottom:12px">Se guardan solos en tu expediente y el Centro los integra a tu portafolio con tus datos y tus firmas. Si después corriges algo, se actualizan solos. Ábrelos para verlos o descargarlos en PDF.</p>
     ${DOCS_REGISTRO.map(d => {
       const falta = faltaEnDocumento(d.id, ctx);
       return `<div class="doc-reg" style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">
         <div style="flex:1 1 220px"><b>${d.titulo}</b><br><small style="color:var(--muted)">${falta.length ? 'Falta: ' + falta.join(', ') : d.desc}</small></div>
+        <span style="font-weight:600;font-size:.84rem;color:${falta.length ? '#B45309' : 'var(--spoke-deep)'}">${falta.length ? 'Incompleto' : '✓ En tu expediente'}</span>
         <button class="btn-plat btn-plat--secundario" data-doc-reg="${d.id}">Ver / descargar</button></div>`;
     }).join('')}
-    <div class="acciones" style="margin-top:6px"><button class="btn-plat btn-plat--primario" id="btnDocsTodos">Abrir los cuatro juntos</button></div>`;
+    <div class="acciones" style="margin-top:6px"><button class="btn-plat btn-plat--secundario" id="btnDocsTodos">Ver los cuatro en un solo PDF</button></div>`;
 }
 $('cardDocsRegistro').addEventListener('click', e => {
   if (!ctxDocsListo) return;
@@ -603,7 +622,7 @@ $('cardDocsRegistro').addEventListener('click', e => {
 });
 
 $('btnRevisar').onclick  = () => { elemActual = 0; pintarElemento(); mostrar('reactivos'); };
-$('btnImprimir').onclick = () => window.print();
+$('btnDatos').onclick    = () => mostrar('intro');
 
 /* ── Arranque ──────────────────────────────────────────────────────────── */
 pintarBarraFlujo($('pasos'), MODULO);

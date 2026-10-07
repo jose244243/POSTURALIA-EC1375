@@ -58,6 +58,11 @@ addEventListener('load', function () {
   .rz-badge.prac { border-color:#FCD34D; color:#92400E; background:#FFFBEB }
   .rz-aviso { border-radius:9px; padding:11px 13px; font-size:.87rem; line-height:1.55; margin:10px 0 }
   .rz-aviso.ok { background:#ECFDF5; color:#065F46 } .rz-aviso.warn { background:#FFFBEB; color:#92400E }
+  .rz-toast { position:fixed; left:50%; bottom:86px; transform:translateX(-50%); z-index:60; max-width:min(560px,calc(100vw - 32px));
+    display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:#0F172A; color:#fff; border-radius:12px; padding:12px 44px 12px 16px;
+    font-size:.9rem; line-height:1.5; box-shadow:0 12px 32px rgba(0,0,0,.28) }
+  .rz-toast .x { position:absolute; top:8px; right:8px; background:none; border:0; color:#fff; font-size:1rem; cursor:pointer; padding:4px 8px }
+  .rz-toast .btn-plat { padding:8px 14px; font-size:.86rem }
   .rz-barra { position:sticky; bottom:0; z-index:20; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
     background:var(--white); border-top:1px solid var(--border); padding:12px 16px; margin:18px -4px 0; box-shadow:0 -6px 18px rgba(15,23,42,.06) }
   .rz-barra .c { text-align:center; flex:1; font-size:.84rem; color:var(--dark) } .rz-barra .c small { display:block; color:var(--muted) }
@@ -227,7 +232,31 @@ function darVobo() {
   if (Store.soloLectura) return;
   guardar({ vobo: true, voboFecha: new Date().toISOString() });
   hub();
+  /* Como Paideia: «¡Visto bueno registrado!» con el siguiente paso o quedarse. */
+  aviso(`<b>¡Visto bueno registrado!</b><br>Cerraste tu Reforzamiento. Tus respuestas del Autodiagnóstico quedan tal como las contestaste.`,
+    sigMod ? { txt: `Siguiente paso: ${sigMod.nombre} →`, href: sigMod.archivo } : null);
 }
+
+/* Aviso flotante (el «toast» de Paideia): se cierra solo o con ✕. */
+function aviso(html, accion) {
+  document.getElementById('rzToast')?.remove();
+  const t = document.createElement('div');
+  t.id = 'rzToast'; t.className = 'rz-toast'; t.setAttribute('role', 'status');
+  t.innerHTML = `<div>${html}</div>${accion ? `<a class="btn-plat btn-plat--primario" href="${accion.href}">${esc(accion.txt)}</a>` : ''}<button type="button" class="x" aria-label="Cerrar">✕</button>`;
+  t.querySelector('.x').onclick = () => t.remove();
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), accion ? 12000 : 6000);
+}
+
+/* El visor del tema solo carga las pantallas de ese tema (?solo=…) y avisa
+   aquí cada vez que se mueve, también en presentación: el contador de abajo
+   y el de adentro siempre dicen lo mismo. */
+let temaActivo = null;
+addEventListener('message', e => {
+  if (e.origin !== location.origin || !temaActivo || !e.data) return;
+  if (e.data.tipo === 'ec1375-deck') temaActivo.desdeVisor(e.data.sid);
+  else if (e.data.tipo === 'ec1375-deck-fin') temaActivo.terminar();
+});
 
 function abrirTema(t) {
   const ts = temas(), i = ts.findIndex(x => x.criterio === t.criterio), vistos = new Set();
@@ -239,9 +268,10 @@ function abrirTema(t) {
   $('temaK').textContent = `Elemento ${t.elem} · ${t.tipo} · ${t.criterio}${t.instr ? ' · se evalúa con ' + t.instr : ''}`;
   $('temaT').textContent = t.titulo;
   $('temaRx').innerHTML = t.reactivos.length ? `<ul class="rz-rx">${t.reactivos.map(r => `<li><b>Reactivo ${r.n}</b>${r.critico ? ' <span class="rz-badge crit">eliminatorio</span>' : ''} — ${esc(r.texto)}</li>`).join('')}</ul>` : '';
-  const ir = n => {
+  const base = `biblioteca-deck.html?solo=${encodeURIComponent(lista.join(','))}`;
+  const ir = (n, desdeVisor = false) => {
     pos = n; vistos.add(lista[pos]);
-    $('temaVisor').src = `biblioteca-deck.html#${lista[pos]}`;
+    if (!desdeVisor) $('temaVisor').src = `${base}#${lista[pos]}`;
     $('temaPant').innerHTML = lista.map((s, k) => `<button type="button" data-k="${k}" class="${k === pos ? 'on' : ''} ${vistos.has(s) ? 'visto' : ''}">${k + 1}</button>`).join('');
     $('temaPant').querySelectorAll('button').forEach(b => b.onclick = () => ir(+b.dataset.k));
     $('temaPos').textContent = `Tema ${i + 1} de ${ts.length} · pantalla ${pos + 1} de ${lista.length}`;
@@ -249,12 +279,26 @@ function abrirTema(t) {
     $('barraTxt').innerHTML = pos === lista.length - 1 ? '<b>Última pantalla de este tema</b>' : `<b>${t.titulo.slice(0, 60)}</b>`;
     $('barraBtn').textContent = $('temaSig').textContent; $('barraBtn').onclick = $('temaSig').onclick;
   };
+  const terminar = () => {
+    const antes = reforzados.has(t.criterio);
+    if (!Store.soloLectura) { reforzados.add(t.criterio); guardar(); }
+    temaActivo = null;
+    hub(t.criterio);
+    if (!antes && !Store.soloLectura) {
+      const pend = temas().filter(x => x.obligatorio && !x.hecho).length;
+      aviso(`✓ Tema reforzado: <b>${esc(t.titulo.length > 50 ? t.titulo.slice(0, 49) + '…' : t.titulo)}</b>` +
+        (pend ? ` · te faltan ${pend} obligatorio${pend > 1 ? 's' : ''}` : ' · ya puedes dar el visto bueno'));
+    }
+  };
+  temaActivo = {
+    terminar,
+    desdeVisor: sid => { const k = lista.indexOf(sid); if (k >= 0 && k !== pos) ir(k, true); },
+  };
   $('temaSig').onclick = () => {
     if (pos < lista.length - 1) return ir(pos + 1);
-    if (!Store.soloLectura) { reforzados.add(t.criterio); guardar(); }
-    hub(t.criterio);
+    terminar();
   };
-  $('temaVolver').onclick = () => hub(t.criterio);
+  $('temaVolver').onclick = () => { temaActivo = null; hub(t.criterio); };
   if (!lista.length) { $('temaVisor').hidden = true; $('temaPos').textContent = 'Este criterio no tiene pantallas en el material.'; $('temaSig').textContent = 'Terminé este tema ✓'; }
   else { $('temaVisor').hidden = false; ir(0); }
 }
