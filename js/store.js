@@ -167,8 +167,12 @@ export const Store = {
         const lista = Array.isArray(v) ? v : [v];
         const nueva = [];
         for (const a of lista) {
-          if (a && typeof a === 'object' && a.enAlmacen && a.clave && !a.dato) {
-            const g = leer ? await leer(a.clave).catch(() => null) : null;
+          if (a && typeof a === 'object' && !a.dato && ((a.enAlmacen && a.clave) || a.nube)) {
+            /* v48: lo que solo está en la nube (abierto en otro equipo) se baja */
+            let g = leer && a.enAlmacen && a.clave ? await leer(a.clave).catch(() => null) : null;
+            if (!g?.dato && a.nube) {
+              try { const { bajarDato } = await import('./archivos-nube.js'); const d = await bajarDato(a.nube); if (d) g = { dato: d, miniatura: g?.miniatura || null }; } catch {}
+            }
             const { enAlmacen, clave, ...ficha } = a;
             nueva.push(g?.dato ? { ...ficha, dato: g.dato, miniatura: ficha.miniatura || g.miniatura || null } : { ...ficha, perdido: true });
           } else nueva.push(a);
