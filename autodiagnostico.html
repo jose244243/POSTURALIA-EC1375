@@ -572,7 +572,7 @@ async function fotoRegistro() {
   const a = leerArchivo('candidato', 'fotoRegistro');
   if (!a) return '';
   let src = a.dato || a.miniatura || '';
-  if (!src && a.enAlmacen) { try { const g = await recuperar(a); src = g?.dato || g?.miniatura || ''; } catch {} }
+  if (!src && (a.enAlmacen || a.nube)) { try { const g = await recuperar(a); src = g?.dato || g?.miniatura || ''; } catch {} }
   return /^data:image\//.test(src) ? src : '';
 }
 async function ctxDocs() {
