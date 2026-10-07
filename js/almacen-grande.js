@@ -118,8 +118,10 @@ export async function aligerar(idExpediente, modulos) {
      avance de este mismo navegador) se deja tal cual: su archivo ya está
      aquí, y volver a guardarlo sin dato lo borraría. */
   const mover = async (v, k) => {
-    if (!v || typeof v !== 'object' || (!v.dato && !v.miniatura)) return v;
-    if (!v.dato && v.enAlmacen && v.clave) {
+    if (!v || typeof v !== 'object' || (!v.dato && !v.miniatura && !v.nube)) return v;
+    /* v48: el archivo está en Supabase Storage (`nube`): aquí solo se guarda
+       la miniatura; el archivo se baja al abrirlo (recuperar). */
+    if (!v.dato && v.enAlmacen && v.clave && !v.nube) {
       /* Viene sin el archivo y apuntando a un almacén: solo sirve si ese
          archivo está en ESTE navegador (el avance traído del mismo equipo).
          Si llegó de otro lado —la nube, un respaldo armado a mano—, se marca
@@ -155,7 +157,20 @@ export async function aligerar(idExpediente, modulos) {
 }
 
 /* Devuelve {dato, miniatura} de un documento ya aligerado */
-export async function recuperar(doc) {
-  if (!doc?.enAlmacen || !doc.clave) return null;
-  return (await leerGrande(doc.clave)) || null;
+export async function recuperar(doc, { soloMiniatura = false } = {}) {
+  if (!doc) return null;
+  let g = doc.enAlmacen && doc.clave ? ((await leerGrande(doc.clave)) || null) : null;
+  /* Para pintar la tarjeta basta la miniatura: no se baja el archivo. */
+  if (soloMiniatura && (g?.miniatura || doc.miniatura)) return { dato: g?.dato || null, miniatura: g?.miniatura || doc.miniatura };
+  /* v48: si el archivo no está en este navegador pero sí en la nube, se baja
+     y se guarda aquí para no volver a bajarlo. */
+  if (!g?.dato && doc.nube) {
+    const { bajarDato } = await import('./archivos-nube.js');
+    const dato = await bajarDato(doc.nube);
+    if (dato) {
+      g = { dato, miniatura: g?.miniatura || doc.miniatura || null };
+      if (doc.enAlmacen && doc.clave) guardarGrande(doc.clave, g).catch(() => {});
+    }
+  }
+  return g;
 }
