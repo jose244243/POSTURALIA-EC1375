@@ -20,8 +20,8 @@
 import { CONFIG } from './config.js';
 import { hoja, envolverOficial, hojaPlanOficial, fechaFormato, escOficial as esc } from './doc-plan-oficial.js';
 import { firmaHtml } from './firma-simple.js';
-import { htmlIecOficial } from './doc-iec-oficial.js';
-import { estilosPortafolioOficial, autodiagnosticoOficial, fichaRenap, triptico, formatoAtencion, cedulaServicio, acuse, contraportada } from './doc-portafolio-oficial.js';
+import { htmlIecSii, htmlFichaSii } from './doc-sii.js';
+import { estilosPortafolioOficial, autodiagnosticoOficial, triptico, formatoAtencion, cedulaServicio, acuse, contraportada } from './doc-portafolio-oficial.js';
 import { CAMPOS_CEDULA, TEXTO_ACUERDO, cedulaPublicada, juicioOficial } from './evaluacion.js';
 import { ENCUESTA } from './data-portafolio.js';
 import { fichaRegistro, cartaConsentimiento, planSesion, planSeguimiento, verificacionEspacio, estilosSesion } from './doc-sesion.js';
@@ -93,9 +93,9 @@ export const documentoAnexo = (titulo, img, nota = '', { etiqueta = '' } = {}) =
 /* Autodiagnóstico y Tríptico: formato oficial en doc-portafolio-oficial.js */
 
 /* ── IEC aplicado ──────────────────────────────────────────────────────── */
-/* IEC completo en formato oficial (N-FO-03 v2.0): ver doc-iec-oficial.js */
+/* IEC idéntico al que emite el SII (N-FO-03 v2.0, 83 hojas): ver doc-sii.js */
 export function iec(ev = {}, { candidato = '', evaluador = '' } = {}) {
-  return htmlIecOficial(ev, { candidato, evaluador });
+  return htmlIecSii(ev, { candidato, evaluador });
 }
 
 /* ── Productos entregados y liga del video ─────────────────────────────── */
@@ -239,7 +239,7 @@ export function htmlPortafolio({ expediente: x, evaluacion: ev = {}, lote = '', 
     portada({ candidato: nombre, evaluador, fecha: ced?.fecha || hoyIso(), lote }),
     indice(),
     separador('1. Datos del Candidato/a', nombre),
-    fichaRenap(c, { foto: lista(imagenes['candidato.fotoRegistro'])[0] || '', firma: firmaCand }),
+    htmlFichaSii(c, { foto: lista(imagenes['candidato.fotoRegistro'])[0] || '', firma: firmaCand }),
     documentoAnexo('CURP', imagenes['evidencias.curp'] || '', 'Comprobante de CURP entregado por el candidato'),
     documentoAnexo('INE', imagenes['evidencias.ine'] || '', 'Identificación oficial vigente (ambos lados)'),
     autodiagnosticoOficial(auto, c, { firmaCandidato: firmaCand, firmaEvaluador: ev.firmas?.diagnostico || null, evaluador, decision }),

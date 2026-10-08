@@ -22,7 +22,8 @@
    ========================================================================== */
 import { hoja, envolverOficial, fechaFormato, escOficial as esc } from './doc-plan-oficial.js';
 import { firmaHtml } from './firma-simple.js';
-import { estilosPortafolioOficial, autodiagnosticoOficial, fichaRenap, triptico, acuse, cedulaServicio, formatoAtencion } from './doc-portafolio-oficial.js';
+import { htmlFichaSii } from './doc-sii.js';
+import { estilosPortafolioOficial, autodiagnosticoOficial, triptico, acuse, cedulaServicio, formatoAtencion } from './doc-portafolio-oficial.js';
 import { encuesta as hojaEncuesta } from './doc-portafolio.js';
 import { CONFIG } from './config.js';
 
@@ -73,7 +74,7 @@ function hojas(id, ctx) {
   const f = firmaDe(firma);
   const ce = CONFIG.centroEvaluacion || {};
   if (id === 'autodiagnostico') return autodiagnosticoOficial(auto, cand, { firmaCandidato: f, firmaEvaluador: null, evaluador: '', decision: '' });
-  if (id === 'ficha') return fichaRenap({ ...cand, fechaAplicacion: cand.fechaAplicacion || fechaFormato(hoyIso()) }, { foto, firma: f });
+  if (id === 'ficha') return htmlFichaSii({ ...cand, fechaAplicacion: cand.fechaAplicacion || hoyIso() }, { foto, firma: f });
   if (id === 'acuseTriptico') {
     const s = auto.triptico || {};
     return triptico(cand, { firma: firmaDeSello(s), fecha: s.fecha })

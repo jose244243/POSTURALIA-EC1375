@@ -312,12 +312,24 @@ async function descargarPdf(fr, archivo) {
   try {
     await Promise.all([...doc.images].map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; })));
     const { jsPDF } = w.jspdf;
-    const pdf = new jsPDF({ unit: 'mm', format: 'letter', orientation: 'portrait', compress: true });
+    /* En puntos: las hojas del SII (Ficha A4, IEC carta) se dibujan con las
+       coordenadas exactas del PDF del SII (sii-pdf.js); las del Centro van
+       como antes, en carta con sus márgenes. */
+    const PT = 72 / 25.4;
+    const bloques0 = [...doc.querySelectorAll('.papel > .hoja, .papel > .sii-hoja')];
+    const bloques = bloques0.length ? bloques0 : [doc.querySelector('.papel') || doc.body];
+    const sii = bloques.some(b => b.classList.contains('sii-hoja')) ? await import('./sii-pdf.js') : null;
+    const primerTam = sii && bloques[0].classList.contains('sii-hoja') ? sii.tamanoSii(bloques[0]) : [612, 792];
+    const pdf = new jsPDF({ unit: 'pt', format: primerTam, orientation: 'portrait', compress: true });
     const MX = 16, MY = 12, ANCHO = 215.9 - 2 * MX, ALTO = 279.4 - 2 * MY;
-    const hojas = [...doc.querySelectorAll('.papel > .hoja')];
-    const bloques = hojas.length ? hojas : [doc.querySelector('.papel') || doc.body];
     let primera = true;
+    const nuevaHoja = tam => { if (!primera) pdf.addPage(tam, 'portrait'); primera = false; };
     for (const h of bloques) {
+      if (h.classList.contains('sii-hoja')) {
+        nuevaHoja(sii.tamanoSii(h));
+        await sii.hojaSiiAPdf(pdf, h, w);
+        continue;
+      }
       const r = h.getBoundingClientRect();
       const pxMm = r.width / ANCHO, altoPag = ALTO * pxMm;
       /* Dónde se puede cortar: al final de cada renglón o bloque */
@@ -336,9 +348,8 @@ async function descargarPdf(fr, archivo) {
         trozo.width = lienzo.width; trozo.height = Math.max(1, Math.round((y1 - y0) * k));
         const cx = trozo.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, trozo.width, trozo.height);
         cx.drawImage(lienzo, 0, Math.round(y0 * k), lienzo.width, trozo.height, 0, 0, trozo.width, trozo.height);
-        if (!primera) pdf.addPage('letter', 'portrait');
-        primera = false;
-        pdf.addImage(trozo.toDataURL('image/jpeg', 0.92), 'JPEG', MX, MY, ANCHO, (y1 - y0) / pxMm, undefined, 'FAST');
+        nuevaHoja([612, 792]);
+        pdf.addImage(trozo.toDataURL('image/jpeg', 0.92), 'JPEG', MX * PT, MY * PT, ANCHO * PT, (y1 - y0) / pxMm * PT, undefined, 'FAST');
         y0 = y1;
       }
     }
