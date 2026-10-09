@@ -23,7 +23,7 @@
 
 import { icono } from './iconos.js';
 import { esc } from './seguro.js';
-import { sesion as sesionCuenta, rolLocal } from './cuenta.js';
+import { sesion as sesionCuenta } from './cuenta.js';
 
 export const ROL = {
   CANDIDATO:  'candidato',
@@ -113,9 +113,11 @@ const CLAVE_ADMIN = 'posturalia.sesion.admin';
 export function esAdmin() {
   /* Con cuenta: manda el rol de la sesión. Sin cuenta (versiones previas):
      la marca de que ya entró al panel en este navegador. */
+  /* Con cuenta manda SOLO el rol de la sesión, que asegurarRol() revisa
+     contra la nube en cada entrada (9 oct). Antes también valía el equipo
+     local de este navegador, y una cuenta de candidato se colaba. */
   const s = sesionCuenta();
-  if (s?.rol) return s.rol === 'admin';
-  if (s) return rolLocal(s.correo) === 'admin';
+  if (s) return s.rol === 'admin';
   try { return localStorage.getItem(CLAVE_ADMIN) === '1'; } catch { return false; }
 }
 export function marcarAdmin() {

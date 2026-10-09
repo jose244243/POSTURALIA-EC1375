@@ -102,16 +102,41 @@ export async function rolCentral(correo) {
   if (!lista.length || !correo) return null;
   try { const h = await huellaCorreo(correo); return lista.find(m => m.h === h)?.rol || null; } catch { return null; }
 }
-/* Una sesión abierta sin rol (entró por el lado del candidato, o antes de
-   que su correo estuviera en el equipo) toma su rol en cuanto se sabe. */
+/* El rol de la sesión se vuelve a revisar en cada entrada (9 oct).
+   Antes solo se llenaba cuando faltaba: una cuenta que alguna vez fue del
+   equipo (o que estaba por error en la lista fija) se quedaba con «admin»
+   guardado en el navegador y seguía viendo el panel, aunque la nube ya no
+   la reconociera y le rechazara cada escritura. Ahora:
+     · con la nube, manda lo que responde Supabase (`rol_equipo`), con la
+       lista fija solo como respaldo; si la nube no contesta, no se toca;
+     · sin la nube, el equipo local y la lista fija.
+   Si ya no es del equipo, se le quita el rol y las marcas viejas. */
 export async function asegurarRol() {
   const s = sesion();
-  if (!s || s.rol) return false;
-  let rol = null; try { rol = await rolDe(s.correo); } catch {}
-  if (!rol) return false;
-  const s2 = { ...s, rol };
+  if (!s?.correo) return false;
+  let rol = null;
+  try {
+    if (enNube()) {
+      const { clienteNube } = await import('./nube.js');
+      const c = await clienteNube();
+      if (!c) return false;
+      const { data, error } = await c.rpc('rol_equipo');
+      if (error) return false;               // sin respuesta: no se toca nada
+      rol = data || (await rolCentral(s.correo));
+    } else {
+      rol = rolLocal(s.correo) || (await rolCentral(s.correo));
+    }
+  } catch { return false; }
+  rol = rol === 'admin' || rol === 'evaluador' ? rol : null;
+  if ((s.rol || null) === rol) return false;
+  const s2 = { ...s };
+  if (rol) s2.rol = rol; else delete s2.rol;
+  if (!rol) {
+    try { localStorage.removeItem('posturalia.sesion.admin'); localStorage.setItem('posturalia.sesion.rol', 'candidato'); } catch {}
+  }
   const enLocal = (() => { try { return !!localStorage.getItem(K_SESION); } catch { return false; } })();
   if (enLocal) escribir(K_SESION, s2); else { try { sessionStorage.setItem(K_SESION, JSON.stringify(s2)); } catch {} }
+  window.dispatchEvent(new CustomEvent('cuenta:cambio', { detail: s2 }));
   return true;
 }
 async function rolDe(correo) {
@@ -318,18 +343,16 @@ export function montarGate(cont, { equipo = false, permitirEvaluador = false, ti
 /* Pantalla completa de acceso, encima de la página (candidato o equipo) */
 export function exigirSesion({ equipo = false, permitirEvaluador = false } = {}) {
   const s = sesion();
-  if (s && (!equipo || (s.rol === 'admin' || (s.rol === 'evaluador' && permitirEvaluador)))) return Promise.resolve(s);
-  /* Sesión abierta del lado del candidato por alguien del equipo: se le
-     reconoce el rol sin pedirle la contraseña otra vez. */
-  if (s && equipo && !s.rol) {
-    return rolDe(s.correo).catch(() => null).then(rol => {
-      if (rol === 'admin' || (rol === 'evaluador' && permitirEvaluador)) {
-        const s2 = { ...s, rol };
-        const enLocal = (() => { try { return !!localStorage.getItem(K_SESION); } catch { return false; } })();
-        if (enLocal) escribir(K_SESION, s2); else { try { sessionStorage.setItem(K_SESION, JSON.stringify(s2)); } catch {} }
-        return s2;
-      }
-      return pedirAcceso(equipo, permitirEvaluador);
+  const pasa = x => x && (!equipo || (x.rol === 'admin' || (x.rol === 'evaluador' && permitirEvaluador)));
+  if (s && !equipo) return Promise.resolve(s);
+  /* Panel del equipo con sesión abierta: antes de dejarlo pasar se revisa
+     su rol contra la nube (quien ya no es del equipo ve «no eres del
+     equipo»; quien entró por el lado del candidato y sí es, pasa sin volver
+     a escribir su contraseña). */
+  if (s && equipo) {
+    return asegurarRol().catch(() => false).then(() => {
+      const s2 = sesion();
+      return pasa(s2) ? s2 : pedirAcceso(equipo, permitirEvaluador);
     });
   }
   return pedirAcceso(equipo, permitirEvaluador);

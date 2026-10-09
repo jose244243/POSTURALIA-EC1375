@@ -41,7 +41,6 @@ export const CONFIG = {
      Con Supabase manda la tabla `evaluadores`.                             */
   equipoCentral: [
     { h: 'cdc244e7ce0645f5867e40bf1ba0536df902a762d0a8492f76817719f176bc22', rol: 'admin', nombre: 'Fernando Villarreal' },
-    { h: 'b56ef7af4ba16919cde6062a69d63880ea06597193ee147e08752bb42e509bbd', rol: 'admin', nombre: 'Fernando Villarreal' },
   ],
 
   /* ── Centro de Evaluación (formatos oficiales del portafolio) ───────────
