@@ -6,7 +6,7 @@
   "start_url": "./portada.html",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#F1F5F9",
   "theme_color": "#0d2a6e",

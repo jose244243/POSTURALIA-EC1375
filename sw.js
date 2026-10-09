@@ -26,7 +26,7 @@
    computadoras se comparten.
    ========================================================================== */
 
-const VERSION = 'posturalia-v50';
+const VERSION = 'posturalia-v51';
 const CACHE_APP    = `${VERSION}-app`;
 const CACHE_PESADO = `${VERSION}-material`;
 
@@ -117,6 +117,9 @@ const ARMAZON = [
   './js/doc-portafolio.js',
   './js/doc-portafolio-oficial.js',
   './js/doc-iec-oficial.js',
+  './js/doc-sii.js',
+  './js/data-sii.js',
+  './js/sii-pdf.js',
   './js/data-cuestionario-iec.js',
   './js/resultado.js',
   './js/sala.js',
