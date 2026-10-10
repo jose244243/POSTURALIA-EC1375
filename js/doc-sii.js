@@ -134,8 +134,9 @@ export function datosFichaSii(c = {}) {
 export function hojaFichaSii(c = {}, { foto = '', firma = null } = {}) {
   const d = datosFichaSii(c);
   const p = SII.ficha[0];
-  /* La firma va sobre la línea de «Firma» (x 40–203, y 473.5), como se firma a mano */
-  const firmaSvg = firma?.dataUrl ? imagen(firma.dataUrl, 52, 446, 140, 30, 'xMidYMax meet') : '';
+  /* La firma va sobre la línea de «Firma» (x 40–203, y 473.5), a la derecha
+     de la palabra «Firma» (x 96–124) para no taparla, como se firma a mano */
+  const firmaSvg = firma?.dataUrl ? imagen(firma.dataUrl, 127, 446, 77, 30, 'xMidYMax meet') : '';
   return pagina(p, (tipo, k) => {
     if (tipo === 't') return campoTexto(k, d[k.k]);
     if (tipo === 'x') return d.renap ? campoTexto({ ...k, x: d.renap === 'no' ? k.no : k.si }, 'X') : '';

@@ -76,14 +76,6 @@ function construir() {
                title="${m.motivo || ''}">${cuerpo}</span>`;
   }).join('');
 
-  /* El avance ponderado necesita mostrar su desglose: un 38% sin explicar
-     parece inventado. Con las fases a la vista se entiende de dónde sale. */
-  const fases = avancePorFase().map(f => `
-    <div class="sh-fase">
-      <span class="sh-fase-n">${f.label}</span>
-      <span class="sh-fase-b"><i style="width:${f.pct}%"></i></span>
-      <span class="sh-fase-p">${f.peso}%</span>
-    </div>`).join('');
 
   /* El material de consulta no es un paso del proceso: se abre siempre, sin
      esperar al paso anterior ni a que se libere ninguna fase. */
@@ -108,26 +100,12 @@ function construir() {
     ${esp ? `<div class="sh-espejo">Expediente de <strong>${esp.nombre}</strong></div>` : ''}
     ${botonVolverAdmin()}
 
-    <div class="sh-avance">
-      <div class="sh-avance-txt">
-        <span>${esp ? 'Su avance' : 'Tu avance'}</span><strong>${pct}%</strong>
-      </div>
-      <div class="sh-barra"><div class="sh-barra-fill" style="width:${pct}%"></div></div>
-      <div class="sh-avance-sub">${hechos} de ${listos} módulos terminados · ponderado por fase</div>
-    </div>
-
-    <div class="sh-fases">${fases}</div>
+    <!-- v53: el avance por fase vive en el Panel («Tu progreso»), como en Paideia -->
 
     <nav class="sh-nav sh-nav--panel" aria-label="Panel">
       <a class="sh-item sh-item--panel ${actual === 'index.html' ? 'sh-item--activo' : ''}" href="index.html"
          ${actual === 'index.html' ? 'aria-current="page"' : ''}>
         <span class="sh-ico">${icono('casa', 18)}</span><span class="sh-nom">Panel</span><span class="sh-est"></span></a>
-      <a class="sh-item sh-item--panel sh-item--cedula ${actual === 'cedula.html' ? 'sh-item--activo' : ''}" href="cedula.html"
-         ${actual === 'cedula.html' ? 'aria-current="page"' : ''}>
-        <span class="sh-ico">${icono('escudo', 18)}</span><span class="sh-nom">Mi Cédula</span><span class="sh-est"></span></a>
-      <a class="sh-item sh-item--panel ${actual === 'portafolio.html' ? 'sh-item--activo' : ''}" href="portafolio.html"
-         ${actual === 'portafolio.html' ? 'aria-current="page"' : ''}>
-        <span class="sh-ico">${icono('archivo', 18)}</span><span class="sh-nom">Mi Portafolio</span><span class="sh-est"></span></a>
     </nav>
 
     <nav class="sh-nav" aria-label="Módulos del proceso">
@@ -163,22 +141,13 @@ function enlaceTutorial() {
   const actual = archivoActual();
   const m = [...CONFIG.flujo, ...(CONFIG.consulta || [])].find(x => x.archivo === actual);
   const id = m ? m.id : (actual === 'index.html' || actual === '' ? 'general' : null);
-  if (!id || id === 'recursos') return;
-  let head = document.querySelector('[data-tuto-ancla]') || document.querySelector('.plat-head');
-  /* El panel pinta su encabezado con innerHTML: el botón va en su propia
-     franja, justo debajo, para que no se borre al repintar. */
-  if (!head && document.getElementById('hero')) {
-    if (document.getElementById('shTutoPanel')) return;
-    head = document.createElement('div'); head.id = 'shTutoPanel'; head.style.cssText = 'margin:-6px 0 12px';
-    document.getElementById('hero').insertAdjacentElement('afterend', head);
-  }
-  if (!head || head.querySelector('.sh-tuto')) return;
+  const der = barraDerecha();
+  if (!der || !id || id === 'recursos' || der.querySelector('.sh-tuto')) return;
   const a = document.createElement('a');
   a.className = 'sh-tuto';
   a.href = `recursos.html#tuto-${id}`;
   a.dataset.tutorial = id;
-  a.innerHTML = '▶ Ver cómo se hace';
-  a.style.cssText = 'display:inline-block;margin-top:8px;font-size:.84rem;font-weight:600;color:var(--spoke-deep,#0f766e);text-decoration:none';
+  a.innerHTML = `${icono('play', 14)}<span>Ver cómo se hace</span>`;
   a.addEventListener('click', async e => {
     /* preventDefault antes de cualquier await: después ya es tarde y el
        navegador sigue la liga. Ctrl/⌘ + clic sí abre Recursos aparte. */
@@ -191,7 +160,33 @@ function enlaceTutorial() {
     const info = TUTORIALES_INFO[id] || {};
     abrirVideo(ruta, { titulo: info.titulo || 'Tutorial', desc: info.desc || '', disparador: a });
   });
-  head.appendChild(a);
+  der.prepend(a);
+}
+
+/* ── Barra superior como la de Paideia (v53) ─────────────────────────────
+   Izquierda: nombre de la página e «Inicio». Derecha: «Ver cómo se hace»,
+   modo oscuro y la persona con su nombre. */
+function barraDerecha() {
+  const top = document.querySelector('.plat-top-inner');
+  if (!top) return null;
+  let der = top.querySelector('.sh-top-der');
+  if (der) return der;
+  const actual = archivoActual();
+  const m = [...CONFIG.flujo, ...(CONFIG.consulta || [])].find(x => x.archivo === actual);
+  const marca = top.querySelector('.plat-marca');
+  if (marca && actual !== 'index.html' && actual !== '') {
+    const titulo = (m?.nombre || document.querySelector('.plat-head h1, main h1')?.textContent || '').trim();
+    if (titulo) marca.innerHTML = `${titulo.replace(/[<>&"]/g, '')} <a class="sh-top-ini" href="index.html">Inicio</a>`;
+  }
+  der = document.createElement('div');
+  der.className = 'sh-top-der';
+  const s = sesion();
+  const nombre = s ? String((Store.get('candidato', {}) || {}).nombre || s.nombre || s.correo || '').trim().split(/\s+/)[0] : '';
+  der.innerHTML = `<button type="button" class="sh-top-tema" aria-label="Modo oscuro / claro" title="Modo oscuro / claro">${icono('luna', 16)}</button>
+    ${s ? `<span class="sh-top-u"><span class="sh-avatar">${iniciales(s)}</span><span class="sh-top-n">${nombre.replace(/[<>&"]/g, '')}</span></span>` : ''}`;
+  der.querySelector('.sh-top-tema').onclick = () => { alternarTema(); refrescarShell(); };
+  top.appendChild(der);
+  return der;
 }
 
 /* ── Caja de pago (como Paideia) ──────────────────────────────────────────

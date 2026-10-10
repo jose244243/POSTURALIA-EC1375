@@ -22,11 +22,11 @@ import { hoja, envolverOficial, hojaPlanOficial, fechaFormato, escOficial as esc
 import { firmaHtml } from './firma-simple.js';
 import { htmlIecSii, htmlFichaSii } from './doc-sii.js';
 import { estilosPortafolioOficial, autodiagnosticoOficial, triptico, formatoAtencion, cedulaServicio, acuse, contraportada } from './doc-portafolio-oficial.js';
-import { CAMPOS_CEDULA, TEXTO_ACUERDO, cedulaPublicada, juicioOficial } from './evaluacion.js';
+import { CAMPOS_CEDULA, TEXTO_ACUERDO, cedulaPublicada, juicioOficial, fechasProceso } from './evaluacion.js';
 import { ENCUESTA } from './data-portafolio.js';
-import { fichaRegistro, cartaConsentimiento, planSesion, planSeguimiento, verificacionEspacio, estilosSesion } from './doc-sesion.js';
+import { fichaRegistro, cartaConsentimiento, planSesion, planSeguimiento, encuestaUsuario, verificacionEspacio, estilosSesion } from './doc-sesion.js';
 import { domicilioCompleto } from './registro.js';
-const GEN_SESION = { ficha: fichaRegistro, consentimiento: cartaConsentimiento, plan_sesion: planSesion, plan_seguimiento: planSeguimiento };
+const GEN_SESION = { ficha: fichaRegistro, consentimiento: cartaConsentimiento, plan_sesion: planSesion, plan_seguimiento: planSeguimiento, encuesta_usuario: encuestaUsuario };
 
 const ce = () => CONFIG.centroEvaluacion || {};
 const std = () => `<b>${esc(CONFIG.marca.estandar)}</b> - ${esc(CONFIG.marca.estandarNombre)}.`;
@@ -90,6 +90,20 @@ export const documentoAnexo = (titulo, img, nota = '', { etiqueta = '' } = {}) =
     `<img src="${it.src}" alt="${esc(titulo)}" style="max-width:100%;max-height:${it.pagina ? 196 : g.length > 1 ? 94 : 190}mm;object-fit:contain;display:block;margin:0 auto ${g.length > 1 ? 3 : 0}mm;break-inside:avoid${it.pagina ? ';border:1px solid #ccc' : ''}">`).join('')}</div>`)).join('');
 };
 
+/* ── Documentos del SII que sube el evaluador (v53, escenario 2) ────────
+   Si el evaluador subió el PDF de la Ficha de Registro que descarga del
+   SII, entra ese en lugar del que arma la plataforma, con la firma del
+   candidato encima de la línea «Firma» de la hoja 1 (misma posición que en
+   la ficha del SII: sobre la línea, a la derecha de la palabra «Firma»,
+   x 127–204, y 446–476 de 595 × 842 pt). */
+export function fichaSiiSubida(paginas = [], firma = null) {
+  return lista(paginas).map((p, i) => hoja('Ficha de Registro', `<div style="text-align:center">
+    <div style="position:relative;display:inline-block;max-width:100%">
+      <img src="${p.src || p}" alt="Ficha de Registro del SII, hoja ${i + 1}" style="display:block;max-width:100%;max-height:196mm;border:1px solid #ccc">
+      ${i === 0 && firma?.dataUrl ? `<img src="${firma.dataUrl}" alt="Firma del candidato" style="position:absolute;left:21.3%;top:52.97%;width:12.9%;height:3.56%;object-fit:contain;object-position:center bottom">` : ''}
+    </div></div>`, { sinTitulo: true })).join('');
+}
+
 /* Autodiagnóstico y Tríptico: formato oficial en doc-portafolio-oficial.js */
 
 /* ── IEC aplicado ──────────────────────────────────────────────────────── */
@@ -103,10 +117,13 @@ const PRODUCTOS = [['ficha', 'Ficha de registro de atención de condiciones fís
   ['plan_sesion', 'Plan de sesión'], ['plan_seguimiento', 'Plan de seguimiento'], ['encuesta_usuario', 'Encuesta de satisfacción del usuario del servicio']];
 /* Si el candidato los llenó con su usuario (sesion.html), entran llenos y
    firmados; si además subió el escaneo, va detrás. */
-export function productos(x, imagenes = {}, { firma = null } = {}) {
+export function productos(x, imagenes = {}, { firma = null, fechaEvaluacion = '' } = {}) {
   const dm = datosMod(x, 'documentos');
   const docs = dm.documentos || {};
-  const sesion = dm.sesion && dm.sesionGenerada ? dm.sesion : null;
+  const generada = dm.sesion && dm.sesionGenerada ? dm.sesion : null;
+  /* v53: la Carta de Consentimiento y los Planes de Sesión y Seguimiento
+     llevan la fecha 3 (la de la evaluación) cuando el evaluador la capturó. */
+  const sesion = generada && fechaEvaluacion ? { ...generada, campos: { ...(generada.campos || {}), fechaConsentimiento: fechaEvaluacion, fechaSesion: fechaEvaluacion } } : generada;
   const c = x?.candidato || {};
   const cand = { ...c, nombre: c.nombre || x?.nombre || '', domicilioCompleto: domicilioCompleto(c), firma };
   return (sesion ? `<style>${estilosSesion()}</style>` : '') + PRODUCTOS.map(([k, t], i) => {
@@ -125,8 +142,9 @@ export const ligaVideo = (ev = {}, x) => {
 };
 
 /* ── 3. Cédula de Evaluación ───────────────────────────────────────────── */
-export function cedula(ev = {}, { candidato = '' } = {}) {
-  const c = cedulaPublicada(ev) || ev.cedula || {};
+export function cedula(ev = {}, { candidato = '', fecha = '' } = {}) {
+  const c = { ...(cedulaPublicada(ev) || ev.cedula || {}) };
+  if (fecha) c.fecha = fecha;   // v53: fecha 3
   const fila = (k, v) => `<tr><td class="gris der" style="width:160px">${k}</td><td class="just">${esc(v || '')}</td></tr>`;
   return hoja('CÉDULA DE EVALUACIÓN', `
     <table class="t datos"><tr><td>Evaluadora:</td><td>${esc(c.evaluadora || '')}</td></tr>
@@ -142,7 +160,7 @@ export function cedula(ev = {}, { candidato = '' } = {}) {
     <div style="font-size:9pt;border:1px solid #000;padding:4px 8px"><b>Notas:</b><ul style="margin:2px 0 0 18px;padding:0">
       <li>El Juicio de Competencia emitido, está sujeto a la ratificación o rectificación del dictamen emitido por la ECE u OC.</li>
       <li>El Candidato pagará el importe establecido para el certificado, sí y solo si su Juicio de Competencia resultara ser competente.</li></ul></div>
-    <table class="t" style="margin-top:10px"><tr><td class="gris" style="width:170px">RECIBÍ COPIA DE LA CÉDULA DE EVALUACIÓN (ACUSE)<br>Sí ${ev.firma_candidato ? 'X' : '__'} NO __</td>
+    <table class="t" style="margin-top:10px"><tr><td class="gris" style="width:170px">RECIBÍ COPIA DE LA CÉDULA DE EVALUACIÓN (ACUSE)<br>${ev.firma_candidato ? '<s style="text-decoration-thickness:2px">SÍ</s>' : 'SÍ'} &nbsp;&nbsp;&nbsp; NO</td>
       <td class="cen" style="vertical-align:bottom">${firmaHtml(ev.firma_candidato, 40)}<small>NOMBRE Y FIRMA DEL USUARIO</small></td></tr></table>
     <table class="t"><tr><td class="gris" style="width:170px">Observaciones:</td><td>Uso exclusivo para el Candidato.</td></tr></table>`);
 }
@@ -206,9 +224,9 @@ export function verificacion(ev = {}, { candidato = '' } = {}) {
 }
 
 /* ── 4. Anexos: autorización de firma electrónica ──────────────────────── */
-export function autorizacionFirma({ candidato = '', evaluador = '', fecha = '', firma = null } = {}) {
+export function autorizacionFirma({ candidato = '', evaluador = '', cedulaEvaluador = '', fecha = '', firma = null } = {}) {
   return hoja('AUTORIZACIÓN FIRMA ELECTRÓNICA', `
-    <table class="t datos"><tr><td>Centro de Evaluación:</td><td>${esc(ce().clave || '')} ${esc(ce().nombre || '')}</td></tr><tr><td>Evaluador/a:</td><td>${esc(evaluador)}</td></tr>
+    <table class="t datos"><tr><td>Centro de Evaluación:</td><td>${esc(ce().clave || '')} ${esc(ce().nombre || '')}</td></tr><tr><td>Evaluador/a:</td><td>${esc(evaluador)}${cedulaEvaluador ? ' ' + esc(cedulaEvaluador) : ''}</td></tr>
       <tr><td>Estándar de Competencia:</td><td class="just">${std()}</td></tr><tr><td>Candidata/o</td><td>${esc(candidato)}</td></tr><tr><td>Fecha:</td><td>${esc(fechaFormato(fecha))}</td></tr></table>
     <div class="nota" style="font-family:Arial;font-weight:bold;font-size:10.5pt">CONFIRMO QUE HE LEÍDO EL AVISO DE PRIVACIDAD DE ${esc(String(ce().nombre || 'EL CENTRO DE EVALUACIÓN').toUpperCase())} Y ESTOY DE ACUERDO EN TODO LO ESTIPULADO EN EL DOCUMENTO. ASÍ MISMO AUTORIZO Y PRESTO MI FIRMA DIGITAL PARA SER PLASMADA EXCLUSIVAMENTE EN TODAS LAS FOJAS DEL INSTRUMENTO DE EVALUACIÓN DE COMPETENCIAS DEL EC</div>
     <div style="width:95mm;height:45mm;border:1px solid #000;margin:14mm auto 4px;display:flex;align-items:center;justify-content:center">${firmaHtml(firma, 70)}</div>
@@ -234,45 +252,52 @@ export function htmlPortafolio({ expediente: x, evaluacion: ev = {}, lote = '', 
   const firmaPlanCand = acusePlan?.firma ? { mode: 'draw', dataUrl: acusePlan.firma } : firmaCand;
   const firmaTrip = firmaDeSello(auto.triptico) || firmaCand;
   const decision = planDatos.fProcede === 'no' ? 'Asesorarme' : (planDatos.fFechaPlan || acusePlan) ? 'Evaluarme' : '';
+  /* v53 · las tres fechas del evaluador (ver fechasProceso en evaluacion.js) */
+  const F = fechasProceso(ev, planDatos);
+  const lugarEval = F.lugar || planDatos.fLugar || '';
+  const fechaCed = F.evaluacion || ced?.fecha || '';
   const hojas = [
     `<style>${estilosPortafolioOficial()}</style>`,
-    portada({ candidato: nombre, evaluador, fecha: ced?.fecha || hoyIso(), lote }),
+    portada({ candidato: nombre, evaluador, fecha: fechaCed || hoyIso(), lote }),
     indice(),
     separador('1. Datos del Candidato/a', nombre),
-    htmlFichaSii(c, { foto: lista(imagenes['candidato.fotoRegistro'])[0] || '', firma: firmaCand }),
+    imagenes['sii.ficha']?.length ? fichaSiiSubida(imagenes['sii.ficha'], firmaCand) : htmlFichaSii(c, { foto: lista(imagenes['candidato.fotoRegistro'])[0] || '', firma: firmaCand }),
     documentoAnexo('CURP', imagenes['evidencias.curp'] || '', 'Comprobante de CURP entregado por el candidato'),
     documentoAnexo('INE', imagenes['evidencias.ine'] || '', 'Identificación oficial vigente (ambos lados)'),
     autodiagnosticoOficial(auto, c, { firmaCandidato: firmaCand, firmaEvaluador: ev.firmas?.diagnostico || null, evaluador, decision }),
-    triptico(c, { firma: firmaTrip, fecha: auto.triptico?.fecha }),
+    triptico(c, { firma: firmaTrip, fecha: F.agenda || auto.triptico?.fecha }),
     separador('2. Recopilación de Evidencias'),
     hojaPlanOficial({
-      evaluadora: planDatos.fEvaluadora || evaluador, centro: planDatos.fCentro, fechaPlan: planDatos.fFechaPlan,
+      evaluadora: planDatos.fEvaluadora || evaluador, centro: planDatos.fCentro, fechaPlan: F.plan,
       candidato: planDatos.fCandidato || nombre, resultadoDiagnostico: planDatos.fResultadoDiag,
       sugirioCapacitacion: planDatos.fSugirio === 'si', procede: planDatos.fProcede !== 'no',
-      fechaEvaluacion: planDatos.fFecha, lugar: planDatos.fLugar, horario: planDatos.fHorario,
-      lugarResultados: planDatos.fLugarRes, fechaResultados: planDatos.fFechaRes, horarioResultados: planDatos.fHorarioRes,
+      fechaEvaluacion: F.evaluacion || planDatos.fFecha, lugar: lugarEval, horario: planDatos.fHorario,
+      lugarResultados: F.lugar || planDatos.fLugarRes, fechaResultados: F.evaluacion || planDatos.fFechaRes, horarioResultados: planDatos.fHorarioRes,
       proporcionaMaterial: planDatos.fProporciona, firmaCandidato: acusePlan?.firma || '', acuse: acusePlan?.firma ? 'si' : '',
       firmaEvaluador: ev.firmas?.plan || null,
     }),
     /* Las hojas «IEC» y «PRODUCTOS» del formato oficial (págs. 35 y 36):
        una página con la palabra, antes de cada bloque. */
     marcador('IEC'),
-    vistaCandidato ? reservada('Instrumento de Evaluación de Competencia (IEC)') : iec(ev, { candidato: nombre, evaluador }),
+    vistaCandidato ? reservada('Instrumento de Evaluación de Competencia (IEC)')
+      : imagenes['sii.iec']?.length ? documentoAnexo('Instrumento de Evaluación de Competencia (IEC)', imagenes['sii.iec']) : iec(ev, { candidato: nombre, evaluador }),
     marcador('PRODUCTOS'),
-    productos(x, imagenes, { firma: firmaCand }),
-    ...(datosMod(x, 'documentos').sesionGenerada && datosMod(x, 'documentos').sesion ? [verificacionEspacio(datosMod(x, 'documentos').sesion, { ...c, nombre, domicilioCompleto: domicilioCompleto(c), firma: firmaCand })] : []),
+    productos(x, imagenes, { firma: firmaCand, fechaEvaluacion: F.evaluacion }),
+    ...(datosMod(x, 'documentos').sesionGenerada && datosMod(x, 'documentos').sesion ? [verificacionEspacio(F.evaluacion
+      ? { ...datosMod(x, 'documentos').sesion, campos: { ...(datosMod(x, 'documentos').sesion.campos || {}), fechaSesion: F.evaluacion } }
+      : datosMod(x, 'documentos').sesion, { ...c, nombre, domicilioCompleto: domicilioCompleto(c), firma: firmaCand })] : []),
     ligaVideo(ev, x),
     separador('3. Cierre de Evaluación'),
-    cedula(ev, { candidato: nombre }),
-    encuesta(enc, { candidato: nombre, firma: firmaDeSello(enc.sello) || firmaCand }),
+    cedula(ev, { candidato: nombre, fecha: F.evaluacion }),
+    encuesta(F.evaluacion ? { ...enc, fecha: F.evaluacion } : enc, { candidato: nombre, firma: firmaDeSello(enc.sello) || firmaCand }),
     vistaCandidato ? reservada('Verificación Interna del Proceso de Evaluación') : verificacion(ev, { candidato: nombre }),
     cedulaServicio(enc, c, { evaluador: `${evaluador}${ce().nombre ? ' · ' + ce().nombre : ''}`, firmaCandidato: firmaDeSello(enc.sello) || firmaCand }),
-    formatoAtencion(enc, c, { lugar: planDatos.fLugar || CONFIG.marca?.ciudad || '', evaluador, firmaCandidato: firmaDeSello(enc.sello) || firmaCand, firmaEvaluador: ev.firmas?.plan || null }),
+    formatoAtencion(F.agenda ? { ...enc, fecha: F.agenda } : enc, c, { folio: F.folio, lugar: lugarEval || CONFIG.marca?.ciudad || '', evaluador, firmaCandidato: firmaDeSello(enc.sello) || firmaCand, firmaEvaluador: ev.firmas?.plan || null }),
     separador('4. ANEXOS'),
-    acuse('triptico', { evaluador, candidato: nombre, fecha: auto.triptico?.fecha, firma: firmaTrip }),
-    acuse('cedula', { evaluador, candidato: nombre, fecha: ced?.fecha, firma: ev.firma_candidato || null }),
-    acuse('plan', { evaluador, candidato: nombre, fecha: planDatos.fFechaPlan || acusePlan?.fecha, firma: acusePlan?.firma ? firmaPlanCand : null }),
-    autorizacionFirma({ candidato: nombre, evaluador, fecha: ced?.fecha || hoyIso(), firma: firmaCand }),
+    acuse('triptico', { evaluador, candidato: nombre, fecha: F.agenda || auto.triptico?.fecha, firma: firmaTrip }),
+    acuse('cedula', { evaluador, candidato: nombre, fecha: fechaCed, firma: ev.firma_candidato || null }),
+    acuse('plan', { evaluador, candidato: nombre, fecha: F.plan || acusePlan?.fecha, firma: acusePlan?.firma ? firmaPlanCand : null }),
+    autorizacionFirma({ candidato: nombre, evaluador, cedulaEvaluador: F.cedulaEvaluador, fecha: F.plan || ced?.fecha || hoyIso(), firma: firmaCand }),
     /* Foto para el diploma y certificados de formación, al final de Anexos
        (como Paideia). Los certificados son opcionales: sin ellos no se
        agrega hoja vacía. */

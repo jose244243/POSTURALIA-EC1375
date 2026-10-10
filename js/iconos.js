@@ -66,6 +66,7 @@ const TRAZOS = {
   brujula:   ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M15.5 8.5 13.8 13.8 8.5 15.5l1.7-5.3z'],
   sol:       ['M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z', 'M12 1.5v2.5', 'M12 20v2.5', 'M3.9 3.9l1.8 1.8', 'M18.3 18.3l1.8 1.8', 'M1.5 12H4', 'M20 12h2.5', 'M3.9 20.1l1.8-1.8', 'M18.3 5.7l1.8-1.8'],
   luna:      ['M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z'],
+  play:      ['M7 4.5v15l12-7.5z'],
 };
 
 /* Los que se dibujan rellenos y sin trazo (ninguno hoy, pero el hueco evita

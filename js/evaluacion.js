@@ -429,3 +429,33 @@ export function telefonoWhatsApp(t) {
 
 export { GRUPOS_CUESTIONARIO };
 export { REACTIVOS as REACTIVOS_IEC, CUESTIONARIO as CUESTIONARIO_IEC, UMBRAL as UMBRAL_IEC, ELEMENTOS as ELEMENTOS_IEC, TIPOS as TIPOS_IEC };
+
+/* ── Fechas del proceso (v53, cambios de Humberto, 9-oct-2026) ─────────────
+   El evaluador captura tres fechas y cada una va en su lugar del portafolio:
+     1 · agenda     — cuando se agenda al candidato en el sistema (SII):
+                      Formato de Atención a Usuarios, Tríptico y su acuse.
+     2 · plan       — Plan de Evaluación (encabezado), su acuse y la
+                      Autorización de firma electrónica.
+     3 · evaluacion — columna «Fecha» del Plan, acuerdos de desarrollo y de
+                      resultados, Cédula, Encuesta de Satisfacción, DOC 2–4,
+                      acuse de la Cédula y portada.
+   Sin capturar, cada documento usa la fecha que traía antes (la del Plan
+   que llenó el candidato, la de su encuesta…): ningún portafolio viejo
+   pierde fechas. */
+const isoDia = v => (/^\d{4}-\d{2}-\d{2}/.test(String(v || '')) ? String(v).slice(0, 10) : '');
+export const CAMPOS_PROCESO = [
+  { id: 'agenda',     label: 'Fecha 1 · Se agenda en el sistema (SII)', ayuda: 'Formato de Atención a Usuarios y Tríptico de Derechos y Obligaciones.' },
+  { id: 'plan',       label: 'Fecha 2 · Plan de Evaluación', ayuda: 'Encabezado del Plan, su acuse y la Autorización de firma electrónica.' },
+  { id: 'evaluacion', label: 'Fecha 3 · Evaluación', ayuda: 'Fechas del Plan, Cédula, Encuesta, Carta de Consentimiento y Planes de Sesión y Seguimiento.' },
+];
+export function fechasProceso(ev = {}, planDatos = {}) {
+  const f = ev.fechas || {};
+  return {
+    agenda: isoDia(f.agenda),
+    plan: isoDia(f.plan) || isoDia(planDatos.fFechaPlan),
+    evaluacion: isoDia(f.evaluacion),
+    lugar: String(ev.lugarEvaluacion || '').trim(),
+    folio: String(ev.folioSii || '').trim(),
+    cedulaEvaluador: String(ev.cedulaEvaluador || '').trim(),
+  };
+}

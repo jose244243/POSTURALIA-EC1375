@@ -84,9 +84,11 @@ export function estilosOficiales() {
   @media print { .barra { display: none } .papel { margin: 0; padding: 0; box-shadow: none; max-width: none } body { background: #fff } }`;
 }
 
-export function hoja(titulo, cuerpo, { sinTitulo = false } = {}) {
+/* sinLogos (v53, Humberto): los documentos del candidato con SU usuario
+   (DOC 1–5) no llevan los logos de CONOCER ni de la ECE. */
+export function hoja(titulo, cuerpo, { sinTitulo = false, sinLogos = false } = {}) {
   const ce = CONFIG.centroEvaluacion || {};
-  const L = ce.logos || {};
+  const L = sinLogos ? {} : (ce.logos || {});
   return `<table class="hoja">
   <thead><tr><td><div class="enc">
     <div class="logos">

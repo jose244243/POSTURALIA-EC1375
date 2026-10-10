@@ -14,7 +14,7 @@
 import { hoja, fechaFormato, envolverOficial } from './doc-plan-oficial.js';
 import { firmaHtml } from './firma-simple.js';
 import { NOTA_MEDICO, ENTERADO_AVISO, textoConsentimiento, avisoPrivacidadBloques, datosAviso, tecnicaEfectiva,
-  PREP_ITEMS, PREP_PROTOCOLO, PREP_MATERIALES, DOCS_SESION } from './data-sesion.js';
+  PREP_ITEMS, PREP_PROTOCOLO, PREP_MATERIALES, DOCS_SESION, ENCUESTA_USUARIO } from './data-sesion.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const v = x => esc(String(x ?? '').trim()) || '—';
@@ -38,7 +38,14 @@ export function estilosSesion() {
   .ds-firmas > div { flex: 1; text-align: center; font-size: 9pt }
   .ds-firmas .caja { height: 22mm; display: flex; align-items: flex-end; justify-content: center }
   .ds-firmas .l { border-top: 1px solid #000; padding-top: 1mm } .ds-firmas .n { font-weight: bold; text-transform: uppercase }
-  .ds-chk td.x { width: 12mm; text-align: center; font-weight: bold }`;
+  .ds-chk td.x { width: 12mm; text-align: center; font-weight: bold }
+  .eu-tit { text-align: center; font-weight: bold; font-size: 12pt; margin: 0 0 4mm; line-height: 1.35 }
+  table.eu { width: 100%; border-collapse: collapse; font-size: 10pt; margin: 0 0 3mm }
+  table.eu td { border: 1px solid #000; padding: .7mm 2mm; vertical-align: top; line-height: 1.25 }
+  table.eu .v { background: #b0cf94; font-weight: bold } table.eu .g { background: #a9a9a9 }
+  table.eu td.x { text-align: center; font-weight: bold; width: 14% } table.eu td.it { font-weight: bold; width: 30% }
+  table.eu .com { height: 11mm }
+  .eu-firma .ds-firmas { margin: 3mm 0 0 } .eu-firma .ds-firmas .caja { height: 16mm }`;
 }
 
 const datos = filas => `<table class="ds-d">${filas.map(([k, x]) => `<tr><td>${esc(k)}</td><td>${v(x)}</td></tr>`).join('')}</table>`;
@@ -46,6 +53,7 @@ const tabla = (cab, filas) => `<table class="ds-t"><thead><tr>${cab.map(c => `<t
 const bloqueFirma = (etiqueta, nombre, firma) => `<div><div class="caja">${firmaHtml(firma, 60)}</div><div class="l">${esc(etiqueta)}</div>${nombre ? `<div class="n">${esc(nombre)}</div>` : ''}</div>`;
 const firmas = (...b) => `<div class="ds-firmas">${b.join('')}</div>`;
 const hoyIso = () => new Date().toISOString().slice(0, 10);
+const SIN_LOGOS = { sinLogos: true };   // v53: los DOC del usuario no llevan logos
 
 export function avisoHtml(d, opts) {
   return `<div class="ds-aviso">${avisoPrivacidadBloques(d, opts).map(b => b.t === 'titulo' ? `<div class="tt">${esc(b.x)}</div>`
@@ -67,7 +75,7 @@ export function fichaRegistro(s = {}, cand = {}) {
       ['Resumen de resultados de laboratorio y gabinete', c.resultadosLaboratorio]])}
     <p class="ds-h">Síntomas, necesidades o interés para recibir tratamiento:</p><p class="ds-p">${multi(c.sintomasNecesidades)}</p>
     <p class="ds-i">${NOTA_MEDICO}</p><p class="ds-i">${ENTERADO_AVISO}</p>
-    ${firmas(bloqueFirma('Nombre completo y firma del usuario', c.usuarioNombre, s.firmas?.usuarioFicha), bloqueFirma('Nombre y firma del candidato/a', cand.nombre, cand.firma))}`);
+    ${firmas(bloqueFirma('Nombre completo y firma del usuario', c.usuarioNombre, s.firmas?.usuarioFicha), bloqueFirma('Nombre y firma del candidato/a', cand.nombre, cand.firma))}`, SIN_LOGOS);
 }
 
 /* DOC 2 · Carta de Consentimiento Informado (lleva el Aviso completo) */
@@ -81,7 +89,7 @@ export function cartaConsentimiento(s = {}, cand = {}) {
       ['Número de sesiones y duración', `${String(c.numeroSesionesPlan || '').trim() || '—'} / ${String(c.duracionSesionPlan || '').trim() || '—'}`], ['Objetivos y efectos generales', c.objetivosEfectos]])}
     ${avisoHtml(datosAviso(c, cand))}
     <p class="ds-p">${esc(textoConsentimiento(String(c.usuarioNombre || '').trim()))}</p>
-    ${firmas(bloqueFirma('Nombre completo y firma del usuario', c.usuarioNombre, s.firmas?.usuarioConsentimiento))}`);
+    ${firmas(bloqueFirma('Nombre completo y firma del usuario', c.usuarioNombre, s.firmas?.usuarioConsentimiento))}`, SIN_LOGOS);
 }
 
 /* DOC 3 · Plan de Sesión */
@@ -94,7 +102,7 @@ export function planSesion(s = {}) {
     <p class="ds-h">Condiciones de preparación</p><p class="ds-p">${multi(c.condicionesPreparacion)}</p>
     <p class="ds-h">Objetivos y efectos generales</p><p class="ds-p">${multi(c.objetivosEfectos)}</p>
     <p class="ds-h">Notas de evolución y pronóstico</p><p class="ds-p">${multi(c.notaEvolucion)}</p><p class="ds-p">${multi(c.pronostico)}</p>
-    <p class="ds-h">Recomendaciones / tareas para casa</p><p class="ds-p">${multi(c.recomendaciones)}</p>`);
+    <p class="ds-h">Recomendaciones / tareas para casa</p><p class="ds-p">${multi(c.recomendaciones)}</p>`, SIN_LOGOS);
 }
 
 /* DOC 4 · Plan de Seguimiento */
@@ -109,7 +117,25 @@ export function planSeguimiento(s = {}, cand = {}) {
     <p class="ds-h">Nota de evolución:</p><p class="ds-p">${multi(c.notaEvolucion)}</p>
     <p class="ds-h">Pronóstico:</p><p class="ds-p">${multi(c.pronostico)}</p>
     <p class="ds-h">Recomendaciones / ejercicios para casa:</p><p class="ds-p">${multi(c.recomendaciones)}</p>
-    ${firmas(bloqueFirma('Nombre completo y firma del usuario', c.usuarioNombre, s.firmas?.usuarioSeguimiento), bloqueFirma('Nombre y firma del profesional', cand.nombre, cand.firma))}`);
+    ${firmas(bloqueFirma('Nombre completo y firma del usuario', c.usuarioNombre, s.firmas?.usuarioSeguimiento), bloqueFirma('Nombre y firma del profesional', cand.nombre, cand.firma))}`, SIN_LOGOS);
+}
+
+/* DOC 5 · Formato F-EC1375-05 Encuesta de Satisfacción (v53, formato de
+   Humberto): la contesta y firma el usuario al terminar el servicio. */
+export function encuestaUsuario(s = {}, cand = {}) {
+  const c = s.campos || {}, e = s.encuesta || {}, r = e.r || {}, com = e.comentarios || {};
+  const filas = g => g.items.map((t, i) => `<tr><td class="it">${esc(t)}</td>${ENCUESTA_USUARIO.escala.map(n => `<td class="x">${Number(r[`${g.k}-${i}`]) === n ? 'X' : ''}</td>`).join('')}</tr>`).join('');
+  const comentario = g => `<tr class="com"><td class="g" colspan="6"><b>COMENTARIOS</b> ${multi(com[g.k] || '').replace(/^—$/, '')}</td></tr>`;
+  const [servicio, ...resto] = ENCUESTA_USUARIO.grupos;
+  return hoja('Encuesta de Satisfacción', `<p class="ds-doc">DOC 5</p>
+    <p class="eu-tit" style="margin-bottom:2mm">Formato ${ENCUESTA_USUARIO.clave}<br>Encuesta de Satisfacción</p>
+    <table class="eu"><tr><td class="v" colspan="6" style="font-weight:normal"><b>NOMBRE COMPLETO</b> ${esc(c.usuarioNombre || '')}<br>
+      <b>EDAD</b> ${esc(c.usuarioEdad || '')}<br><b>SERVICIO RECIBIDO:</b> ${esc(e.servicioRecibido || tecnicaEfectiva(c))}</td></tr></table>
+    <p class="ds-p">Marque con una X la puntuación que considere más acorde con el servicio recibido (1 muy deficiente, 5 excelente) Con escala del 1 al 5.</p>
+    <table class="eu"><tr class="v"><td>${servicio.t}</td>${ENCUESTA_USUARIO.escala.map(n => `<td class="x">${n}</td>`).join('')}</tr>
+      ${filas(servicio)}${comentario(servicio)}
+      ${resto.map(g => `<tr class="v"><td colspan="6">${g.t}</td></tr>${filas(g)}${comentario(g)}`).join('')}</table>
+    <div class="eu-firma">${firmas(bloqueFirma('Nombre completo y firma del usuario:', c.usuarioNombre, s.firmas?.usuarioEncuesta))}</div>`, { sinTitulo: true, sinLogos: true });
 }
 
 /* Verificación del espacio y las herramientas (E1·P1 y E1·P2) */
@@ -124,7 +150,7 @@ export function verificacionEspacio(s = {}, cand = {}) {
     ${firmas(bloqueFirma('Nombre y firma del prestador del servicio', cand.nombre, cand.firma))}`);
 }
 
-const GEN = { ficha: fichaRegistro, consentimiento: cartaConsentimiento, plan_sesion: planSesion, plan_seguimiento: planSeguimiento, verificacion_espacio: verificacionEspacio };
+const GEN = { ficha: fichaRegistro, consentimiento: cartaConsentimiento, plan_sesion: planSesion, plan_seguimiento: planSeguimiento, encuesta_usuario: encuestaUsuario, verificacion_espacio: verificacionEspacio };
 export const documentoSesion = (clave, s, cand) => `<style>${estilosSesion()}</style>` + GEN[clave](s, cand);
 /* Documento suelto (para abrir, imprimir o guardar como PDF) */
 export function documentoSesionSuelto(clave, s, cand) {

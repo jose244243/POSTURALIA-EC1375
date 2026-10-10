@@ -234,29 +234,29 @@ export const FORMATOS = [
   /* ── 5. Encuesta de satisfacción del usuario (E4·D1, reactivos 117-120)
      Es la que el CANDIDATO le aplica a SU usuario al terminar el servicio;
      no confundir con la encuesta CONOCER que contesta el candidato sobre su
-     propia evaluación (encuesta.html). Redacción de las preguntas: propuesta
-     de esta plataforma, a validar por Humberto.                           */
+     propia evaluación (encuesta.html). v53: Formato F-EC1375-05 de Humberto
+     (el mismo que se llena en Documentos de Sesión y entra como DOC 5).   */
   {
     clave: 'encuesta_usuario',
-    nombre: 'Encuesta de satisfacción del usuario',
+    nombre: 'Encuesta de satisfacción del usuario (F-EC1375-05)',
     para: 'Se aplica al término del servicio: explícale cómo llenarla, recibe sus comentarios y agradécele.',
     reactivos: 'Desempeño E4·D1 · cuatro reactivos',
     campos: [
-      { t: 'grupo',   x: 'Datos' },
-      { t: 'texto',   x: 'Nombre del usuario (opcional)' },
-      { t: 'fecha',   x: 'Fecha', ancho: 'corto' },
-      { t: 'leyenda', x: 'INSTRUCCIONES. Califique cada enunciado del 1 al 5, donde 1 es "totalmente ' +
-                          'en desacuerdo" y 5 es "totalmente de acuerdo". Sus respuestas nos ayudan a ' +
-                          'mejorar el servicio.' },
-      { t: 'grupo',   x: 'Su opinión sobre el servicio' },
-      { t: 'texto',   x: 'Se me explicó con claridad en qué consistía el servicio (1-5)', ancho: 'corto' },
-      { t: 'texto',   x: 'Se me trató con respeto, discreción y confidencialidad (1-5)', ancho: 'corto' },
-      { t: 'texto',   x: 'El espacio estaba limpio, ordenado y ventilado (1-5)', ancho: 'corto' },
-      { t: 'texto',   x: 'Se atendieron mis dudas antes y después de la sesión (1-5)', ancho: 'corto' },
-      { t: 'texto',   x: 'Recomendaría este servicio (1-5)', ancho: 'corto' },
-      { t: 'area',    x: 'Comentarios acerca del servicio', filas: 3 },
-      { t: 'leyenda', x: 'Gracias por su colaboración y sus comentarios.' },
-      { t: 'firma',   x: 'Firma del usuario' },
+      { t: 'grupo',   x: 'Formato F-EC1375-05 · Encuesta de Satisfacción' },
+      { t: 'texto',   x: 'NOMBRE COMPLETO' },
+      { t: 'texto',   x: 'EDAD', ancho: 'corto' },
+      { t: 'texto',   x: 'SERVICIO RECIBIDO' },
+      { t: 'leyenda', x: 'Marque con una X la puntuación que considere más acorde con el servicio recibido (1 muy deficiente, 5 excelente) Con escala del 1 al 5.' },
+      { t: 'grupo',   x: 'SERVICIO (1 · 2 · 3 · 4 · 5)' },
+      ...['PACIENCIA', 'AMABILIDAD', 'HIGIENE', 'CLARIDAD EN LAS EXPLICACIONES', 'MEDIDAS SANITARIAS', 'DISIPACIÓN DE DUDAS'].map(x => ({ t: 'texto', x, ancho: 'corto' })),
+      { t: 'area',    x: 'COMENTARIOS', filas: 2 },
+      { t: 'grupo',   x: 'INSTALACIONES (1 · 2 · 3 · 4 · 5)' },
+      ...['ÁREAS COMUNES', 'RECEPCIÓN', 'CONSULTORIO'].map(x => ({ t: 'texto', x, ancho: 'corto' })),
+      { t: 'area',    x: 'COMENTARIOS', filas: 2 },
+      { t: 'grupo',   x: 'PERSONAL (1 · 2 · 3 · 4 · 5)' },
+      ...['RECEPCIÓN', 'PERSONAL AUXILIAR', 'ESPECIALISTA EN EL SERVICIO'].map(x => ({ t: 'texto', x, ancho: 'corto' })),
+      { t: 'area',    x: 'COMENTARIOS', filas: 2 },
+      { t: 'firma',   x: 'Nombre completo y firma del usuario' },
     ],
     nota: 'Se archiva en el expediente del usuario junto con el plan de seguimiento.',
   },

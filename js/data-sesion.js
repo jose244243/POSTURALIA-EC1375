@@ -106,11 +106,28 @@ export const sesionVacia = (hoy = new Date().toISOString().slice(0, 10)) => ({
     notaEvolucion: '', pronostico: '', recomendaciones: '',
   },
   sesiones: [{ numero: '1', frecuencia: '', duracion: '' }],
-  firmas: { usuarioFicha: null, usuarioConsentimiento: null, usuarioSeguimiento: null },
+  firmas: { usuarioFicha: null, usuarioConsentimiento: null, usuarioSeguimiento: null, usuarioEncuesta: null },
+  encuesta: { servicioRecibido: '', r: {}, comentarios: {} },   // DOC 5 · F-EC1375-05 (v53)
   prep: {},          // 'prep-0'…, 'proto-0'… → true
   videos: {},        // sección → true («Video de esta sección grabado»)
   paso: 0,
 });
+
+/* DOC 5 · Formato F-EC1375-05 «Encuesta de Satisfacción» (v53): el formato
+   que Humberto agregó al portafolio. La contesta y firma el USUARIO al
+   terminar el servicio (escala 1 muy deficiente … 5 excelente). */
+export const ENCUESTA_USUARIO = {
+  clave: 'F-EC1375-05',
+  escala: [1, 2, 3, 4, 5],
+  grupos: [
+    { k: 'servicio', t: 'SERVICIO', items: ['PACIENCIA', 'AMABILIDAD', 'HIGIENE', 'CLARIDAD EN LAS EXPLICACIONES', 'MEDIDAS SANITARIAS', 'DISIPACIÓN DE DUDAS'] },
+    { k: 'instalaciones', t: 'INSTALACIONES', items: ['ÁREAS COMUNES', 'RECEPCIÓN', 'CONSULTORIO'] },
+    { k: 'personal', t: 'PERSONAL', items: ['RECEPCIÓN', 'PERSONAL AUXILIAR', 'ESPECIALISTA EN EL SERVICIO'] },
+  ],
+};
+export const clavesEncuestaUsuario = () => ENCUESTA_USUARIO.grupos.flatMap(g => g.items.map((_, i) => `${g.k}-${i}`));
+export const encuestaUsuarioCompleta = s => clavesEncuestaUsuario().every(k => [1, 2, 3, 4, 5].includes(Number(s?.encuesta?.r?.[k])))
+  && firmaValida(s?.firmas?.usuarioEncuesta);
 
 export const tecnicaEfectiva = c => c.tecnicaAplicar === 'Otra' ? (c.otraTecnica || '').trim() : (c.tecnicaAplicar || '');
 export const firmaValida = f => !!f && ((f.mode === 'draw' && !!f.dataUrl) || (f.mode === 'type' && String(f.typedName || '').trim().length >= 3));
@@ -126,7 +143,7 @@ export function pasoValido(id, s) {
   if (id === 'terapia_explicacion') return !!tecnicaEfectiva(c);
   if (id === 'consentimiento') return firmaValida(s.firmas?.usuarioConsentimiento);
   if (id === 'plan_sesion') return !!String(c.objetivosEfectos || '').trim();
-  if (id === 'cierre') return firmaValida(s.firmas?.usuarioSeguimiento);
+  if (id === 'cierre') return firmaValida(s.firmas?.usuarioSeguimiento) && encuestaUsuarioCompleta(s);
   return true;
 }
 export const QUE_FALTA = {
@@ -136,7 +153,7 @@ export const QUE_FALTA = {
   terapia_explicacion: 'Elige la técnica que vas a aplicar.',
   consentimiento: 'Falta la firma del usuario en la Carta de Consentimiento.',
   plan_sesion: 'Escribe los objetivos y efectos generales.',
-  cierre: 'Falta la firma del usuario en el Plan de Seguimiento.',
+  cierre: 'Faltan la firma del usuario en el Plan de Seguimiento y su Encuesta de Satisfacción (calificar los 12 puntos y firmar).',
 };
 
 /* Hasta qué paso se puede saltar: el primero que falta. La preparación no
@@ -210,5 +227,6 @@ export const DOCS_SESION = [
   { clave: 'consentimiento', doc: 'DOC 2', titulo: 'Carta de Consentimiento Informado', desc: 'Autorización del usuario, con el Aviso de Privacidad', firma: 'usuarioConsentimiento' },
   { clave: 'plan_sesion', doc: 'DOC 3', titulo: 'Plan de Sesión', desc: 'Signos vitales, técnica, evolución y tareas para casa' },
   { clave: 'plan_seguimiento', doc: 'DOC 4', titulo: 'Plan de Seguimiento', desc: 'Contacto y sesiones programadas', firma: 'usuarioSeguimiento' },
+  { clave: 'encuesta_usuario', doc: 'DOC 5', titulo: 'Encuesta de Satisfacción (F-EC1375-05)', desc: 'La contesta y firma tu usuario al terminar', firma: 'usuarioEncuesta' },
   { clave: 'verificacion_espacio', doc: 'E1', titulo: 'Verificación del espacio y las herramientas', desc: 'Preparación del espacio y protocolo sanitario' },
 ];
