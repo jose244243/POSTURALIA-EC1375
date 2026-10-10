@@ -252,7 +252,7 @@ $('formatos').addEventListener('input', e => {
 function pintar() {
   $('preguntas').innerHTML = ENCUESTA.preguntas.map((p, i) => `
     <div class="enc-preg" data-i="${i}">
-      <div class="enc-txt" id="encP${i}"><span class="enc-n" aria-hidden="true">${i + 1}</span>${p}</div>
+      <div class="enc-txt" id="encP${i}"><span class="enc-n" aria-hidden="true">${i + 1}</span>${p}${i === 3 ? '<small style="display:block;color:var(--muted);font-weight:500;margin-top:4px">Ojo: esta pregunta va al revés. Si <b>no</b> te condicionaron a tomar un curso antes de evaluarte, la respuesta es «Totalmente en desacuerdo».</small>' : ''}</div>
       <div class="enc-ops" role="group" aria-labelledby="encP${i}">
         ${ENCUESTA.escala.map((op, k) => `
           <button type="button" class="enc-op ${respuestas[i] === k ? 'sel' : ''}" data-i="${i}" data-k="${k}"

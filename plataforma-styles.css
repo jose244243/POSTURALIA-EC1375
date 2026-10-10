@@ -1370,3 +1370,16 @@ select:focus-visible {
 .fmt-firmado img { width: 28px; height: 28px; object-fit: cover; border-radius: 4px }
 .fmt-firmado button { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: .9rem }
 .fmt-firmado-nota { color: var(--spoke-deep); font-weight: 600 }
+
+/* v53 · Barra superior como Paideia: título e «Inicio» a la izquierda;
+   «Ver cómo se hace», modo oscuro y la persona a la derecha. */
+.sh-top-ini { margin-left: 8px; font-size: .74rem; font-weight: 500; color: var(--muted); text-decoration: none }
+.sh-top-ini:hover { text-decoration: underline }
+.sh-top-der { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-shrink: 0 }
+.sh-tuto { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border: 1px solid var(--border); border-radius: 999px;
+  font-size: .82rem; font-weight: 700; color: var(--dark); text-decoration: none; background: var(--white); white-space: nowrap }
+.sh-tuto:hover { border-color: var(--spoke); color: var(--spoke-deep, #0f766e) }
+.sh-top-tema { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 10px; background: var(--white); color: var(--dark); cursor: pointer }
+.sh-top-u { display: inline-flex; align-items: center; gap: 7px; font-size: .84rem; font-weight: 600; color: var(--dark) }
+.sh-top-u .sh-avatar { width: 32px; height: 32px; font-size: .75rem }
+@media (max-width: 640px) { .sh-tuto span, .sh-top-n { display: none } .sh-tuto { padding: 8px 10px } }

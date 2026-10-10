@@ -71,6 +71,12 @@ addEventListener('load', function () {
   .e-ok { background:#ECFDF5; color:#065F46 } .e-no { background:#FFFBEB; color:#92400E }
   .intro-l li { margin:0 0 6px }
   [data-solo-lectura] input, [data-solo-lectura] textarea, [data-solo-lectura] select { pointer-events:none; background:var(--bg) }
+  .eu-g { border:1px solid var(--border); border-radius:10px; padding:8px 10px; margin:0 0 10px }
+  .eu-h, .eu-f { display:grid; grid-template-columns: 1fr repeat(5, 42px); align-items:center; gap:2px }
+  .eu-h { font-weight:800; font-size:.78rem; color:var(--muted); padding-bottom:4px; border-bottom:1px solid var(--border) }
+  .eu-h span:not(:first-child), .eu-f label { text-align:center }
+  .eu-f { font-size:.84rem; padding:5px 0; border-bottom:1px dashed var(--border) }
+  .eu-f input { width:20px; height:20px; cursor:pointer }
 </style>
 </head>
 <body class="plataforma">
@@ -108,7 +114,7 @@ import { firmaGuardada } from './js/firma.js';
 import { domicilioCompleto } from './js/registro.js';
 import { PASOS, PREP_ITEMS, PREP_MATERIALES, PREP_PROTOCOLO, TOTAL_PREP, FICHA_CAMPOS, FICHA_PREGUNTAS, sesionVacia, pasoValido, pasoMaximo,
   todoValido, faltantes, QUE_FALTA, prepHechos, precargarSeguimiento, edadDe, NOTA_MEDICO, textoConsentimiento, avisoPrivacidadBloques, datosAviso,
-  DOCS_SESION, tecnicaEfectiva } from './js/data-sesion.js';
+  DOCS_SESION, tecnicaEfectiva, ENCUESTA_USUARIO } from './js/data-sesion.js';
 import { documentoSesionSuelto, todosLosDocumentos } from './js/doc-sesion.js';
 import { abrirDocumento } from './js/doc-plan-oficial.js';
 import('./js/sala-ui.js').then(m => m.montarTarjeta(document.getElementById('salaTarjeta'))).catch(() => {});
@@ -122,7 +128,8 @@ const soloLectura = Store.soloLectura;
 const base = sesionVacia();
 const guardada = Store.get(MODULO, {}).sesion || {};
 const s = { ...base, ...guardada, campos: { ...base.campos, ...(guardada.campos || {}) }, firmas: { ...base.firmas, ...(guardada.firmas || {}) },
-  prep: { ...(guardada.prep || {}) }, videos: { ...(guardada.videos || {}) }, sesiones: guardada.sesiones?.length ? guardada.sesiones : base.sesiones };
+  prep: { ...(guardada.prep || {}) }, videos: { ...(guardada.videos || {}) }, sesiones: guardada.sesiones?.length ? guardada.sesiones : base.sesiones,
+  encuesta: { ...base.encuesta, ...(guardada.encuesta || {}), r: { ...(guardada.encuesta?.r || {}) }, comentarios: { ...(guardada.encuesta?.comentarios || {}) } } };
 let paso = 0;          // en pantalla: 0 = inicio · 1…19 = pasos · 20 = Tus documentos. s.paso = el último visitado
 const FIN = PASOS.length + 1;
 
@@ -131,7 +138,7 @@ const cand = (() => {
   const f = firmaGuardada();
   return { ...c, domicilioCompleto: domicilioCompleto(c), firma: f?.dato ? { mode: 'draw', dataUrl: f.dato } : null };
 })();
-const huella = () => JSON.stringify({ c: s.campos, f: s.firmas, p: s.prep, x: s.sesiones });
+const huella = () => JSON.stringify({ c: s.campos, f: s.firmas, p: s.prep, x: s.sesiones, e: s.encuesta });
 
 let tGuardar = null;
 function guardar(inmediato = false) {
@@ -230,8 +237,20 @@ const PANTALLA = {
   medio_contacto: p => panelGuion(p) + `<p style="font-size:.86rem;color:var(--muted);margin:0 0 10px">Teléfono y correo se precargan de la Ficha de Registro — corrígelos solo si el seguimiento debe hacerse por otro medio.</p>
     ${fila(campo('telefonoMovilSeguimiento', 'Teléfono móvil', { tipo: 'tel' }), campo('telefonoFijoSeguimiento', 'Teléfono fijo', { tipo: 'tel' }))}
     ${campo('correoSeguimiento', 'Correo electrónico', { tipo: 'email' })}${campo('medioContacto', 'Medio de contacto para seguimiento', { ph: 'Ej. Celular / WhatsApp' })}`,
-  cierre: p => panelGuion(p) + `<p style="font-size:.9rem">Nombre del usuario: <b>${esc(s.campos.usuarioNombre) || '—'}</b></p>${firmaCaja('usuarioSeguimiento', 'Firma del usuario — cierra su Plan de Seguimiento')}`,
+  cierre: p => panelGuion(p) + `<p style="font-size:.9rem">Nombre del usuario: <b>${esc(s.campos.usuarioNombre) || '—'}</b></p>${firmaCaja('usuarioSeguimiento', 'Firma del usuario — cierra su Plan de Seguimiento')}${encuestaUsuarioHtml()}`,
 };
+/* DOC 5 · F-EC1375-05: la contesta tu usuario (v53) */
+function encuestaUsuarioHtml() {
+  const e = s.encuesta, r = e.r;
+  const grupo = g => `<div class="eu-g"><div class="eu-h"><span>${esc(g.t)}</span>${ENCUESTA_USUARIO.escala.map(n => `<span>${n}</span>`).join('')}</div>
+    ${g.items.map((t, i) => { const k = `${g.k}-${i}`; return `<div class="eu-f" role="radiogroup" aria-label="${esc(t)}"><span>${esc(t)}</span>${ENCUESTA_USUARIO.escala.map(n =>
+      `<label><input type="radio" name="eu_${k}" data-eu="${k}" value="${n}" ${Number(r[k]) === n ? 'checked' : ''} aria-label="${esc(t)}: ${n}"></label>`).join('')}</div>`; }).join('')}
+    <div class="campo"><label for="euc_${g.k}">Comentarios — ${esc(g.t.toLowerCase())}</label><textarea id="euc_${g.k}" data-euc="${g.k}" rows="2">${esc(e.comentarios[g.k] || '')}</textarea></div></div>`;
+  return `<div class="sec-l">Encuesta de Satisfacción (F-EC1375-05) — la contesta tu usuario</div>
+    <p style="font-size:.86rem;color:var(--muted);margin:0 0 10px">Entrégale el dispositivo: marca del 1 (muy deficiente) al 5 (excelente) y firma. Va en tu portafolio como DOC 5.</p>
+    <div class="campo"><label for="euServ">Servicio recibido</label><input id="euServ" data-eus value="${esc(e.servicioRecibido || tecnicaEfectiva(s.campos))}"></div>
+    ${ENCUESTA_USUARIO.grupos.map(grupo).join('')}${firmaCaja('usuarioEncuesta', 'Nombre completo y firma del usuario — cierra su Encuesta de Satisfacción')}`;
+}
 const filasSesiones = () => s.sesiones.map((r, i) => `<div class="ses-row"><span>${i + 1}</span>
   <input data-ses="${i}" data-k="frecuencia" value="${esc(r.frecuencia)}" placeholder="Frecuencia (ej. Lunes)" aria-label="Frecuencia de la sesión ${i + 1}">
   <input data-ses="${i}" data-k="duracion" value="${esc(r.duracion)}" placeholder="Duración (ej. 1 hr)" aria-label="Duración de la sesión ${i + 1}"></div>`).join('');
@@ -261,7 +280,7 @@ function pintarPaso() {
     <div id="falta"></div>
     <div class="nav"><button class="btn-plat btn-plat--secundario" id="atras">← Atrás</button>
       <button class="btn-plat btn-plat--primario" id="sig">${paso === PASOS.length ? 'Ver mis documentos →' : 'Siguiente →'}</button></div>`;
-  ['usuarioFicha', 'usuarioConsentimiento', 'usuarioSeguimiento'].forEach(k => {
+  ['usuarioFicha', 'usuarioConsentimiento', 'usuarioSeguimiento', 'usuarioEncuesta'].forEach(k => {
     const el = $('fir_' + k); if (!el) return;
     if (soloLectura) { el.innerHTML = s.firmas[k] ? '<p>✓ Firmado</p>' : '<p>Sin firma</p>'; return; }
     montarFirmaSimple(el, { valor: s.firmas[k], nombreSugerido: () => s.campos.usuarioNombre, onCambio: f => { s.firmas[k] = f; guardar(); revisar(); } });
@@ -307,13 +326,17 @@ $('ds').addEventListener('input', e => {
     guardar(); revisar(); return;
   }
   const r = e.target.closest('[data-ses]');
-  if (r) { s.sesiones[+r.dataset.ses][r.dataset.k] = r.value; guardar(); }
+  if (r) { s.sesiones[+r.dataset.ses][r.dataset.k] = r.value; guardar(); return; }
+  if (e.target.dataset.euc) { s.encuesta.comentarios[e.target.dataset.euc] = e.target.value; guardar(); return; }
+  if (e.target.hasAttribute('data-eus')) { s.encuesta.servicioRecibido = e.target.value; guardar(); }
 });
 $('ds').addEventListener('change', e => {
   const c = e.target.closest('[data-c][data-repinta]');
   if (c) { s.campos[c.dataset.c] = c.value; guardar(); pintar(); return; }
   const pr = e.target.closest('[data-prep]');
   if (pr) { s.prep[pr.dataset.prep] = pr.checked; guardar(); const k = $('prepCuenta'); if (k) k.textContent = `${prepHechos(s.prep)} / ${TOTAL_PREP} completados`; revisar(); return; }
+  const eu = e.target.closest('[data-eu]');
+  if (eu) { s.encuesta.r[eu.dataset.eu] = Number(eu.value); guardar(); revisar(); return; }
   const v = e.target.closest('[data-video]');
   if (v) { s.videos[v.dataset.video] = v.checked; guardar(); return; }
   if (e.target.id === 'irPaso') ir(e.target.value);

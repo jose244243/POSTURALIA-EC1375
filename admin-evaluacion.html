@@ -84,6 +84,9 @@ addEventListener('load', function () {
 <main class="ad-wrap">
   <div id="sinCandidato" class="card" hidden><h2>Elige un candidato</h2><div id="listaCand"></div></div>
   <div id="app" class="ev-grid" hidden>
+    <section class="card"><h2>Fechas del proceso</h2>
+      <p style="color:var(--muted);font-size:.84rem;margin:0 0 6px">Las tres fechas que pide el portafolio. Cada una se pone sola en sus documentos; sin capturarla, cada documento usa la fecha que ya traía.</p>
+      <div id="fechasProc"></div></section>
     <section class="card"><h2>Etapas del Centro Evaluador</h2><div id="etapas"></div></section>
 
     <details class="card" id="cardIec"><summary>Instrumento de Evaluación (IEC)</summary><div id="iec"></div></details>
@@ -96,6 +99,9 @@ addEventListener('load', function () {
       <p style="color:var(--muted);font-size:.84rem">Cada documento lleva su propia firma: el Plan de Evaluación, la rúbrica del IEC y la Verificación Interna.</p>
       <div id="firmas"></div></section>
 
+    <section class="card"><h2>Documentos del SII</h2>
+      <p style="color:var(--muted);font-size:.84rem;margin:0 0 6px">Si subes el PDF que descargas del SII, entra al portafolio en lugar del que arma la plataforma. A la Ficha de Registro se le pone encima la firma del candidato. Se guardan en esta computadora.</p>
+      <div id="sii"></div></section>
     <section class="card"><h2>Grabación de la sesión</h2><div id="video"></div></section>
 
     <section class="card"><h2>Portafolio de Evidencias</h2><div id="portafolio"></div></section>
@@ -112,14 +118,14 @@ montarTutoriales();
 const TUTO_VERIF = botonTutorial('evaluador_verificacion', 'Tutorial');
 import { cargar, candidatos, evaluacionDe, guardarEvaluacion, fasesPagadas, sincronizarEvaluaciones } from './js/admin-data.js';
 import { sesion } from './js/cuenta.js';
-import { recuperar } from './js/almacen-grande.js';
+import { recuperar, guardarGrande, leerGrande, borrarGrande } from './js/almacen-grande.js';
 import { imagenesDe } from './js/portafolio-imagenes.js';
 import { estadoPortafolio, htmlAvance, CSS_AVANCE } from './js/portafolio-avance.js';
 import { montarFirmaSimple, firmaHtml } from './js/firma-simple.js';
 import { lineaDeTiempo, ETAPAS, JUICIOS, juicioOficial, CAMPOS_CEDULA, TEXTO_ACUERDO, validarCedula, publicarCedula, guardarBorrador,
          cedulaPublicada, calificarIec, validarIec, sugerenciasIec, guardarIec, seccionesIec, CUESTIONARIO_IEC,
          GRUPOS_CUESTIONARIO, letraDe, normalizarRespuesta, esCorrecta, correctaTexto, calificarCuestionario,
-         SECCIONES_PORTAFOLIO, avisosPortafolio, mensajeWhatsApp, telefonoWhatsApp, firmaValida } from './js/evaluacion.js';
+         SECCIONES_PORTAFOLIO, avisosPortafolio, mensajeWhatsApp, telefonoWhatsApp, firmaValida, CAMPOS_PROCESO } from './js/evaluacion.js';
 import { htmlPortafolio, cedula as hojaCedula, iec as hojaIec, verificacion as hojaVerif, PUNTOS_VERIFICACION } from './js/doc-portafolio.js';
 import { envolverOficial, abrirDocumento } from './js/doc-plan-oficial.js';
 
@@ -145,13 +151,81 @@ if (!clave || !candidato()) {
   $('app').hidden = false;
 }
 
-function pintarTodo() { pintarCabecera(); pintarEtapas(); pintarIec(); pintarCedula(); pintarVerif(); pintarFirmas(); pintarVideo(); pintarPortafolio(); }
+function pintarTodo() { pintarCabecera(); pintarSii(); pintarFechasProceso(); pintarEtapas(); pintarIec(); pintarCedula(); pintarVerif(); pintarFirmas(); pintarVideo(); pintarPortafolio(); }
 
 function pintarCabecera() {
   const c = candidato(), e = ev();
   const t = lineaDeTiempo({ evaluacion: e, evidenciasHechas: !!c.estado?.evidencias?.completado, entregaPagada: !!c.fases?.entrega });
   $('titulo').textContent = c.nombre;
   $('sub').innerHTML = `${esc(c.email)} · ${t.dictamen ? `<span class="chip ${t.dictamen === 'competente' ? 'chip-ok' : 'chip-no'}">${t.dictamen === 'competente' ? 'COMPETENTE' : 'TODAVÍA NO COMPETENTE'}</span>` : '<span class="chip chip-gris">Sin dictamen</span>'}`;
+}
+
+/* ── Fechas del proceso (v53) ── */
+function pintarFechasProceso() {
+  const e = ev(), f = e.fechas || {};
+  const campo = (id, label, valor, { tipo = 'text', ph = '', ayuda = '' } = {}) => `<div class="campo-e"><label for="fp_${id}">${esc(label)}</label>
+    <input id="fp_${id}" data-fp="${id}" type="${tipo}" value="${esc(valor || '')}" placeholder="${esc(ph)}">${ayuda ? `<small style="color:var(--muted)">${esc(ayuda)}</small>` : ''}</div>`;
+  $('fechasProc').innerHTML = CAMPOS_PROCESO.map(c => campo(c.id, c.label, f[c.id], { tipo: 'date', ayuda: c.ayuda })).join('')
+    + campo('lugarEvaluacion', 'Lugar de la evaluación', e.lugarEvaluacion, { ph: 'SAN PEDRO GARZA GARCÍA', ayuda: 'Va en el Plan de Evaluación (acuerdos) y en el Formato de Atención a Usuarios.' })
+    + campo('folioSii', 'Folio del SII (Formato de Atención a Usuarios)', e.folioSii, { ph: 'Ej. 3459161' })
+    + campo('cedulaEvaluador', 'Número de cédula del evaluador', e.cedulaEvaluador, { ph: 'Va junto a tu nombre en la Autorización de firma electrónica' })
+    + '<p class="cq-ok" id="fpGuardado" aria-live="polite"></p>';
+}
+$('fechasProc').addEventListener('change', e => {
+  const i = e.target.closest('[data-fp]'); if (!i) return;
+  const k = i.dataset.fp, v = i.value.trim();
+  if (CAMPOS_PROCESO.some(c => c.id === k)) guardar({ fechas: { ...(ev().fechas || {}), [k]: v } });
+  else guardar({ [k]: v });
+  $('fpGuardado').textContent = 'Guardado ✓';
+  setTimeout(() => { const g = $('fpGuardado'); if (g) g.textContent = ''; }, 1800);
+});
+
+/* ── Documentos del SII (v53, escenario 2 de Humberto) ── */
+const SII_DOCS = [['ficha', 'Ficha de Registro'], ['iec', 'Instrumento de Evaluación (IEC)']];
+const claveSii = t => `sii:${clave}:${t}`;
+function pintarSii() {
+  const s = ev().sii || {};
+  $('sii').innerHTML = SII_DOCS.map(([t, n]) => `<div class="port-li"><span><b>${esc(n)}</b><br><small style="color:var(--muted)">${s[t]
+      ? `Subido: ${esc(s[t].nombre)} · ${s[t].paginas || '?'} pág. · ${esc(fechaCorta(s[t].fecha))} · se guarda en la computadora donde se subió`
+      : 'Sin subir: entra el que arma la plataforma'}</small></span>
+    <span style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn-a btn-a--pri" style="cursor:pointer">${s[t] ? 'Reemplazar' : 'Subir PDF del SII'}<input type="file" accept="application/pdf,.pdf" data-sii="${t}" hidden></label>
+      ${s[t] ? `<button class="btn-a btn-a--sec" data-sii-quitar="${t}">Quitar</button>` : ''}</span></div>`).join('') + '<p class="falta" id="siiMsg" aria-live="polite"></p>';
+}
+$('sii').addEventListener('change', async e => {
+  const inp = e.target.closest('[data-sii]'); if (!inp || !inp.files?.[0]) return;
+  const f = inp.files[0], t = inp.dataset.sii;
+  if (f.size > 25 * 1024 * 1024) { $('siiMsg').textContent = 'El PDF pesa más de 25 MB.'; return; }
+  $('siiMsg').textContent = 'Revisando el PDF…';
+  const dato = await new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = mal; r.readAsDataURL(f); });
+  const { revisarPdf } = await import('./js/pdf-util.js');
+  const rev = await revisarPdf(dato, { paginasTexto: 1 });
+  if (!rev.ok) { $('siiMsg').textContent = rev.motivo === 'contrasena' ? 'El PDF tiene contraseña: descárgalo sin contraseña del SII.' : 'El PDF está dañado o no es un PDF.'; return; }
+  try { await guardarGrande(claveSii(t), { dato, nombre: f.name }); }
+  catch { $('siiMsg').textContent = 'No se pudo guardar en esta computadora (almacenamiento lleno o bloqueado).'; return; }
+  guardar({ sii: { ...(ev().sii || {}), [t]: { nombre: f.name, paginas: rev.paginas, fecha: new Date().toISOString() } } });
+  pintarSii();
+});
+$('sii').addEventListener('click', async e => {
+  const b = e.target.closest('[data-sii-quitar]'); if (!b) return;
+  const t = b.dataset.siiQuitar;
+  await borrarGrande(claveSii(t));
+  const s = { ...(ev().sii || {}) }; delete s[t];
+  guardar({ sii: s }); pintarSii();
+});
+/* Las hojas de los PDF del SII, listas para el portafolio */
+async function imagenesSii(avance = () => {}) {
+  const out = {}, s = ev().sii || {};
+  for (const [t, n] of SII_DOCS) {
+    if (!s[t]) continue;
+    const g = await leerGrande(claveSii(t));
+    if (!g?.dato) { avance(`${n} del SII no está en esta computadora`); continue; }
+    avance(`Abriendo ${n} del SII…`);
+    try {
+      const { paginasComoImagenes } = await import('./js/pdf-util.js');
+      out['sii.' + t] = (await paginasComoImagenes(g.dato, { ancho: t === 'iec' ? 1100 : 1400, max: 120 })).map(src => ({ src, pagina: true }));
+    } catch {}
+  }
+  return out;
 }
 
 /* ── Etapas ── */
@@ -433,7 +507,7 @@ $('btnPortafolio').onclick = async e => {
   const btn = $('btnPortafolio'), antes = btn.textContent;
   if (w) w.document.write('<p style="font:16px system-ui;padding:24px">Armando el portafolio integrado… (los PDF entregados se convierten en hojas)</p>');
   const html = htmlPortafolio({ expediente: c, evaluacion: ev(), lote: c.sinAlta ? '' : c.lote,
-    imagenes: await imagenesDe(c, t => { btn.textContent = t; }) });
+    imagenes: { ...(await imagenesDe(c, t => { btn.textContent = t; })), ...(await imagenesSii(t => { btn.textContent = t; })) } });
   btn.textContent = antes;
   const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
   if (w) w.location.href = url; else location.href = url;
