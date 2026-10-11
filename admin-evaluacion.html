@@ -172,7 +172,7 @@ function pintarFechasProceso() {
     <input id="fp_${id}" data-fp="${id}" type="${tipo}" value="${esc(valor || '')}" placeholder="${esc(ph)}">${ayuda ? `<small style="color:var(--muted)">${esc(ayuda)}</small>` : ''}</div>`;
   $('fechasProc').innerHTML = CAMPOS_PROCESO.map(c => campo(c.id, c.label, f[c.id], { tipo: 'date', ayuda: c.ayuda })).join('')
     + campo('lugarEvaluacion', 'Lugar de la evaluación', e.lugarEvaluacion, { ph: 'SAN PEDRO GARZA GARCÍA', ayuda: 'Va en el Plan de Evaluación (acuerdos) y en el Formato de Atención a Usuarios.' })
-    + campo('folioSii', 'Folio del SII (Formato de Atención a Usuarios)', e.folioSii, { ph: 'Ej. 3459161' })
+    + campo('folioSii', 'Folio del SII (Formato de Atención a Usuarios)', e.folioSii, { ph: 'Ej. 3459161', ayuda: 'Te lo da la SEP cuando inicias el proceso en el portal. Va en la pág. 2 del portafolio.' })
     + campo('cedulaEvaluador', 'Número de cédula del evaluador', e.cedulaEvaluador, { ph: 'Va junto a tu nombre en la Autorización de firma electrónica' })
     + '<p class="cq-ok" id="fpGuardado" aria-live="polite"></p>';
 }
