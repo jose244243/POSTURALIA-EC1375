@@ -20,8 +20,12 @@ const CLAVE_EQUIPO = 'posturalia.evaluador.v1';
 const enNube = () => !!(CONFIG.supabase?.url && CONFIG.supabase?.anonKey);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const FASES_PAGO = CONFIG.fases.filter(f => f.id !== 'registro').map(f => f.id);
-const etiquetaFase = f => (CONFIG.fases.find(x => x.id === f) || {}).label || f;
+/* v60: el apartado (fase «registro») también se cobra: link y monto propios */
+export const FASES_COBRO = CONFIG.fases.map(f => f.id);
+export const MONTO_APARTADO = 2000;
+const etiquetaFase = f => f === 'registro' ? 'Apartado' : (CONFIG.fases.find(x => x.id === f) || {}).label || f;
 export const QUE_INCLUYE = {
+  registro: 'Con tu apartado aseguras tu lugar en el grupo y el equipo abre tu proceso de certificación.',
   alineacion: 'Con el pago de Alineación se abre tu sesión con instructor y su grabación.',
   evaluacion: 'Con el pago de Evaluación se abre tu Plan de Evaluación y tu sesión de evidencias.',
   entrega: 'Con el pago de Entrega procesamos tu certificado ante la SEP (duración aproximada de 90 días) y te lo hacemos llegar.',
@@ -43,14 +47,14 @@ export function validarDatosPago(v = {}) {
   if (clabe && !clabeValida(clabe)) errores.push('La CLABE no es válida: son 18 dígitos y el último es de verificación. Cópiala tal cual de tu banca.');
   if (clabe && !String(v.titular || '').trim()) errores.push('Falta el titular de la cuenta.');
   const links = {};
-  FASES_PAGO.forEach(f => {
+  FASES_COBRO.forEach(f => {
     const u = String(v.links?.[f] || '').trim();
     if (!u) return;
     if (!RE_MP.test(u)) errores.push(`El link de ${etiquetaFase(f)} no parece de Mercado Pago (debe empezar con https://mpago.la/ o https://link.mercadopago.com.mx/…).`);
     else links[f] = u;
   });
   const montos = {};
-  FASES_PAGO.forEach(f => { const n = Math.round(Number(String(v.montos?.[f] ?? '').replace(/[$,\s]/g, ''))); if (n > 0) montos[f] = n; });
+  FASES_COBRO.forEach(f => { const n = Math.round(Number(String(v.montos?.[f] ?? '').replace(/[$,\s]/g, ''))); if (n > 0) montos[f] = n; });
   return { ok: !errores.length, errores, valor: { banco: String(v.banco || '').trim(), titular: String(v.titular || '').trim(), cuenta: String(v.cuenta || '').replace(/\s/g, ''),
     clabe, links, montos, nota: String(v.nota || '').trim().slice(0, 300) } };
 }
@@ -89,7 +93,7 @@ export async function guardarDatosPago(entrada) {
 export function montoPara(correo, fase, cfg) {
   const pr = (leerEquipo().precio || {})[String(correo || '').toLowerCase()];
   const n = Number(pr?.['monto_' + fase]);
-  return n > 0 ? n : (Number(cfg?.montos?.[fase]) > 0 ? Number(cfg.montos[fase]) : null);
+  return n > 0 ? n : (Number(cfg?.montos?.[fase]) > 0 ? Number(cfg.montos[fase]) : fase === 'registro' ? MONTO_APARTADO : null);
 }
 
 /* ── Caja de pago ────────────────────────────────────────────────────── */
