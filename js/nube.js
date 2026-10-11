@@ -50,6 +50,21 @@ export const Auth = {
     return sesion;
   },
 
+  /* v54: ¿sigue viva la sesión de Supabase? { sesion, error }.
+     `error` = no se pudo saber (sin red): quien llama no decide nada.
+     Sin error y sin sesión = venció de verdad (lo de Edge del 10-oct:
+     la plataforma decía «admin» y Supabase ya no reconocía a nadie). */
+  async estado() {
+    const c = await obtenerCliente();
+    if (!c) return { sesion: null, error: 'sin-cliente' };
+    try {
+      const { data, error } = await c.auth.getSession();
+      if (error) return { sesion: null, error: error.message || 'error' };
+      sesion = data?.session ?? null;
+      return { sesion, error: null };
+    } catch (e) { return { sesion: null, error: e?.message || 'error' }; }
+  },
+
   async entrar(correo) {
     const c = await obtenerCliente();
     if (!c) return { ok: false, motivo: 'La plataforma está en modo local.' };
@@ -204,6 +219,14 @@ export const Nube = {
     const columnas = new Set(Object.keys(resto).map(columnaDe).filter(Boolean));
     columnas.forEach(col => { if (col in completa) fila[col] = completa[col]; });
     if (resto.plan && completa.nombre) fila.nombre = completa.nombre;
+    /* v54: nombre y CURP también desde su registro, para que se lean en el
+       Table Editor de Supabase sin abrir el JSON (antes salían vacías hasta
+       llenar el Plan, y la CURP nunca). */
+    const cand = { ...(remotos.candidato || {}), ...(paraSubir.candidato || {}) };
+    if (resto.candidato) {
+      if (!fila.nombre && !(actual?.nombre) && cand.nombre) fila.nombre = String(cand.nombre).trim();
+      if (cand.curp) fila.curp = String(cand.curp).trim().toUpperCase();
+    }
 
     const { error } = await c.from(TABLA).upsert(fila, { onConflict: 'user_id' });
 

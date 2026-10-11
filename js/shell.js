@@ -125,7 +125,7 @@ function construir() {
       </a>
       <button class="sh-tema" type="button" id="shTema">${etiquetaBoton()}</button>
       ${(() => { const s = sesion(); return s && !esp ? `
-      <div class="sh-usuario"><span class="sh-avatar">${iniciales(s)}</span>
+      <div class="sh-usuario"><span class="sh-avatar">${iniciales({ ...s, nombre: (Store.get('candidato', {}) || {}).nombre || s.nombre })}</span>
         <span class="sh-u-txt"><b>${(Store.get('candidato', {}).nombre || s.nombre || s.correo).replace(/[<>&"]/g, '')}</b><small>${s.correo.replace(/[<>&"]/g, '')}</small></span></div>
       <button class="sh-tema sh-salir" type="button" id="shSalir">${icono('flecha', 16)} Cerrar sesión</button>` : ''; })()}
       <a class="sh-instalar" href="#" id="shInstalar" data-visible="no">${icono('descarga', 17)} Instalar como app</a>
@@ -183,7 +183,7 @@ function barraDerecha() {
   const s = sesion();
   const nombre = s ? String((Store.get('candidato', {}) || {}).nombre || s.nombre || s.correo || '').trim().split(/\s+/)[0] : '';
   der.innerHTML = `<button type="button" class="sh-top-tema" aria-label="Modo oscuro / claro" title="Modo oscuro / claro">${icono('luna', 16)}</button>
-    ${s ? `<span class="sh-top-u"><span class="sh-avatar">${iniciales(s)}</span><span class="sh-top-n">${nombre.replace(/[<>&"]/g, '')}</span></span>` : ''}`;
+    ${s ? `<span class="sh-top-u"><span class="sh-avatar">${iniciales({ ...s, nombre: (Store.get('candidato', {}) || {}).nombre || s.nombre })}</span><span class="sh-top-n">${nombre.replace(/[<>&"]/g, '')}</span></span>` : ''}`;
   der.querySelector('.sh-top-tema').onclick = () => { alternarTema(); refrescarShell(); };
   top.appendChild(der);
   return der;

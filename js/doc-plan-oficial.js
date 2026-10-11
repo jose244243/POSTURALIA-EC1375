@@ -44,8 +44,13 @@ function bloque(b) {
      "Imprimir / Guardar PDF". Varias hojas = un solo PDF (el portafolio). */
 export function estilosOficiales() {
   return `
-  @page { size: letter; margin: 12mm 16mm 12mm 16mm }
-  * { box-sizing: border-box }
+  /* v54 · Márgenes de hoja en 0 y el margen va adentro (encabezado y pie
+     de cada hoja): así Chrome NO imprime su propio encabezado y pie (fecha,
+     título, la dirección blob:… y «1/144») aunque la opción esté activada.
+     Y los grises/negros del formato se imprimen aunque «Gráficos de fondo»
+     esté apagado (print-color-adjust). Portafolio de Pedro, 10-oct. */
+  @page { size: letter; margin: 0 }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important }
   body { margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #000; background: #fff }
   .hoja { width: 100%; border-collapse: collapse; break-before: page }
   .hoja:first-of-type { break-before: auto }
@@ -76,27 +81,39 @@ export function estilosOficiales() {
   .nota { background: #c9c9c9; border: 1px solid #000; padding: 6px 8px; font-family: 'Times New Roman', serif; font-size: 11pt; text-align: justify; margin: 16px 0 }
   .bloque-gris { background: #a6a6a6; color: #000; min-height: 200mm; padding: 16mm 12mm; font-family: 'Times New Roman', serif; font-size: 16pt; line-height: 1.5 }
   .bloque-gris .tit { background: #d9d9d9; color: #fff; font-size: 26pt; font-weight: bold; text-align: center; padding: 10px; margin: -6mm -2mm 18mm }
-  .separador { background: #a6a6a6; min-height: 200mm; display: flex; align-items: center; justify-content: center; font-family: 'Times New Roman', serif; font-size: 20pt; color: #fff }
+  .separador { background: #aeaaaa; min-height: 200mm; display: flex; align-items: center; justify-content: center; font-family: 'Times New Roman', serif; font-size: 18pt; color: #000 }
   .barra { position: sticky; top: 0; background: #0d2a6e; color: #fff; padding: 10px 16px; font: 600 14px system-ui, sans-serif; display: flex; gap: 12px; align-items: center; justify-content: space-between; z-index: 5 }
   .barra button { font: inherit; padding: 8px 16px; border-radius: 8px; border: 0; background: #FFD700; color: #0a1f52; cursor: pointer }
   .papel { max-width: 216mm; margin: 16px auto; background: #fff; padding: 12mm 16mm; box-shadow: 0 4px 24px rgba(0,0,0,.18) }
   @media screen { body { background: #e5e7eb } .hoja { margin-bottom: 18mm } }
-  @media print { .barra { display: none } .papel { margin: 0; padding: 0; box-shadow: none; max-width: none } body { background: #fff } }`;
+  @media print { .barra { display: none } .papel { margin: 0; padding: 0 16mm; box-shadow: none; max-width: none } body { background: #fff }
+    .hoja > thead td { padding-top: 11mm } .hoja > tfoot td { padding-bottom: 9mm }
+    .marcador-oficial { margin: 0 -16mm; padding: 11mm 16mm }
+    .sii-hoja { margin-left: -16mm !important; margin-right: -16mm !important } }`;
 }
 
 /* sinLogos (v53, Humberto): los documentos del candidato con SU usuario
    (DOC 1–5) no llevan los logos de CONOCER ni de la ECE. */
-export function hoja(titulo, cuerpo, { sinTitulo = false, sinLogos = false } = {}) {
+/* v54: sinPie (sin el pie del Centro Evaluador) y filete (la raya guinda de
+   arriba sin logos) para las hojas del Autodiagnóstico, como el FORMATO 2026
+   (págs. 8–19); sinFilete quita la raya negra bajo los logos (portada). */
+export function hoja(titulo, cuerpo, { sinTitulo = false, sinLogos = false, sinPie = false, filete = false, sinFilete = false } = {}) {
   const ce = CONFIG.centroEvaluacion || {};
   const L = sinLogos ? {} : (ce.logos || {});
+  if (filete) return `<table class="hoja">
+  <thead><tr><td><div style="border-top:2px solid #7f1d1d;margin:0 0 6mm"></div></td></tr></thead>
+  ${sinPie ? '' : `<tfoot><tr><td><div class="pie">SUC . CENTRO EVALUADOR <b>${esc(ce.clave || '')}</b> ${esc(ce.nombre || '')}<br>
+    ${esc(ce.direccion || '')} ${esc(ce.telefono || '')}</div></td></tr></tfoot>`}
+  <tbody><tr><td>${cuerpo}</td></tr></tbody>
+</table>`;
   return `<table class="hoja">
-  <thead><tr><td><div class="enc">
+  <thead><tr><td><div class="enc"${sinFilete ? ' style="border-bottom:0"' : ''}>
     <div class="logos">
       ${L.izq ? `<img src="${abs(L.izq)}" alt="">` : ''}${L.centro ? `<img src="${abs(L.centro)}" alt="">` : ''}${L.der ? `<img src="${abs(L.der)}" alt="">` : ''}
     </div>
     ${sinTitulo ? '' : `<h1>${esc(titulo)}</h1>`}</div></td></tr></thead>
-  <tfoot><tr><td><div class="pie">SUC . CENTRO EVALUADOR <b>${esc(ce.clave || '')}</b> ${esc(ce.nombre || '')}<br>
-    ${esc(ce.direccion || '')} ${esc(ce.telefono || '')}</div></td></tr></tfoot>
+  ${sinPie ? '' : `<tfoot><tr><td><div class="pie">SUC . CENTRO EVALUADOR <b>${esc(ce.clave || '')}</b> ${esc(ce.nombre || '')}<br>
+    ${esc(ce.direccion || '')} ${esc(ce.telefono || '')}</div></td></tr></tfoot>`}
   <tbody><tr><td>${cuerpo}</td></tr></tbody>
 </table>`;
 }

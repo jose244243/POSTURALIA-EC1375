@@ -322,27 +322,22 @@ export const SECCIONES_PORTAFOLIO = [
   { id: 'ficha_registro', titulo: 'Ficha de Registro (SII / RENAP)', generado: true },
   { id: 'curp',      titulo: 'CURP', modulo: 'evidencias', doc: 'curp' },
   { id: 'ine',       titulo: 'INE (ambos lados)', modulo: 'evidencias', doc: 'ine' },
-  { id: 'autodiag',  titulo: 'Autodiagnóstico (formato CONOCER, 16 hojas)', generado: true },
+  { id: 'autodiag',  titulo: 'Autodiagnóstico (formato CONOCER)', generado: true },
   { id: 'derechos',  titulo: 'Tríptico de Derechos y Obligaciones', generado: true },
   { id: 'sep2',      titulo: '2. Recopilación de Evidencias', separador: true },
   { id: 'plan',      titulo: 'Plan de Evaluación', generado: true },
   { id: 'iec',       titulo: 'Instrumento de Evaluación de Competencia (IEC completo, foliado)', generado: true },
   { id: 'productos', titulo: 'Productos DOC 1–5: ficha de registro, consentimiento, plan de sesión, plan de seguimiento y encuesta del usuario', modulo: 'documentos', docs: ['ficha', 'consentimiento', 'plan_sesion', 'plan_seguimiento', 'encuesta_usuario'] },
-  { id: 'video',     titulo: 'Liga de la grabación de la sesión', generado: true },
   { id: 'sep3',      titulo: '3. Cierre de Evaluación', separador: true },
   { id: 'cedula',    titulo: 'Cédula de Evaluación', generado: true },
   { id: 'encuesta',  titulo: 'Encuesta de Satisfacción del Proceso de Evaluación', modulo: 'encuesta', doc: 'encuesta' },
-  { id: 'verificacion', titulo: 'Verificación Interna del Proceso de Evaluación', generado: true },
   { id: 'cedula_servicio', titulo: 'Cédula de Evaluación del Servicio a usuarios', generado: true },
+  { id: 'verificacion', titulo: 'Verificación Interna del Proceso de Evaluación', generado: true },
   { id: 'atencion',  titulo: 'Formato de Atención a Usuarios', generado: true },
   { id: 'sep4',      titulo: '4. Anexos', separador: true },
   { id: 'acuses',    titulo: 'Acuses de recibido: tríptico, cédula y plan', generado: true },
   { id: 'acuse_plan',titulo: 'Acuse de recibido — Plan de Evaluación', modulo: 'plan', doc: 'acusePlanEvaluacion' },
   { id: 'firma_electronica', titulo: 'Autorización de firma electrónica', generado: true },
-  /* Como Paideia (22 sep): la foto para el diploma y los certificados de
-     formación van al final, en su propio bloque de Anexos. Los certificados
-     son opcionales, así que solo la foto genera aviso. */
-  { id: 'foto_certificados', titulo: 'Foto para el diploma y certificados de formación', modulo: 'evidencias', doc: 'fotoDiploma' },
   { id: 'contraportada', titulo: 'Contraportada', generado: true },
 ];
 
@@ -356,7 +351,8 @@ export function avisosPortafolio(expediente, ev = {}) {
   const datosDe = m => expediente?.estado?.[m]?.datos || {};
   SECCIONES_PORTAFOLIO.forEach(s => {
     if (!s.modulo) return;
-    const docs = datosDe(s.modulo).documentos || {};
+    /* v54: INE y CURP llegan del registro (candidato); los de antes, de Evidencias */
+    const docs = { ...(s.modulo === 'evidencias' ? (expediente?.candidato?.documentos || {}) : {}), ...(datosDe(s.modulo).documentos || {}) };
     const faltan = (s.docs || [s.doc]).filter(k => !docs[k] && !docs[`firmado_${k}`]);
     if (faltan.length) avisos.push(`Falta «${s.titulo}» (el candidato todavía no lo entrega)`);
   });

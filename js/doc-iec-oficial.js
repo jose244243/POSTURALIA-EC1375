@@ -255,7 +255,18 @@ function figuraEjes() {
       <g font-family="Arial" font-size="13" font-weight="bold"><text x="64" y="189">A</text><text x="122" y="92">B</text><text x="8" y="92">C</text></g>
     </svg></div>`;
 }
-export const figura = img => !img ? '' : img.tipo === 'ejes_cuerpo' ? figuraEjes() : figuraCuadrantes(img.leyenda || []);
+/* v54: las MISMAS figuras del IEC del SII (el monito de los ejes y la lámina
+   de cuadrantes abdominales), no dibujos propios: Fernando pidió que el
+   examen se vea idéntico al cuestionario del portafolio. */
+const figuraReal = (archivo, alt, ancho) => `<div class="ie-fig" data-fig="${alt}"><img src="${new URL(archivo, location.href).href}" alt="${alt}" style="max-width:${ancho}px;width:100%;height:auto;display:block"></div>`;
+/* El monito sale de la misma lámina del SII (sii-figura-1.jpg, 1544 × 864),
+   recortado a la figura (x 225–450, y 195–640) a 170 px de ancho. */
+const figuraEjesReal = () => `<div class="ie-fig" data-fig="Ejes del cuerpo"><div role="img" aria-label="Ejes del cuerpo" style="position:relative;width:170px;height:336px;overflow:hidden">
+  <img src="${new URL('formatos/sii-figura-1.jpg', location.href).href}" alt="" style="position:absolute;left:-170px;top:-147px;width:1167px;max-width:none;height:auto"></div></div>`;
+export const figura = img => !img ? '' : img.tipo === 'ejes_cuerpo'
+  ? figuraEjesReal()
+  : figuraReal('formatos/sii-figura-2.jpg', 'Cuadrantes abdominales', 420);
+export const figuraDibujada = img => !img ? '' : img.tipo === 'ejes_cuerpo' ? figuraEjes() : figuraCuadrantes(img.leyenda || []);
 
 /* Letras de la respuesta del candidato, una por renglón de la izquierda */
 const letrasPorRenglon = (q, v) => {

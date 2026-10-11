@@ -54,10 +54,11 @@ export function estadoPortafolio(x = {}, ev = {}) {
   const fichaOk = !!(cand.nombre && cand.curp && foto);
   add(G1, 'Ficha de Registro (SII / RENAP)', fichaOk ? 'listo' : 'falta',
     { de: 'autodiagnostico', detalle: fichaOk ? `${cand.nombre} · ${cand.curp}` : `Falta: ${[!cand.nombre && 'nombre', !cand.curp && 'CURP', !foto && 'foto'].filter(Boolean).join(', ')}` });
-  const curp = doc(evid.curp, 'CURP');
-  add(G1, 'CURP', curp ? 'listo' : 'falta', { de: 'evidencias', detalle: curp || 'Sube el PDF de gob.mx o una foto' });
-  const ine = doc(evid.ine, 'INE');
-  add(G1, 'INE (frente y reverso)', ine ? 'listo' : 'falta', { de: 'evidencias', detalle: ine || 'Sube el frente y el reverso' });
+  const dc = cand.documentos || {};
+  const curp = doc(dc.curp, 'CURP') || doc(evid.curp, 'CURP');
+  add(G1, 'CURP', curp ? 'listo' : 'falta', { de: 'autodiagnostico', detalle: curp || 'Súbelo en tus datos generales' });
+  const ine = doc(dc.ine, 'INE') || doc(evid.ine, 'INE');
+  add(G1, 'INE (frente y reverso)', ine ? 'listo' : 'falta', { de: 'autodiagnostico', detalle: ine || 'Súbelo en tus datos generales' });
   const nAuto = Object.keys(auto.respuestas || auto.answers || {}).length;
   add(G1, 'Autodiagnóstico (formato CONOCER)', auto.completado ? 'listo' : 'falta',
     { de: 'autodiagnostico', detalle: auto.completado ? `Contestado${auto.porcentaje != null ? ` · ${Math.round(auto.porcentaje)}%` : ''}` : nAuto ? `${nAuto} de 142 reactivos` : 'Sin contestar' });
@@ -76,17 +77,15 @@ export function estadoPortafolio(x = {}, ev = {}) {
   const firmados = PROD.filter(([k]) => archivos(sesDocs[`firmado_${k}`]).some(conArchivo)).map(([, n]) => n);
   add(G2, 'Productos DOC 1–5', prodOk.length === 5 ? 'listo' : 'falta',
     { de: 'documentos', detalle: `${prodOk.length} de 5${sesion ? ' · llenos en línea' : ''}${firmados.length ? ` · firmados: ${firmados.join(', ')}` : ''}${prodOk.length < 5 ? ` · faltan ${PROD.filter(p => !prodOk.includes(p)).map(p => p[1]).join(', ')}` : ''}` });
-  const video = lista(evid.video)[0]?.liga || (typeof evid.video === 'string' ? evid.video : '') || ev.video?.liga;
-  add(G2, 'Liga de la grabación de tu sesión', video ? 'listo' : 'falta', { de: 'evidencias', detalle: video ? 'Guardada' : 'Pega la liga de tu video' });
 
   /* 3 */
   const ced = cedulaPublicada(ev);
   add(G3, 'Cédula de Evaluación', ced ? (firmaValida(ev.firma_candidato) ? 'listo' : 'falta') : 'centro',
     { quien: ced ? 'tú' : 'Centro', de: ced ? 'cedula' : null, detalle: ced ? (firmaValida(ev.firma_candidato) ? `${ced.juicio || ''} · firmada` : 'Publicada · falta tu firma') : 'La publica tu evaluador(a) al calificar' });
   add(G3, 'Encuesta de Satisfacción', enc.completado ? 'listo' : 'falta', { de: 'encuesta', detalle: enc.completado ? `Contestada · ${fecha(enc.fecha)}` : 'Sin contestar' });
+  add(G3, 'Cédula de Evaluación del Servicio', enc.servicio?.medio ? 'listo' : 'falta', { de: 'encuesta', detalle: enc.servicio?.medio ? 'Contestada' : 'Va en tu Encuesta' });
   const v = ev.verificacion || {}, nv = PUNTOS_VERIFICACION_N.filter(n => v[n] === 'si' || v[n] === 'no').length;
   add(G3, 'Verificación Interna', nv === PUNTOS_VERIFICACION_N.length ? 'listo' : 'centro', { quien: 'Centro', detalle: nv ? `${nv} de 14 puntos` : 'La llena el Centro antes de enviar' });
-  add(G3, 'Cédula de Evaluación del Servicio', enc.servicio?.medio ? 'listo' : 'falta', { de: 'encuesta', detalle: enc.servicio?.medio ? 'Contestada' : 'Va en tu Encuesta' });
   add(G3, 'Formato de Atención a Usuarios', enc.atencion?.medio ? 'listo' : 'falta', { de: 'encuesta', detalle: enc.atencion?.medio ? 'Contestado' : 'Va en tu Encuesta' });
 
   /* 4 */
@@ -94,10 +93,6 @@ export function estadoPortafolio(x = {}, ev = {}) {
   add(G4, 'Acuses de recibido (tríptico, plan y cédula)', acuses.length === 3 ? 'listo' : 'falta', { detalle: `${acuses.length} de 3${acuses.length ? ': ' + acuses.join(', ') : ''}` });
   const firmaCand = !!(x?.firma?.dato || x?.firma?.dataUrl);
   add(G4, 'Autorización de firma electrónica', firmaCand ? 'listo' : 'falta', { de: 'evidencias', detalle: firmaCand ? 'Con tu firma guardada' : 'Falta guardar tu firma' });
-  const fd = doc(evid.fotoDiploma, 'Foto');
-  add(G4, 'Foto para el diploma', fd ? 'listo' : 'falta', { de: 'evidencias', detalle: fd || 'De frente, fondo blanco' });
-  const certs = [...archivos(evid.certificados), ...Object.entries(cand.documentos || {}).filter(([k]) => k.startsWith('cert_')).flatMap(([, a]) => archivos(a))].filter(conArchivo);
-  add(G4, 'Certificados / diplomas de formación', certs.length ? 'listo' : 'opcional', { de: 'evidencias', detalle: certs.length ? `${certs.length} archivo${certs.length > 1 ? 's' : ''}` : 'Opcional' });
 
   const cuentan = items.filter(i => i.estado !== 'opcional');
   return { items, listos: cuentan.filter(i => i.estado === 'listo').length, total: cuentan.length,

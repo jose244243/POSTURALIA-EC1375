@@ -48,7 +48,7 @@ export function portada({ candidato = '', evaluador = '', fecha = '', lote = '' 
     <p>Clave del CE ${esc(String(ce().clave || '').replace(/^CE\s*/, ''))}</p>
     <p>Evaluador : ${esc(evaluador)}</p>
     <p>Fecha: ${esc(fechaFormato(fecha))}</p>
-    <p>Lote: ${esc(lote)}</p></div>`, { sinTitulo: true });
+    <p>Lote: ${esc(lote)}</p></div>`, { sinTitulo: true, sinPie: true, sinFilete: true });
 }
 export function indice() {
   const li = t => `<li style="list-style:'✓  '">${t}</li>`;
@@ -59,9 +59,9 @@ export function indice() {
       <li>Recopilación de Evidencias<ul>${li('Plan de Evaluación Acordado con el Candidato')}${li('Instrumento de Evaluación Aplicado al Candidato')}${li('Evidencias complementarias (Las que solicite el IEC)')}</ul></li>
       <li>Cierre de la Evaluación<ul>${li('Cédula de Evaluación del Candidato')}${li('Encuesta de satisfacción del candidato')}${li('Verificación interna (evaluador)')}${li('Formato Servicio a Usuarios (formato evaluación)')}${li('Formato atención a usuarios')}</ul></li>
       <li>Anexos<ul>${li('Acuse de recibido de cédula, plan y tríptico')}${li('Autorización firma electrónica')}</ul></li>
-    </ol></div>`, { sinTitulo: true });
+    </ol></div>`, { sinTitulo: true, sinPie: true, sinFilete: true });
 }
-export const separador = (texto, sub = '') => hoja(texto, `<div class="separador" style="flex-direction:column;gap:8mm">${esc(texto)}${sub ? `<b style="font-size:16pt">${esc(sub)}</b>` : ''}</div>`, { sinTitulo: true });
+export const separador = (texto, sub = '') => hoja(texto, `<div class="separador" style="flex-direction:column;gap:8mm">${esc(texto)}${sub ? `<b style="font-size:16pt">${esc(sub)}</b>` : ''}</div>`, { sinTitulo: true, sinPie: true, sinFilete: true });
 
 /* ── 1. Ficha de Registro (SII / RENAP): doc-portafolio-oficial.js ──── */
 
@@ -170,7 +170,7 @@ export function cedula(ev = {}, { candidato = '', fecha = '' } = {}) {
    naranja, amarilla y verde, con su etiqueta del mismo color. */
 const CARAS = [['Totalmente en desacuerdo', '#e53935', 'triste'], ['Parcialmente en desacuerdo', '#fb8c00', 'triste'],
   ['De acuerdo', '#fdd835', 'feliz'], ['Muy de acuerdo', '#7cb342', 'feliz']];
-const cara = (color, gesto) => `<svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13.5" fill="${color}" stroke="#555" stroke-width="1"/>
+const cara = (color, gesto) => `<svg width="40" height="40" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13.5" fill="${color}" stroke="#555" stroke-width="1"/>
   <circle cx="10.5" cy="12" r="1.6" fill="#222"/><circle cx="19.5" cy="12" r="1.6" fill="#222"/>
   <path d="${gesto === 'feliz' ? 'M9.5 18.5 Q15 23.5 20.5 18.5' : 'M9.5 21.5 Q15 16.5 20.5 21.5'}" stroke="#222" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`;
 
@@ -186,7 +186,7 @@ export function encuesta(enc = {}, { candidato = '', firma = null } = {}) {
     <p class="just" style="font-size:10pt">Conteste las siguientes preguntas marcando con una X la opción que considere adecuada al servicio recibido, conforme a la siguiente escala de evaluación:</p>
     <table class="t"><tr class="gris"><td class="cen" style="width:24px">#</td><td class="cen">Pregunta</td>
       ${CARAS.map(([t, c, g]) => `<td class="cen" style="width:72px;font-size:8.5pt;vertical-align:bottom">${cara(c, g)}<br>${t}</td>`).join('')}</tr>
-      ${ENCUESTA.preguntas.map((p, i) => `<tr><td class="cen">${i + 1}.</td><td style="font-size:10pt">${esc(p)}</td>${[0, 1, 2, 3].map(k => `<td class="x">${col(i) === k ? 'X' : ''}</td>`).join('')}</tr>`).join('')}</table>`);
+      ${ENCUESTA.preguntas.map((p, i) => `<tr${i % 2 ? '' : ' style="background:#d9d9d9"'}><td class="cen">${i + 1}.</td><td style="font-size:10pt">${esc(p)}</td>${[0, 1, 2, 3].map(k => `<td class="x">${col(i) === k ? 'X' : ''}</td>`).join('')}</tr>`).join('')}</table>`);
 }
 
 /* ── Verificación Interna del Proceso de Evaluación ────────────────────── */
@@ -262,8 +262,8 @@ export function htmlPortafolio({ expediente: x, evaluacion: ev = {}, lote = '', 
     indice(),
     separador('1. Datos del Candidato/a', nombre),
     imagenes['sii.ficha']?.length ? fichaSiiSubida(imagenes['sii.ficha'], firmaCand) : htmlFichaSii(c, { foto: lista(imagenes['candidato.fotoRegistro'])[0] || '', firma: firmaCand }),
-    documentoAnexo('CURP', imagenes['evidencias.curp'] || '', 'Comprobante de CURP entregado por el candidato'),
-    documentoAnexo('INE', imagenes['evidencias.ine'] || '', 'Identificación oficial vigente (ambos lados)'),
+    documentoAnexo('CURP', imagenes['candidato.curp'] || imagenes['evidencias.curp'] || '', 'Comprobante de CURP entregado por el candidato'),
+    documentoAnexo('INE', imagenes['candidato.ine'] || imagenes['evidencias.ine'] || '', 'Identificación oficial vigente (ambos lados)'),
     autodiagnosticoOficial(auto, c, { firmaCandidato: firmaCand, firmaEvaluador: ev.firmas?.diagnostico || null, evaluador, decision }),
     triptico(c, { firma: firmaTrip, fecha: F.agenda || auto.triptico?.fecha }),
     separador('2. Recopilación de Evidencias'),
@@ -283,32 +283,23 @@ export function htmlPortafolio({ expediente: x, evaluacion: ev = {}, lote = '', 
       : imagenes['sii.iec']?.length ? documentoAnexo('Instrumento de Evaluación de Competencia (IEC)', imagenes['sii.iec']) : iec(ev, { candidato: nombre, evaluador }),
     marcador('PRODUCTOS'),
     productos(x, imagenes, { firma: firmaCand, fechaEvaluacion: F.evaluacion }),
-    ...(datosMod(x, 'documentos').sesionGenerada && datosMod(x, 'documentos').sesion ? [verificacionEspacio(F.evaluacion
-      ? { ...datosMod(x, 'documentos').sesion, campos: { ...(datosMod(x, 'documentos').sesion.campos || {}), fechaSesion: F.evaluacion } }
-      : datosMod(x, 'documentos').sesion, { ...c, nombre, domicilioCompleto: domicilioCompleto(c), firma: firmaCand })] : []),
-    ligaVideo(ev, x),
+    /* v54 (Fernando, 11-oct): fuera la Verificación del espacio, la hoja de
+       la liga del video y la Foto para el diploma: no vienen en el FORMATO
+       2026 ni en el portafolio de Diego. Siguen en la plataforma para el
+       evaluador; solo no van al PDF. */
     separador('3. Cierre de Evaluación'),
     cedula(ev, { candidato: nombre, fecha: F.evaluacion }),
     encuesta(F.evaluacion ? { ...enc, fecha: F.evaluacion } : enc, { candidato: nombre, firma: firmaDeSello(enc.sello) || firmaCand }),
-    vistaCandidato ? reservada('Verificación Interna del Proceso de Evaluación') : verificacion(ev, { candidato: nombre }),
+    /* Orden del FORMATO 2026 (págs. 38–42): Cédula · Encuesta · Cédula del
+       Servicio · Verificación Interna · Formato de Atención. */
     cedulaServicio(enc, c, { evaluador: `${evaluador}${ce().nombre ? ' · ' + ce().nombre : ''}`, firmaCandidato: firmaDeSello(enc.sello) || firmaCand }),
+    vistaCandidato ? reservada('Verificación Interna del Proceso de Evaluación') : verificacion(ev, { candidato: nombre }),
     formatoAtencion(F.agenda ? { ...enc, fecha: F.agenda } : enc, c, { folio: F.folio, lugar: lugarEval || CONFIG.marca?.ciudad || '', evaluador, firmaCandidato: firmaDeSello(enc.sello) || firmaCand, firmaEvaluador: ev.firmas?.plan || null }),
     separador('4. ANEXOS'),
     acuse('triptico', { evaluador, candidato: nombre, fecha: F.agenda || auto.triptico?.fecha, firma: firmaTrip }),
     acuse('cedula', { evaluador, candidato: nombre, fecha: fechaCed, firma: ev.firma_candidato || null }),
     acuse('plan', { evaluador, candidato: nombre, fecha: F.plan || acusePlan?.fecha, firma: acusePlan?.firma ? firmaPlanCand : null }),
     autorizacionFirma({ candidato: nombre, evaluador, cedulaEvaluador: F.cedulaEvaluador, fecha: F.plan || ced?.fecha || hoyIso(), firma: firmaCand }),
-    /* Foto para el diploma y certificados de formación, al final de Anexos
-       (como Paideia). Los certificados son opcionales: sin ellos no se
-       agrega hoja vacía. */
-    documentoAnexo('Foto para el diploma', imagenes['evidencias.fotoDiploma'] || '', 'Foto para el diploma (de frente, fondo blanco)', { etiqueta: 'FOTO Y CERTIFICADOS' }),
-    /* Los certificados que subió en Evidencias y los de su Ficha de
-       Registro (v47: antes estos últimos no llegaban al portafolio). */
-    ...(() => {
-      const certs = [...lista(imagenes['evidencias.certificados']),
-        ...Object.keys(imagenes).filter(k => k.startsWith('candidato.cert_')).sort().flatMap(k => lista(imagenes[k]))];
-      return certs.length ? [documentoAnexo('Certificados / diplomas de formación', certs)] : [];
-    })(),
     contraportada(),
   ];
   return envolverOficial(`Portafolio de Evidencias — ${nombre}${vistaCandidato ? ' (vista del candidato)' : ''}`, hojas.join(''));

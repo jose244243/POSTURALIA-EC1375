@@ -148,7 +148,29 @@ async function rolDe(correo) {
 export function sesion() {
   return leer(K_SESION, null) || (() => { try { return JSON.parse(sessionStorage.getItem(K_SESION)); } catch { return null; } })();
 }
+/* v54 · Cada navegador guarda el avance de UNA persona. En la prueba del
+   10-oct el panel del admin y la cuenta de un candidato se cruzaron en el
+   mismo navegador: al entrar otra persona, lo que quedaba del anterior se
+   habría subido a SU expediente. Ahora el avance local lleva dueño; si entra
+   alguien distinto, se borra lo local (con la nube, lo del anterior ya está
+   arriba: cerrarSesion lo sube antes de salir) y se baja lo suyo. */
+const K_DUENO = `${NS}.__dueno`;
+export function cambiarDueno(correo) {
+  const nuevo = norm(correo);
+  let previo = '';
+  try {
+    previo = norm(localStorage.getItem(K_DUENO) || '');
+    if (!previo) previo = norm(JSON.parse(localStorage.getItem(`${NS}.candidato`) || 'null')?.email || '');
+  } catch {}
+  if (previo && previo !== nuevo) {
+    try { Object.keys(localStorage).filter(k => k.startsWith(NS + '.')).forEach(k => localStorage.removeItem(k)); } catch {}
+  }
+  try { localStorage.setItem(K_DUENO, nuevo); } catch {}
+  return !!(previo && previo !== nuevo);
+}
+
 function abrirSesion(datos, recordar) {
+  cambiarDueno(datos.correo);
   const s = { ...datos, desde: new Date().toISOString(), motor: enNube() ? 'nube' : 'local' };
   try { localStorage.removeItem(K_SESION); sessionStorage.removeItem(K_SESION); } catch {}
   if (recordar) escribir(K_SESION, s); else { try { sessionStorage.setItem(K_SESION, JSON.stringify(s)); } catch {} }
@@ -159,6 +181,19 @@ function abrirSesion(datos, recordar) {
   return s;
 }
 export async function cerrarSesion() {
+  /* v54: antes de salir, sube lo que quedó pendiente (máx. 5 s): el
+     siguiente que entre en este navegador empieza limpio (cambiarDueno). */
+  const duenoOk = (() => { try { const s = sesion(); return !!s?.correo && norm(localStorage.getItem(K_DUENO) || '') === norm(s.correo); } catch { return false; } })();
+  if (enNube() && duenoOk) {
+    try {
+      const { Store } = await import('./store.js');
+      const r = await Promise.race([Store.sincronizar(), new Promise(res => setTimeout(() => res({ ok: false }), 5000))]);
+      /* Subió todo: el navegador queda limpio para quien entre después. Si no
+         subió (sin red), se queda; si entra otra persona, cambiarDueno lo
+         quita y si vuelve la misma, sigue ahí. */
+      if (r?.ok) { try { Object.keys(localStorage).filter(k => k.startsWith(NS + '.')).forEach(k => localStorage.removeItem(k)); } catch {} }
+    } catch {}
+  }
   try { localStorage.removeItem(K_SESION); sessionStorage.removeItem(K_SESION); } catch {}
   if (enNube()) { try { const { Auth } = await import('./nube.js'); await Auth.salir(); } catch {} }
   window.dispatchEvent(new CustomEvent('cuenta:cambio', { detail: null }));
@@ -341,7 +376,36 @@ export function montarGate(cont, { equipo = false, permitirEvaluador = false, ti
 }
 
 /* Pantalla completa de acceso, encima de la página (candidato o equipo) */
-export function exigirSesion({ equipo = false, permitirEvaluador = false } = {}) {
+/* v54 · Sesión de la plataforma sin sesión de Supabase detrás (venció, se
+   cerró en otra pestaña, otra cuenta): antes se seguía mostrando lo que el
+   navegador tenía guardado, sin aviso (Edge, 10-oct: «no hay ningún Pedro»).
+   Ahora se cierra y se pide entrar de nuevo. Sin red no se decide nada. */
+export async function sesionNubeVigente(s = sesion()) {
+  if (!enNube() || !s?.correo) return true;
+  try {
+    const { Auth } = await import('./nube.js');
+    const r = await Auth.estado();
+    if (r.error) return true;
+    const u = norm(r.sesion?.user?.email || '');
+    return !!u && u === norm(s.correo);
+  } catch { return true; }
+}
+let avisoVencida = '';
+export function exigirSesion(opciones = {}) {
+  const s = sesion();
+  if (!s) return exigirSesionBase(opciones);
+  return sesionNubeVigente(s).then(async ok => {
+    if (!ok) {
+      try { localStorage.removeItem(K_SESION); sessionStorage.removeItem(K_SESION); } catch {}
+      try { const { Auth } = await import('./nube.js'); await Auth.salir(); } catch {}
+      avisoVencida = 'Tu sesión venció. Vuelve a entrar para ver la información al día.';
+      return pedirAcceso(!!opciones.equipo, !!opciones.permitirEvaluador, s.correo);
+    }
+    try { if (!localStorage.getItem(K_DUENO)) cambiarDueno(s.correo); } catch {}
+    return exigirSesionBase(opciones);
+  });
+}
+function exigirSesionBase({ equipo = false, permitirEvaluador = false } = {}) {
   const s = sesion();
   const pasa = x => x && (!equipo || (x.rol === 'admin' || (x.rol === 'evaluador' && permitirEvaluador)));
   if (s && !equipo) return Promise.resolve(s);
@@ -357,7 +421,7 @@ export function exigirSesion({ equipo = false, permitirEvaluador = false } = {})
   }
   return pedirAcceso(equipo, permitirEvaluador);
 }
-function pedirAcceso(equipo, permitirEvaluador) {
+function pedirAcceso(equipo, permitirEvaluador, correoVencido = '') {
   return new Promise(res => {
     const velo = document.createElement('div');
     velo.id = 'veloAcceso';
@@ -366,7 +430,8 @@ function pedirAcceso(equipo, permitirEvaluador) {
       <div style="text-align:center;margin-bottom:18px">
         <div style="font-weight:800;letter-spacing:.06em;color:#0d2a6e">POSTURALIA</div>
         <div style="font-size:.82rem;color:var(--muted,#64748b)">${equipo ? 'Acceso del equipo · ' : 'Certificación '}${esc(CONFIG.marca?.estandar || 'EC1375')}</div>
-      </div><div id="veloGate"></div></div>`;
+      </div>${avisoVencida ? `<p class="cg-txt cg-aviso" role="alert" style="margin-bottom:14px">${esc(avisoVencida)}</p>` : ''}<div id="veloGate"></div></div>`;
+    avisoVencida = '';
     document.body.appendChild(velo);
     document.documentElement.style.overflow = 'hidden';
     /* Con sesión abierta ya se sabe quién es: no se le vuelve a pedir el
@@ -375,7 +440,7 @@ function pedirAcceso(equipo, permitirEvaluador) {
     const s = sesion();
     const yaDentro = equipo && s?.correo && !(s.rol === 'admin' || (s.rol === 'evaluador' && permitirEvaluador));
     montarGate(velo.querySelector('#veloGate'), {
-      correoInicial: s?.correo || '', pasoInicial: yaDentro ? 'noEquipo' : '',
+      correoInicial: s?.correo || correoVencido || '', pasoInicial: yaDentro ? 'noEquipo' : correoVencido ? 'entrar' : '',
       equipo, permitirEvaluador, titulo: equipo ? 'Acceso del equipo' : 'Entra a tu proceso',
       onListo: s2 => { velo.remove(); document.documentElement.style.overflow = ''; res(s2); },
     });

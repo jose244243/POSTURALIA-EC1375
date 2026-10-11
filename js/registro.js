@@ -16,7 +16,7 @@
    ========================================================================== */
 import { Store } from './store.js';
 import { CONFIG } from './config.js';
-import { prepararArchivo, guardarArchivo, quitarArchivo, leerArchivo, pesoLegible } from './archivos.js';
+import { prepararArchivo, guardarArchivo, quitarArchivo, leerArchivo, leerArchivos, archivoCompleto, mandarAlAlmacen, pesoLegible } from './archivos.js';
 
 const MOD = 'candidato';
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
@@ -45,6 +45,12 @@ export const ESTADOS_MX = ['Aguascalientes', 'Baja California', 'Baja California
 /* Domicilio completo en una línea (para los formatos que lo piden así) */
 export const domicilioCompleto = (d = {}) => [d.domicilio, d.colonia && 'Col. ' + d.colonia, d.cp && 'C.P. ' + d.cp, d.municipio, d.ciudad !== d.municipio && d.ciudad, d.estado]
   .map(x => String(x || '').trim()).filter(Boolean).join(', ');
+
+/* v54 · INE y comprobante de CURP se suben aquí, al registrarse, junto con
+   la foto y los certificados (Fernando, 11-oct: «se debió haber subido desde
+   el inicio»). Quien ya los había subido en Evidencias, los conserva. */
+export const tieneDocRegistro = clave => leerArchivos(MOD, clave).some(archivoCompleto)
+  || leerArchivos('evidencias', clave).some(archivoCompleto);
 
 function certificadosCompletos(d = datos()) {
   const filas = (d.certificados || []).filter(c => (c.nombre || '').trim() || leerArchivo(MOD, `cert_${c.id}`));
@@ -75,6 +81,8 @@ export function faltantes(d = datos()) {
       : ['Subir tus certificados de formación previa (o marcar que no tienes ninguno)']));
   }
   if (!leerArchivo(MOD, 'fotoRegistro')) f.push('Subir tu foto para la Ficha de Registro');
+  if (!tieneDocRegistro('ine')) f.push('Subir tu identificación oficial (INE o pasaporte, frente y reverso)');
+  if (!tieneDocRegistro('curp')) f.push('Subir tu comprobante de CURP');
   if (soloDigitos(d.telefonoCelular).length !== 10) f.push('Teléfono celular (10 dígitos)');
   if (!RE_EMAIL.test(d.email || '')) f.push('Correo electrónico');
   if (!d.fechaAplicacion) f.push('Fecha de aplicación');
@@ -140,6 +148,12 @@ export function montarDatosCandidato(cont, onCambio = () => {}) {
         <figcaption style="font-size:.74rem;color:var(--muted);margin-top:4px">Ejemplos oficiales del CONOCER. Compara tu foto contra estas antes de subirla.</figcaption>
       </figure>` : ''}
       <div id="rg_foto"></div>`)}
+    ${campo('ine', 'Identificación oficial (INE o pasaporte)', true, `
+      <small class="rg-ayuda">Copia legible y vigente, de frente y reverso (dos fotos o un PDF). Va en tu portafolio de evidencias.</small>
+      <div id="rg_doc_ine"></div>`)}
+    ${campo('curpDoc', 'Comprobante de CURP', true, `
+      <small class="rg-ayuda">La constancia que descargas de gob.mx/curp (PDF) o una foto legible. Va en tu portafolio de evidencias.</small>
+      <div id="rg_doc_curp"></div>`)}
     <label class="ev-check" style="margin:6px 0 2px">
       <input type="checkbox" id="rg_renap" ${d.renapAutorizado ? 'checked' : ''}>
       <span>Autorizo la publicación de mis datos en el RENAP (Registro Nacional de Personas con Competencias Certificadas)</span>
@@ -161,7 +175,7 @@ export function montarDatosCandidato(cont, onCambio = () => {}) {
     const ok = {
       nombre: !!(x.nombre || '').trim(), curp: RE_CURP.test((x.curp || '').toUpperCase()),
       domicilio: !!(x.domicilio || '').trim(), certificados: !!(x.sinCertificados || certificadosCompletos(x)),
-      foto: !!leerArchivo(MOD, 'fotoRegistro'), telefonoCelular: soloDigitos(x.telefonoCelular).length === 10,
+      foto: !!leerArchivo(MOD, 'fotoRegistro'), ine: tieneDocRegistro('ine'), curpDoc: tieneDocRegistro('curp'), telefonoCelular: soloDigitos(x.telefonoCelular).length === 10,
       email: RE_EMAIL.test(x.email || ''), fechaAplicacion: !!x.fechaAplicacion, telefonoCasa: true,
     };
     cont.querySelectorAll('[data-estado]').forEach(s => {
@@ -283,6 +297,37 @@ export function montarDatosCandidato(cont, onCambio = () => {}) {
     };
   };
 
+  /* ── INE y CURP (v54) ── */
+  const pintarDoc = (clave, cajaId, multiple) => {
+    const caja = $(`#${cajaId}`);
+    const aqui = leerArchivos(MOD, clave).filter(archivoCompleto);
+    const antes = aqui.length ? [] : leerArchivos('evidencias', clave).filter(archivoCompleto);
+    caja.innerHTML = `
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px">
+        ${aqui.map((a, i) => `<span class="rg-ok">✓ ${esc(a.nombre || 'Archivo')}${a.bytes ? ' · ' + esc(pesoLegible(a.bytes)) : ''}
+          ${Store.soloLectura ? '' : `<button type="button" class="rg-quitar" data-quitar-doc="${clave}" data-i="${i}">Quitar</button>`}</span>`).join('')}
+        ${antes.length ? `<small class="rg-ok">✓ Ya lo subiste en Evidencias (${esc(antes[0].nombre || 'archivo')})</small>` : ''}
+        ${Store.soloLectura ? '' : `<label class="btn-plat btn-plat--secundario rg-subir">${aqui.length ? (multiple ? 'Agregar otro' : 'Cambiar') : 'Subir archivo'}
+          <input type="file" data-sube-doc="${clave}" accept="image/*,application/pdf"${multiple ? ' multiple' : ''} hidden></label>`}
+      </div><div class="rg-err" data-err-doc="${clave}"></div>`;
+    if (Store.soloLectura) return;
+    caja.querySelector(`[data-sube-doc]`).onchange = async e => {
+      const errs = []; let agregar = multiple && aqui.length > 0;
+      const curp = String(datos().curp || '').toUpperCase();
+      for (const f of [...e.target.files]) {
+        const reg = await prepararArchivo(f, { modulo: MOD, clave, curp });
+        if (reg.rechazo) { errs.push(`${f.name}: ${reg.rechazo}`); continue; }
+        let res = guardarArchivo(MOD, clave, reg, { agregar });
+        if (!res.ok && res.motivo === 'sin-espacio') { const lig = await mandarAlAlmacen(reg, { modulo: MOD, clave }); if (lig) res = guardarArchivo(MOD, clave, lig, { agregar }); }
+        if (!res.ok) { errs.push(`${f.name}: no se pudo guardar en este navegador.`); continue; }
+        agregar = multiple;
+      }
+      pintarDoc(clave, cajaId, multiple); estados();
+      if (errs.length) caja.querySelector(`[data-err-doc]`).textContent = errs.join(' · ');
+    };
+    caja.querySelectorAll('[data-quitar-doc]').forEach(b => b.onclick = () => { quitarArchivo(MOD, clave, +b.dataset.i); pintarDoc(clave, cajaId, multiple); estados(); });
+  };
+
   if (!document.getElementById('rg-estilo')) {
     const st = document.createElement('style'); st.id = 'rg-estilo';
     st.textContent = `
@@ -307,5 +352,5 @@ export function montarDatosCandidato(cont, onCambio = () => {}) {
     document.head.appendChild(st);
   }
 
-  pintarCerts(); pintarFoto(); estados();
+  pintarCerts(); pintarFoto(); pintarDoc('ine', 'rg_doc_ine', true); pintarDoc('curp', 'rg_doc_curp', false); estados();
 }

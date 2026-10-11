@@ -54,11 +54,12 @@ export const CONFIG = {
     telefono:   '7821138710',
     evaluadora: '',          // nombre por omisión; el Plan permite cambiarlo
     umbral:     97.64,
-    /* 6-oct: Fernando pidió quitar el logo del Colegio Ilustre de los
-       documentos. Quedan CONOCER a la izquierda y la ECE a la derecha, como
-       en el portafolio de Humberto. Para volver a ponerlo:
-       centro: 'formatos/logos/centro.jpg'. */
-    logos: { izq: 'formatos/logos/conocer.jpg', centro: '', der: 'formatos/logos/ece.png' },
+    /* El logo del centro es el del Centro Evaluador que firma el proceso y
+       va junto con su clave, nombre y dirección (los cuatro cambian juntos).
+       11-oct: el FORMATO 2026 lo trae al centro de cada hoja; hoy el CE es
+       el Colegio Ilustre (CE1399), así que sale. Si cambian de CE, se
+       cambian aquí clave, nombre, dirección, teléfono y este logo. */
+    logos: { izq: 'formatos/logos/conocer.jpg', centro: 'formatos/logos/centro.jpg', der: 'formatos/logos/ece.png' },
   },
 
   /* ── Backend ────────────────────────────────────────────────────────────
@@ -90,7 +91,7 @@ export const CONFIG = {
     // Cuántos reactivos se presentan en el examen
     reactivosExamen: 37,
     // Barajar el orden de los reactivos en cada intento
-    barajarExamen: true,
+    barajarExamen: false,   // v54: orden oficial, como el IEC
     // Mostrar la respuesta correcta tras fallar
     retroalimentacionInmediata: false,
   },
@@ -158,7 +159,7 @@ export const CONFIG = {
     { id: 'encuesta',        nombre: 'Encuesta de Satisfacción',archivo: 'encuesta.html',        listo: true, fase: 'evaluacion', pago: 'evaluacion',
       docs: ['encuesta'] },
     { id: 'evidencias',      nombre: 'Evidencias',              archivo: 'evidencias.html',      listo: true, fase: 'entrega', pago: 'evaluacion',
-      docs: ['zoom', 'video', 'ine', 'curp', 'fotoDiploma'] },
+      docs: ['zoom', 'video'] },   // v54: INE, CURP, foto y certificados se suben en el registro
     { id: 'entrega',         nombre: 'Entrega',                 archivo: 'entrega.html',         listo: true, fase: 'entrega', requiere: 'evaluador', cajaPago: 'entrega' },
   ],
 

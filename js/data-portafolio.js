@@ -145,6 +145,7 @@ export const CEDULA_SERVICIO = {
   ],
 };
 
+/* v54: INE, CURP, foto y certificados se suben al registrarse (Autodiagnóstico). */
 export const EVIDENCIAS = [
  {
   "icon": "monitor",
@@ -160,33 +161,5 @@ export const EVIDENCIAS = [
   "required": true,
   "isLink": true,
   "clave": "video"
- },
- {
-  "icon": "archivo",
-  "titulo": "Identificación oficial (INE o Pasaporte)",
-  "desc": "Copia legible de tu identificación vigente, frente y reverso.",
-  "required": true,
-  "clave": "ine"
- },
- {
-  "icon": "archivo",
-  "titulo": "Comprobante CURP",
-  "desc": "Constancia o copia de tu CURP.",
-  "required": true,
-  "clave": "curp"
- },
- {
-  "icon": "monitor",
-  "titulo": "Foto para tu diploma",
-  "desc": "De frente, fondo blanco, sin texturas, formal y nítida. Orejas descubiertas, vestimenta clara y lisa, sin retoques, no mayor a 2 meses de antigüedad.",
-  "required": true,
-  "clave": "fotoDiploma"
- },
- {
-  "icon": "medalla",
-  "titulo": "Certificados o diplomas de formación",
-  "desc": "Respaldo adicional de tus especialidades. Opcional.",
-  "required": false,
-  "clave": "certificados"
  }
 ];

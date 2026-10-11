@@ -28,11 +28,12 @@ const firmaCaja = (f, alto = 46) => `<div style="height:${alto + 4}px;display:fl
 
 export function estilosPortafolioOficial() {
   return `
-  .ad-portada { text-align: center; padding-top: 30mm }
-  .ad-portada h2 { font-size: 30pt; margin: 0 0 4mm; letter-spacing: .04em }
-  .ad-portada .ec { font-size: 20pt; font-weight: bold; margin: 0 0 6mm }
-  .ad-portada .nom { font-size: 14pt; margin: 0 14mm 10mm; line-height: 1.4 }
-  .ad-portada hr { border: 0; border-top: 2px solid #7f1d1d; margin: 2mm 20mm }
+  /* v54: como el FORMATO 2026 (pág. 7): letras grandes azul marino y dos filetes azules */
+  .ad-portada { text-align: center; padding-top: 8mm; color: #0f2a6b }
+  .ad-portada h2 { font-size: 34pt; font-weight: normal; margin: 0; letter-spacing: .01em }
+  .ad-portada .ec { font-size: 26pt; font-weight: bold; margin: 0 0 2mm }
+  .ad-portada .nom { font-size: 24pt; margin: 0 6mm 12mm; line-height: 1.3 }
+  .ad-portada hr { border: 0; border-top: 1.5px solid #2a4a8a; margin: 2mm 4mm }
   .ad-portada .lema { font-style: italic; margin: 14mm 18mm 0; font-size: 12pt; line-height: 1.5 }
   .ad-portada .lema b { color: #b91c1c; font-weight: normal }
   .barra-n { background: #000; color: #fff; font-weight: bold; padding: 1.5mm 3mm; margin: 4mm 0 2mm; font-size: 11pt }
@@ -54,6 +55,12 @@ export function estilosPortafolioOficial() {
   .trip ul { margin: 0 0 2mm 5mm; padding: 0 } .trip li { margin: 0 0 1mm; text-align: justify; font-size: 9.5pt }
   .trip p { font-size: 9.5pt; text-align: justify; margin: 0 0 2mm }
   .trip-cols { columns: 2; column-gap: 8mm }
+  @page trip-h { size: letter landscape; margin: 0 }
+  .trip-hoja { page: trip-h; break-before: page; break-after: page; display: flex; align-items: center; justify-content: center; height: 215mm; width: 279mm; overflow: hidden }
+  .trip-lienzo { position: relative; width: 271mm }
+  .trip-img { display: block; width: 100%; height: auto }
+  @media screen { .trip-hoja { width: auto; height: auto; padding: 6mm 0; margin: 0 0 18mm } .trip-lienzo { width: 100% } }
+  @media print { .trip-hoja { margin: 0 -16mm } }
   .fmt-t { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 0 0 3mm } .fmt-t td { border: 1px solid #000; padding: 1.3mm 2mm; vertical-align: middle }
   .fmt-t .lb { background: #e5e5e5; font-weight: bold } .fmt-t .x { width: 16mm; text-align: center; font-weight: bold }
   .fmt-t .cap { font-size: 7.5pt; color: #333 }
@@ -90,7 +97,7 @@ export function autodiagnosticoOficial(auto = {}, c = {}, { firmaCandidato = nul
 
   const portada = hoja('Autodiagnóstico', `<div class="ad-portada">
       <h2>AUTODIAGNÓSTICO</h2><div class="ec">EC1375</div><div class="nom">${EC_CORTO}</div><hr><hr>
-      <p class="lema">Un <b>Sistema Nacional de Competencias de las Personas</b> para Desarrollar el Potencial Productivo, Educativo y el Progreso Social del Capital Humano de México.</p></div>`, { sinTitulo: true });
+      <p class="lema">Un <b>Sistema Nacional de Competencias de las Personas</b> para Desarrollar el Potencial Productivo, Educativo y el Progreso Social del Capital Humano de México.</p></div>`, { sinTitulo: true, sinPie: true, sinFilete: true });
 
   const ind = [['PRESENTACIÓN', '01'], ['DATOS PERSONALES', '02'], ['PROPÓSITO DEL DIAGNÓSTICO', '03'], ['PERFIL RECOMENDADO DEL CANDIDATO A ELABORAR EL DIAGNÓSTICO', '03'], ['INSTRUCCIONES', '03'], ['APLICACIÓN DEL DIAGNÓSTICO', '04'], ['VALORACIÓN', '11']];
   const presentacion = hoja('Autodiagnóstico', `
@@ -101,7 +108,7 @@ export function autodiagnosticoOficial(auto = {}, c = {}, { firmaCandidato = nul
     <p class="just">Los criterios que se diagnostican para la evaluar la competencia del candidato son:</p>
     ${elementos.map(e => { const nom = todos.find(r => r.elemento === e).elementoNombre;
       return `<div class="barra-g">Elemento ${e} de 4</div><p class="just" style="margin:0 0 1mm">${esc(nom)}.</p>
-        <p style="margin:0 0 2mm 6mm">${ELEM_BULLETS[e].map(b => `• ${b}`).join('&nbsp;&nbsp;&nbsp; ')}</p>`; }).join('')}`, { sinTitulo: true });
+        <p style="margin:0 0 2mm 6mm">${ELEM_BULLETS[e].map(b => `• ${b}`).join('&nbsp;&nbsp;&nbsp; ')}</p>`; }).join('')}`, { sinTitulo: true, sinLogos: true, sinPie: true, filete: true });
 
   const fila = (k, v) => `<tr><td class="lb" style="background:#e5e5e5;font-weight:bold;width:52mm">${k}</td><td>${v}</td></tr>`;
   const datos = hoja('Autodiagnóstico', `
@@ -109,7 +116,7 @@ export function autodiagnosticoOficial(auto = {}, c = {}, { firmaCandidato = nul
     <table class="ad-t">${fila('Nombre Completo', esc(c.nombre || ''))}${fila('Curp', esc(c.curp || ''))}${fila('Domicilio', esc(domicilioCompleto(c)))}
       ${fila('Último grado de estudios', esc(c.escolaridad || ''))}${fila('Teléfono de casa', esc(c.telefonoCasa || ''))}${fila('Teléfono de celular', esc(c.telefonoCelular || ''))}
       ${fila('Correo electrónico', esc(c.email || ''))}${fila('Fecha de aplicación', esc(fechaFormato(c.fechaAplicacion || auto.fecha || '')))}
-      ${fila('Firma', firmaCaja(firmaCandidato, 40))}</table>`, { sinTitulo: true });
+      ${fila('Firma', firmaCaja(firmaCandidato, 40))}</table>`, { sinTitulo: true, sinLogos: true, sinPie: true, filete: true });
 
   const proposito = hoja('Autodiagnóstico', `
     <div class="barra-n">PROPÓSITO DEL DIAGNÓSTICO</div>
@@ -125,7 +132,7 @@ export function autodiagnosticoOficial(auto = {}, c = {}, { firmaCandidato = nul
       <li class="just">1) Lea cuidadosamente cada uno de los apartados del Diagnóstico tomando en cuenta las actividades que usted sabe hacer, bajo qué condiciones las ha realizado, cómo las ha demostrado y qué conocimientos tiene de su actividad.</li>
       <li class="just">2) Lea cuidadosamente la pregunta de las actividades que se enuncian y marque con una “X” en la columna SI cuando considere que sabe hacer o ha hecho el desempeño, producto, Actitudes / Hábitos / Valores o tiene el conocimiento y/o pueda mostrar las evidencias correspondientes y en la columna NO en caso contrario.</li>
       <li class="just">3) Una vez que haya leído todo el Diagnóstico, revise sus respuestas las veces que considere necesario.</li>
-      <li class="just">4) Tiempo máximo para elaborar el diagnóstico: 30 minutos</li></ol>`, { sinTitulo: true });
+      <li class="just">4) Tiempo máximo para elaborar el diagnóstico: 30 minutos</li></ol>`, { sinTitulo: true, sinLogos: true, sinPie: true, filete: true });
 
   /* Aplicación: una hoja por elemento, grupo por grupo con SI / NO */
   const aplicacion = elementos.map(e => {
@@ -143,7 +150,7 @@ export function autodiagnosticoOficial(auto = {}, c = {}, { firmaCandidato = nul
           return `<table class="ad-t"><thead><tr><th colspan="2">${esc(String(g).replace(/:?\s*$/, ':'))}</th><th class="sn">SI</th><th class="sn">NO</th></tr></thead><tbody>
             ${items.map((r, i) => `<tr><td class="num">${i + 1}.</td><td>${esc(r.texto)}</td><td class="sn">${x(r, 'SI')}</td><td class="sn">${x(r, 'NO')}</td></tr>`).join('')}</tbody></table>`;
         }).join('');
-      }).join('')}`, { sinTitulo: true });
+      }).join('')}`, { sinTitulo: true, sinLogos: true, sinPie: true, filete: true });
   }).join('');
 
   /* Valoración por elemento */
@@ -157,7 +164,7 @@ export function autodiagnosticoOficial(auto = {}, c = {}, { firmaCandidato = nul
         ${tipos.map(t => { const d = lista.filter(r => r.tipo === t); const s = d.filter(r => resp[r.clave] === 'SI').length, n = d.filter(r => resp[r.clave] === 'NO').length;
           return `<tr><td>${ETIQ_TIPO[t] || esc(t)}</td><td class="sn">${d.length}</td><td class="sn">${s}</td><td class="sn">${n}</td><td class="sn">${s + n}</td></tr>`; }).join('')}</tbody></table>`;
     }).join('')}
-    <p style="text-align:right;font-weight:bold">Total: ${todos.length}</p>`, { sinTitulo: true });
+    <p style="text-align:right;font-weight:bold">Total: ${todos.length}</p>`, { sinTitulo: true, sinLogos: true, sinPie: true, filete: true });
 
   const resultado = hoja('Autodiagnóstico', `
     <div class="barra-n">Instrucciones para aplicar la valoración</div>
@@ -174,7 +181,7 @@ export function autodiagnosticoOficial(auto = {}, c = {}, { firmaCandidato = nul
         ${firmaCaja(firmaEvaluador)}<p style="text-align:center;border-top:1px solid #000;margin:0;padding-top:1mm"><b>${esc(String(evaluador).toUpperCase())}</b><br>Firma Evaluadora:</p></div>
       <div class="ad-caja"><h4>Decisión del Candidato/a</h4><p>Decisión: <b>${esc(decision)}</b></p><p>&nbsp;</p>
         ${firmaCaja(firmaCandidato)}<p style="text-align:center;border-top:1px solid #000;margin:0;padding-top:1mm"><b>${esc(String(c.nombre || '').toUpperCase())}</b><br>Firma Candidata/o:</p></div>
-    </div>`, { sinTitulo: true });
+    </div>`, { sinTitulo: true, sinLogos: true, sinPie: true, filete: true });
 
   return portada + presentacion + datos + proposito + aplicacion + valoracion + resultado;
 }
@@ -216,38 +223,19 @@ export function fichaRenap(c = {}, { foto = '', firma = null } = {}) {
 }
 
 /* ── Tríptico de Derechos y Obligaciones (texto íntegro) ─────────────── */
+/* v54 · El tríptico oficial del CONOCER, como en el FORMATO 2026 (pág. 20):
+   el folleto a color en una hoja horizontal, con el nombre, la fecha y la
+   firma del candidato sobre la línea «Recibí derechos y obligaciones».
+   Antes salía solo el texto. */
 export function triptico(c = {}, { firma = null, fecha = '' } = {}) {
-  return hoja('DERECHOS Y OBLIGACIONES', `<div class="trip">
-    <p>Este tríptico tiene la finalidad de asegurar a los usuarios del Sistema Nacional de Competencias la transparencia en la información y el libre acceso en los procesos de evaluación – certificación así como brindar certeza de que la operación de la Red CONOCER de Prestadores de Servicios se rige bajo estándares de calidad y excelencia sea como empleadores, trabajadores y personas en general de los sectores social, productivo, educativo y de gobierno de nuestro país.</p>
-    <p><b>#CertificaciónParaTodos</b> &nbsp; 55 22 82 02 00 ext. 1258 &nbsp; contacto@conocer.gob.mx</p>
-    <h3>Principios de la Certificación:</h3><p>Libre Acceso · Excelencia · Transparencia · Imparcialidad · Objetividad</p>
-    <div class="trip-cols">
-    <h3>Derechos de los usuarios:</h3><ul>
-      <li>Consultar en línea de manera gratuita los Estándares de Competencia inscritos en el Registro Nacional de Estándares de Competencia (RENEC), lo podrás consultar en la página www.conocer.gob.mx</li>
-      <li>Disponer del Estándar de Competencia con base en el cual pretendan evaluarse con fines de certificación.</li>
-      <li>Realizar su autodiagnóstico libre de costo con base al Estándar de Competencia de su interés.</li>
-      <li>Contratar servicios de evaluación con la Entidad de Certificación y Evaluación, Organismo de Certificación, Centro de Evaluación que seleccione y acordar planes de evaluación.</li>
-      <li>Realizar el proceso de evaluación de competencia sin obligación o condición de recibir un curso previo.</li>
-      <li>Recibir retroalimentación verbal y documental de Entidad de Certificación y Evaluación de Competencias, Centro de Evaluación o Evaluador Independiente respecto al resultado de su evaluación de competencia.</li>
-      <li>Contratar servicios de certificación con la Entidad de Certificación y Evaluación de Competencias u Organismo Certificador que seleccione.</li>
-      <li>Recibir el Certificado de Competencia como consecuencia de haber sido declarado y dictaminado "competente” y haber cubierto los procedimientos y trámites determinados para la expedición del Certificado en un periodo no mayor a 90 días naturales posterior a la entrega de resultados.</li>
-      <li>Recibir trato digno y respetuoso por parte del CONOCER y/o de los prestadores de servicios del Sistema Nacional de Competencias.</li>
-      <li>Inconformarse por violaciones a sus derechos por parte del CONOCER y/o de los prestadores de servicios del Sistema Nacional de Competencias.</li>
-      <li>Solicitar una revisión del proceso de evaluación en caso de no estar de acuerdo con el juicio emitido por el evaluador</li></ul>
-    <h3>Obligaciones:</h3><ul>
-      <li>Tratar con respeto al personal de CONOCER, de la Red de Prestadores de Servicios y a otros Usuarios.</li>
-      <li>Respetar las fechas y horarios acordados para las diferentes etapas de atención a usuarios, proceso de evaluación y emisión de certificado, debiendo avisar con antelación si existe la imposibilidad de mantener la fecha y horario previstos.</li>
-      <li>Entregar, bajo protesta de decir verdad, la información necesaria y veraz para proceder a la evaluación de tus competencias.</li>
-      <li>Entregar oportunamente la documentación solicitada por el Prestador de Servicios.</li>
-      <li>Colaborar y ser asertivo durante el acuerdo del plan de evaluación.</li>
-      <li>Cumplir con las actividades y entrega de productos acordados en el plan de evaluación.</li>
-      <li>Atender los lineamientos de seguridad, manejo de maquinaria, equipo y suministros establecido dentro de las instalaciones del Prestador de Servicios.</li>
-      <li>Ejercer tus derechos libremente comunicando por medios formales las quejas y sugerencias, en caso que ser necesario.</li></ul>
-    <h3>Recuerda…</h3><p>Ejercer tus derechos y obligaciones es muy importante ya que contribuyes a la implementación de un Sistema Nacional de Competencias sustentado por la excelencia y calidad.</p>
-    <p style="font-size:8.5pt">Barranca del Muerto No. 275, 1er piso, Col. San José insurgentes, Alcaldía Benito Juárez, C.P. 03900, CDMX. www.conocer.gob.mx &nbsp; conocermx</p>
-    </div>
-    <div style="width:95mm;margin:6mm auto 0;text-align:center"><p style="text-align:left;margin:0"><b>Recibí derechos y obligaciones:</b></p>
-      ${firmaCaja(firma)}<p style="border-top:1px solid #000;margin:0;padding-top:1mm;font-size:9pt">${esc(c.nombre || '')}${fecha ? ' · ' + esc(fechaFormato(fecha)) : ''}<br>(Nombre completo, fecha y firma del candidat@</p></div></div>`);
+  const src = new URL('formatos/triptico-conocer.avif', location.href).href;
+  const f = firma?.dataUrl ? `<img src="${firma.dataUrl}" alt="Firma" style="position:absolute;left:22%;top:86.8%;width:8.5%;height:4.6%;object-fit:contain;object-position:center bottom">`
+    : firma?.typedName ? `<div style="position:absolute;left:22%;top:86.8%;width:8.5%;height:4.6%;display:flex;align-items:flex-end;justify-content:center;font:italic 11pt 'Brush Script MT','Segoe Script',cursive">${esc(firma.typedName)}</div>` : '';
+  const txt = `${esc(c.nombre || '')}${fecha ? ' · ' + esc(fechaFormato(fecha)) : ''}`;
+  return `<div class="trip-hoja"><div class="trip-lienzo">
+    <img class="trip-img" src="${src}" alt="Tríptico de Derechos y Obligaciones del CONOCER">
+    ${txt ? `<div style="position:absolute;left:.8%;top:90.2%;width:21%;font:6.3pt Arial,sans-serif;line-height:1;white-space:nowrap;overflow:hidden">${txt}</div>` : ''}${f}
+  </div></div>`;
 }
 
 /* ── Formato de Atención a Usuarios ──────────────────────────────────── */
@@ -317,9 +305,12 @@ export function acuse(tipo, { evaluador = '', candidato = '', fecha = '', firma 
 }
 
 /* ── Contraportada ───────────────────────────────────────────────────── */
+/* v54: como el FORMATO 2026 (pág. 45): los tres logos arriba, el bloque gris
+   y abajo a la izquierda red CONOCER con la página y el teléfono. */
 export function contraportada() {
-  const L = ce().logos || {};
-  return hoja('Contraportada', `<div class="contra"><div class="gris"></div>
-    ${L.izq ? `<img src="${new URL(L.izq, location.href).href}" alt="CONOCER">` : ''}
-    <p><b>www.conocer.gob.mx</b><br>01 800 288 26 66</p></div>`, { sinTitulo: true });
+  const rc = new URL('formatos/logos/redconocer.webp', location.href).href;
+  return hoja('Contraportada', `<div style="width:150mm;height:122mm;background:#aeaaaa;margin:14mm auto 6mm"></div>
+    <div style="width:150mm;margin:0 auto;font:9pt Arial,sans-serif;line-height:1.25">
+      <img src="${rc}" alt="red CONOCER · Centro de Evaluación" style="width:38mm;display:block">
+      <a style="color:#1155cc;text-decoration:underline">www.conocer.gob.mx</a><br>01 800 288 26 66</div>`, { sinTitulo: true, sinPie: true, sinFilete: true });
 }
