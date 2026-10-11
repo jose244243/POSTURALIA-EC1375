@@ -73,7 +73,7 @@ function hojas(id, ctx) {
   const { auto = {}, cand = {}, firma = null, foto = '' } = ctx;
   const f = firmaDe(firma);
   const ce = CONFIG.centroEvaluacion || {};
-  if (id === 'autodiagnostico') return autodiagnosticoOficial(auto, cand, { firmaCandidato: f, firmaEvaluador: null, evaluador: '', decision: '' });
+  if (id === 'autodiagnostico') return autodiagnosticoOficial(auto, cand, { firmaCandidato: f, firmaEvaluador: null, evaluador: '', decision: ctx.decision || '' });
   if (id === 'ficha') return htmlFichaSii({ ...cand, fechaAplicacion: cand.fechaAplicacion || hoyIso() }, { foto, firma: f });
   if (id === 'acuseTriptico') {
     const s = auto.triptico || {};
@@ -90,9 +90,12 @@ export function documentoRegistro(id, ctx = {}) {
   return envolverOficial(`${d.titulo} — ${ctx.cand?.nombre || ''}`, `<style>${estilosPortafolioOficial()}</style>` + hojas(id, ctx));
 }
 
+/* v59 (Fernando, 11-oct): el PDF conjunto lleva solo lo que va al
+   portafolio. El NDA se sigue viendo y descargando aparte. */
+export const DOCS_PORTAFOLIO_REGISTRO = DOCS_REGISTRO.filter(d => d.id !== 'nda');
 export function todosDocsRegistro(ctx = {}) {
   return envolverOficial(`Documentos de Registro — ${ctx.cand?.nombre || ''}`,
-    `<style>${estilosPortafolioOficial()}</style>` + DOCS_REGISTRO.map(d => hojas(d.id, ctx)).join(''));
+    `<style>${estilosPortafolioOficial()}</style>` + DOCS_PORTAFOLIO_REGISTRO.map(d => hojas(d.id, ctx)).join(''));
 }
 
 /* ── Tu Encuesta en formato oficial (como Paideia) ────────────────────────

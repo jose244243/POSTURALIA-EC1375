@@ -38,8 +38,13 @@ const CLAVE_ABIERTO = 'shell.abierto';
 /* Qué página está abierta ahora mismo */
 /* Páginas que son parte de un paso: se marcan y se abren con él */
 const PARTE_DE = { 'sesion.html': 'documentos.html', 'examen-formulario.html': 'examen.html' };
+/* v59: Cloudflare sirve las páginas sin «.html» (/autodiagnostico). Sin
+   esto ninguna página se reconocía: no salían los candados de pago, ni
+   «Ver cómo se hace», ni la caja de pago. */
+const paginaDe = ruta => { const p = String(ruta || '').replace(/\/+$/, '').split('/').pop() || 'index';
+  return /\.[a-z0-9]+$/i.test(p) ? p : p + '.html'; };
 function archivoActual() {
-  const p = location.pathname.split('/').pop() || 'index.html';
+  const p = paginaDe(location.pathname);
   return PARTE_DE[p] || p;
 }
 

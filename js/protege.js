@@ -156,8 +156,8 @@ function arrancar() {
    donde está la caja de pago. Dentro de Reforzamiento (visor de un tema) y
    para el equipo o el espejo del evaluador, no aplica. */
 async function candadoDelMaterial() {
-  const pagina = location.pathname.split('/').pop();
-  if (!/^(alineacion|biblioteca)-deck\.html$/.test(pagina)) return;
+  const pagina = location.pathname.replace(/\/+$/, '').split('/').pop();   // v59: con o sin «.html»
+  if (!/^(alineacion|biblioteca)-deck(\.html)?$/.test(pagina)) return;
   let enVisor = false;
   try { enVisor = window.top !== window.self; } catch { enVisor = true; }
   if (enVisor || enEspejo()) return;

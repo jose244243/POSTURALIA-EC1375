@@ -65,11 +65,29 @@ function texto(f, z, y, xs, palabras, extra = '') {
   return `<text font-family="${FAMILIA[f]}"${f === 1 ? ' font-weight="bold"' : ''} font-size="${z}" y="${y}"${extra}>`
     + palabras.map((w, i) => `<tspan x="${xs[i]}">${esc(w)}</tspan>`).join('') + '</text>';
 }
+/* v59: ancho de cada celda de la Ficha (pt). Una colonia larga invadía la
+   del CP; ahora el texto se encoge (hasta 6 pt) y, si aún no cabe, se
+   comprime a lo ancho de su celda. */
+const ANCHO_FICHA = { nombre: 205, lugar: 205, nacionalidad: 205, curp: 205, genero: 42, fnac: 95, calle: 205, cp: 54, colonia: 90,
+  ciudad: 205, entidad: 150, email: 205, tel: 72, cel: 72 };
 function campoTexto(c, valor) {
   const v = String(valor ?? '').trim();
   if (!v) return '';
-  const pos = c.cx != null ? ` x="${c.cx}" text-anchor="middle"` : ` x="${c.x}"`;
-  return `<text font-family="${FAMILIA[c.f]}"${c.f === 1 ? ' font-weight="bold"' : ''} font-size="${c.z}" y="${c.y}"${pos}>${esc(v)}</text>`;
+  let pos = c.cx != null ? ` x="${c.cx}" text-anchor="middle"` : ` x="${c.x}"`;
+  let z = c.z, ajuste = '';
+  const max = ANCHO_FICHA[c.k];
+  if (max) {
+    const ancho = t => v.length * t * 0.56;   // Helvetica/Arial: ~0.56 em por letra
+    if (ancho(z) > max) {
+      while (z > 7 && ancho(z) > max) z -= 0.5;
+      /* El ancho real varía por letra: se fija al de la celda para que nunca invada la vecina */
+      const w = Math.min(max, ancho(z));
+      ajuste = ` textLength="${w.toFixed(1)}" lengthAdjust="spacingAndGlyphs"`;
+      /* Chrome ignora text-anchor con textLength: se centra a mano */
+      if (c.cx != null) pos = ` x="${(c.cx - w / 2).toFixed(1)}"`;
+    }
+  }
+  return `<text font-family="${FAMILIA[c.f]}"${c.f === 1 ? ' font-weight="bold"' : ''} font-size="${z}" y="${c.y}"${pos}${ajuste}>${esc(v)}</text>`;
 }
 const imagen = (src, x, y, w, h, ajuste = 'none') =>
   `<image href="${esc(src)}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="${ajuste}"/>`;

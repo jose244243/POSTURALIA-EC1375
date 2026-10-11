@@ -28,8 +28,11 @@ export const SECCIONES = [
   { id: 'utilidades', label: 'Utilidades',            archivo: 'admin-utilidades.html',ico: 'archivo'    },
 ];
 
+/* v59: Cloudflare sirve sin «.html» (/admin-candidatos). */
+const paginaDe = ruta => { const p = String(ruta || '').replace(/\/+$/, '').split('/').pop() || 'admin';
+  return /\.[a-z0-9]+$/i.test(p) ? p : p + '.html'; };
 function archivoActual() {
-  return location.pathname.split('/').pop() || 'admin.html';
+  return paginaDe(location.pathname);
 }
 
 function construir() {
@@ -107,7 +110,7 @@ function construir() {
 /* Acceso del equipo: correo y contraseña con rol. El evaluador que abre una
    página de dinero por su dirección va a Candidatos. */
 function exigirAccesoEquipo() {
-  const pagina = location.pathname.split('/').pop() || 'admin.html';
+  const pagina = paginaDe(location.pathname);
   const permitirEvaluador = PAGINAS_EVALUADOR.includes(pagina);
   const s = sesion();
   if (s?.rol === 'evaluador' && !permitirEvaluador) { location.replace('admin-candidatos.html'); return; }
