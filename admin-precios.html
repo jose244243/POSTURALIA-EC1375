@@ -312,7 +312,8 @@ function pintar() {
   st.textContent = '.dp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:10px}.dp-grid label{font-size:.8rem;font-weight:600;color:var(--muted)}.dp-grid input{display:block;width:100%;margin-top:4px;font:inherit;font-size:.9rem;padding:8px 10px;border:1px solid var(--border);border-radius:8px}';
   document.head.appendChild(st);
   const LBL = Object.fromEntries(CONFIG.fases.map(f => [f.id, f.label]));
-  $('dpFases').innerHTML = pg.FASES_PAGO.map(f => `<label>Monto base · ${LBL[f]}<input data-dp-monto="${f}" inputmode="numeric" placeholder="Si no hay precio acordado"></label>
+  LBL.registro = 'Apartado (liga de registro)';
+  $('dpFases').innerHTML = pg.FASES_COBRO.map(f => `<label>Monto base · ${LBL[f]}<input data-dp-monto="${f}" inputmode="numeric" placeholder="Si no hay precio acordado"></label>
     <label>Link de Mercado Pago · ${LBL[f]}<input data-dp-link="${f}" placeholder="https://mpago.la/…"></label>`).join('');
   const leer = () => ({ banco: $('dpBanco').value, titular: $('dpTitular').value, cuenta: $('dpCuenta').value, clabe: $('dpClabe').value, nota: $('dpNota').value,
     links: Object.fromEntries([...document.querySelectorAll('[data-dp-link]')].map(i => [i.dataset.dpLink, i.value])),

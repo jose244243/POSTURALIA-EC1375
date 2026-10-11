@@ -189,7 +189,7 @@ function vistaListo(reRegistro) {
     <p class="pn-nota">Lo que sigue:</p>
     <ol class="rg-listo pn-nota">
       <li>Contesta tu <strong>Autodiagnóstico</strong> (gratis): te dice qué tan cerca estás del estándar.</li>
-      <li>El equipo de ${esc(CONFIG.marca.nombre)} te contacta para tu <strong>apartado</strong> y te asigna tu grupo.</li>
+      <li>Paga tu <strong>apartado</strong> aquí abajo para asegurar tu lugar; el equipo te asigna tu grupo.</li>
       <li>Con cada pago se abre la siguiente fase de tu proceso.</li>
     </ol>
     <div class="rg-acc">
@@ -197,7 +197,13 @@ function vistaListo(reRegistro) {
       <a class="btn-plat btn-plat--secundario" href="index.html">Ir a mi panel</a>
     </div>
     ${wa ? `<p class="rg-pista" style="margin-top:14px"><a href="https://wa.me/${wa}?text=${msj}" target="_blank" rel="noopener">Avisar al equipo por WhatsApp</a></p>` : ''}
-  </div>`;
+  </div>
+  <div id="pagoApartado" style="margin-top:16px"></div>`;
+  /* v60: desde la liga de registro se paga el apartado (Mercado Pago o transferencia) */
+  import('./js/pagos.js').then(async pg => {
+    const cfg = await pg.datosPago();
+    pg.montarPago($('pagoApartado'), 'registro', cfg, { monto: pg.montoPara(datos.correo, 'registro', cfg), nombre: datos.nombre });
+  }).catch(() => {});
 }
 
 function ir(p, extra) {
