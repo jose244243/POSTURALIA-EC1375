@@ -1645,7 +1645,11 @@ nextB.onclick=function(){
   marcaVista();
   var n=Object.keys(vistas).length, faltan=D.total-n;
   if(faltan<=0){ emit('alignment-complete',{progress:1});
-                 nextB.textContent='Alineación completa'; }
+                 nextB.textContent='Alineación completa';
+                 /* v59 (Fernando, 11-oct): el botón no hacía nada. Ahora regresa a
+                    Alineación, donde se marca «Ya tomé mi sesión». Dentro de la
+                    Biblioteca (iframe) no navega. */
+                 try{ if(window.top===window.self) location.href='alineacion.html#cierreAlineacion'; }catch(e){} }
   else { nextB.textContent='Faltan '+faltan;
          emit('alignment-progress',{sid:null,criterio:null,progress:n/D.total});
          irPendiente(); }

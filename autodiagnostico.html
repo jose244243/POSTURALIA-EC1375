@@ -593,8 +593,14 @@ async function fotoRegistro() {
   if (!src && (a.enAlmacen || a.nube)) { try { const g = await recuperar(a); src = g?.dato || g?.miniatura || ''; } catch {} }
   return /^data:image\//.test(src) ? src : '';
 }
+/* v59: «Decisión del Candidato/a» igual que en el portafolio: Asesorarme si
+   en su Plan dijo que no procede; Evaluarme cuando ya acordó su Plan. */
+function decisionCandidato() {
+  const p = Store.get('plan', {}) || {};
+  return p.fProcede === 'no' ? 'Asesorarme' : (p.fFechaPlan || p.documentos?.acusePlanEvaluacion) ? 'Evaluarme' : '';
+}
 async function ctxDocs() {
-  return { auto: Store.get(MODULO, {}), cand: Store.get('candidato', {}), firma: firmaGuardada(), foto: await fotoRegistro(), ndaHtml: NDA_HTML };
+  return { auto: Store.get(MODULO, {}), cand: Store.get('candidato', {}), firma: firmaGuardada(), foto: await fotoRegistro(), ndaHtml: NDA_HTML, decision: decisionCandidato() };
 }
 /* El contexto (con la foto, que puede venir de IndexedDB) se arma al pintar,
    para que el clic abra la pestaña de inmediato: si la abriera después de
@@ -611,11 +617,11 @@ async function pintarDocsRegistro() {
         <span style="font-weight:600;font-size:.84rem;color:${falta.length ? '#B45309' : 'var(--spoke-deep)'}">${falta.length ? 'Incompleto' : '✓ En tu expediente'}</span>
         <button class="btn-plat btn-plat--secundario" data-doc-reg="${d.id}">Ver / descargar</button></div>`;
     }).join('')}
-    <div class="acciones" style="margin-top:6px"><button class="btn-plat btn-plat--secundario" id="btnDocsTodos">Ver los cuatro en un solo PDF</button></div>`;
+    <div class="acciones" style="margin-top:6px"><button class="btn-plat btn-plat--secundario" id="btnDocsTodos">Ver los tres del portafolio en un solo PDF</button></div>`;
 }
 $('cardDocsRegistro').addEventListener('click', e => {
   if (!ctxDocsListo) return;
-  const ctx = { ...ctxDocsListo, auto: Store.get(MODULO, {}), cand: Store.get('candidato', {}), firma: firmaGuardada() };
+  const ctx = { ...ctxDocsListo, auto: Store.get(MODULO, {}), cand: Store.get('candidato', {}), firma: firmaGuardada(), decision: decisionCandidato() };
   const b = e.target.closest('[data-doc-reg]');
   if (b) return abrirDocumento(documentoRegistro(b.dataset.docReg, ctx));
   if (e.target.id === 'btnDocsTodos') abrirDocumento(todosDocsRegistro(ctx));
