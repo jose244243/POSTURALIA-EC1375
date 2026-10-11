@@ -325,6 +325,7 @@ function pendientes() {
   return faltan;
 }
 
+const enLaNube = !!(CONFIG.supabase?.url && CONFIG.supabase?.anonKey);
 function pintarConfirmar() {
   const faltan = pendientes();
   const listo = faltan.length === 0;
@@ -333,11 +334,10 @@ function pintarConfirmar() {
     ? `<h2>Todo listo</h2>
        <p class="pn-nota" style="margin-top:0">
          Tus ${OBLIGATORIAS.length} evidencias obligatorias están puestas, con tu
-         declaración y tu firma. Descarga el respaldo y mándaselo a tu Centro
-         Evaluador: ahí van los archivos que sí cupieron.
+         declaración y tu firma. ${enLaNube ? 'Ya están en tu expediente en la nube: tu Centro Evaluador las ve desde su panel, no tienes que mandarle nada.' : 'Descarga el respaldo y mándaselo a tu Centro Evaluador: ahí van los archivos que sí cupieron.'}
        </p>
        <div class="acciones" style="justify-content:flex-start;margin-top:0">
-         <button class="btn-plat btn-plat--primario" id="btnRespaldoEv">
+         <button class="btn-plat ${enLaNube ? 'btn-plat--secundario' : 'btn-plat--primario'}" id="btnRespaldoEv">
            Descargar mi respaldo</button>
          <button class="btn-plat btn-plat--secundario" id="btnComprobanteEv">
            Comprobante de entrega</button>

@@ -171,14 +171,16 @@ function pintar() {
   $('figura').innerHTML = figura(q.imagen);
   const bloqueada = yaBien || (fb && !fb.ok) || Store.soloLectura;
   if (q.tipo !== 'relacionar_columnas') {
-    const ops = opcionesDe(q), orden = st.ordenOpciones[q.n];
+    /* v54 (Fernando, 11-oct): idéntico al cuestionario del IEC que va en el
+       portafolio: las opciones en su orden oficial y con su letra a), b)… */
+    const ops = opcionesDe(q), orden = ops.map(o => o.letra);
     const elegida = yaBien ? st.respuestas[q.n] : fb?.resp;
     $('opciones').innerHTML = `<div class="ex-opciones">${orden.map((l, k) => {
       const o = ops.find(x => x.letra === l); if (!o) return '';
       const revelada = yaBien || !!fb;
       const cls = revelada && l === q.correcta ? ' ex-op--correcta' : fb && !fb.ok && l === elegida ? ' ex-op--incorrecta' : '';
       return `<button class="ex-op${cls}" data-l="${l}" ${bloqueada ? 'disabled' : ''}>
-        <span class="ex-op-letra">${LETRAS[k]}</span><span>${esc(o.texto)}</span></button>`; }).join('')}</div>`;
+        <span class="ex-op-letra">${esc(o.letra)}</span><span>${esc(o.texto)}</span></button>`; }).join('')}</div>`;
   } else {
     /* Ejes del cuerpo: la clave oficial sigue las letras A/B/C de la figura,
        no la columna impresa a la derecha (errata del instrumento). Se ofrecen

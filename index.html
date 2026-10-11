@@ -150,6 +150,11 @@ import { candidato, documentosDelExpediente, conteoDocumentos, pagosPorFase,
 
 const $ = id => document.getElementById(id);
 
+/* v54: la Cédula publicada y sin firmar manda sobre todo lo demás. Antes
+   el panel decía «No hay nada pendiente de tu lado» y el aviso quedaba
+   abajo, en la tarjeta del Centro (prueba del 10-oct). */
+let cedulaPorFirmar = false;
+
 /* ── Saludo ────────────────────────────────────────────────────────────── */
 function pintarHero() {
   const c   = candidato();
@@ -190,7 +195,11 @@ function pintarHero() {
     </div>
 
     <div class="pn-hero-btns">
-      ${sig
+      ${cedulaPorFirmar
+        ? `<a class="pn-cta" href="cedula.html">
+             <span>Firmar mi Cédula de Evaluación</span>${icono('flecha', 20)}
+           </a>`
+        : sig
         ? `<a class="pn-cta" href="${sig.archivo}">
              <span>Continuar: ${sig.nombre}</span>${icono('flecha', 20)}
            </a>`
@@ -350,6 +359,7 @@ function pintarSesion() {
 /* ── Avisos ────────────────────────────────────────────────────────────── */
 function pintarAvisos() {
   const lista = avisos();
+  if (cedulaPorFirmar) lista.unshift({ nivel: 'medio', txt: '<strong>Tu Cédula de Evaluación está publicada.</strong> Léela y fírmala para que el Centro pueda integrar tu portafolio.', a: 'cedula.html', cta: 'Firmar mi Cédula' });
   $('cuentaAvisos').textContent = lista.length || '0';
 
   if (!lista.length) {
@@ -454,6 +464,8 @@ async function pintarCentro() {
   const ced = cedulaPublicada(ev);
   if (!ev && !t.etapas[0].hecha) { $('cardCentro').hidden = true; return; }
   const hechas = t.etapas.filter(x => x.hecha).length;
+  const porFirmar = !!ced && !ev.firma_candidato;
+  if (porFirmar !== cedulaPorFirmar) { cedulaPorFirmar = porFirmar; pintarHero(); pintarAvisos(); }
   $('cardCentro').hidden = false;
   $('cardCentro').innerHTML = `
     <div class="pn-cab"><h2>Tu certificación con el Centro Evaluador</h2><span class="pn-cuenta">${hechas} de ${t.etapas.length}</span></div>

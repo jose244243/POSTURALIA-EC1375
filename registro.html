@@ -95,6 +95,9 @@ function avanceDeOtro(correo) {
 
 function vistaDatos(err = '') {
   const s = sesion();
+  /* v54: con la sesión del equipo abierta no se prellena su correo: el 10-oct
+     el registro de prueba se guardó encima de la cuenta del administrador. */
+  const esEquipo = s?.rol === 'admin' || s?.rol === 'evaluador';
   const pista = s?.correo
     ? `En este dispositivo está abierta la sesión de <strong>${esc(s.correo)}</strong>. Si vas a registrar a alguien más, escribe su correo: al continuar se cierra esa sesión.`
     : 'Con este correo entras a la plataforma y recibes los avisos de tu proceso. Cambiarlo después implica volver a empezar tu cuenta.';
@@ -104,7 +107,7 @@ function vistaDatos(err = '') {
     <label class="rg-lbl" for="fNombre">Nombre completo</label>
     <input class="rg-in" id="fNombre" autocomplete="name" placeholder="Nombre(s) y apellidos" value="${esc(datos.nombre)}">
     <label class="rg-lbl" for="fCorreo">Correo electrónico</label>
-    <input class="rg-in" id="fCorreo" type="email" autocomplete="email" placeholder="tu@email.com" value="${esc(datos.correo || s?.correo || '')}">
+    <input class="rg-in" id="fCorreo" type="email" autocomplete="email" placeholder="tu@email.com" value="${esc(datos.correo || (esEquipo ? '' : s?.correo) || '')}">
     <p class="rg-pista">${pista}</p>
     ${err ? `<p class="rg-err" role="alert">${err}</p>` : ''}
     <div class="rg-acc"><button class="btn-plat" id="btnDatos">Continuar</button></div>
@@ -116,6 +119,7 @@ function vistaDatos(err = '') {
     datos = { nombre, correo };          // un error re-pinta: que no se borre lo tecleado
     if (nombre.split(' ').length < 2) return vistaDatos('Escribe tu nombre completo (nombre y apellidos).');
     if (!correoValido(correo)) return vistaDatos('Escribe un correo válido.');
+    if (esEquipo && norm(s.correo) === correo) return vistaDatos('Ese correo es de una cuenta del equipo. Escribe el correo de la persona que se va a registrar.');
     const otro = avanceDeOtro(correo);
     if (otro) return vistaDatos(`Este navegador ya guarda el proceso de <strong>${esc(otro)}</strong>. Para no mezclar los dos, regístrate desde tu propio celular o computadora.`);
     const s = sesion();

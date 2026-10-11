@@ -132,7 +132,7 @@ addEventListener('load', function () {
     <p style="color:var(--mid);font-size:.9rem;line-height:1.7">
       Lo que el EC1375 pide en el espacio donde vas a atender a tu usuario el día que grabes tu sesión
       (es la misma lista de tu Plan de Evaluación). Confirma con tu Centro Evaluador cuáles te toca llevar a ti.
-      Donde dice «Buscar» se abre una búsqueda en Amazon México para que compares opciones.
+      Donde dice «Comprar» se abre el producto recomendado en Amazon México.
     </p>
     <div class="pl-req" id="requerimientos"></div>
     <p style="color:var(--muted);font-size:.78rem;margin:10px 0 0">
@@ -304,23 +304,22 @@ $('instrumentos').innerHTML = Object.entries(PLAN.instrumentoPorTipo).map(([tipo
   </div>`).join('');
 
 /* ── Requerimientos (como Paideia, con «Comprar»): la lista oficial del
-   Plan, y para el equipo que se compra, una búsqueda en Amazon México.
-   Búsqueda y no producto fijo: no se rompe si un producto se agota y no
-   lleva a nadie a una marca o a una liga de afiliado. ── */
+   Plan y, para el equipo que se compra, las MISMAS ligas de Amazon que usa
+   Paideia en su Plan de Evaluación (Fernando, 11-oct). ── */
 const COMPRA = {
-  'Banco de altura': 'banco taburete plegable',
-  'Báscula': 'báscula digital corporal',
-  'Baumanómetro': 'baumanómetro digital de brazo',
-  'Oxímetro': 'oxímetro de pulso',
-  'Estandímetro': 'estadímetro de pared',
-  'Termómetro digital': 'termómetro digital infrarrojo',
-  'Perchero': 'perchero de pared',
+  'Banco de altura': 'https://a.co/d/08XZoL0N',
+  'Báscula': 'https://a.co/d/0fuXbj9f',
+  'Baumanómetro': 'https://a.co/d/0eiYKLuZ',          // «Monitor de presión arterial» en Paideia
+  'Oxímetro': 'https://a.co/d/04TDvFyw',
+  'Estandímetro': 'https://www.amazon.com.mx/dp/B0B2S9H519',   // «Estadímetro» en Paideia
+  'Termómetro digital': 'https://a.co/d/047Vs24M',
+  'Perchero': 'https://a.co/d/02NwyvdJ',
 };
 $('requerimientos').innerHTML = REQUERIMIENTOS_PLAN.map(r => {
   const nombre = r.replace(/\.$/, '');
-  const q = COMPRA[nombre];
-  return `<div class="pl-req-i"><span>${esc(nombre)}</span>${q
-    ? `<a href="https://www.amazon.com.mx/s?k=${encodeURIComponent(q)}" target="_blank" rel="noopener">Buscar ↗</a>` : ''}</div>`;
+  const liga = COMPRA[nombre];
+  return `<div class="pl-req-i"><span>${esc(nombre)}</span>${liga
+    ? `<a href="${liga}" target="_blank" rel="noopener">Comprar ↗</a>` : ''}</div>`;
 }).join('');
 
 /* ── Formulario ───────────────────────────────────────────────────────── */

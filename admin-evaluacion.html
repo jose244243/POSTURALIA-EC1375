@@ -31,6 +31,8 @@ addEventListener('load', function () {
 <link rel="stylesheet" href="plataforma-styles.css">
 <link rel="stylesheet" href="admin-styles.css">
 <style>
+.paso-n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#0d2a6e;color:#fff;font-size:.85rem;font-weight:800;margin-right:6px;vertical-align:2px}
+details.card>summary{cursor:pointer;font-weight:700;font-size:1.05rem}
   .ev-grid { display:grid; grid-template-columns: 1fr; gap:16px }
   .et { display:flex; gap:12px; align-items:center; padding:9px 0; border-bottom:1px solid var(--border) }
   .et:last-child { border-bottom:0 }
@@ -84,27 +86,30 @@ addEventListener('load', function () {
 <main class="ad-wrap">
   <div id="sinCandidato" class="card" hidden><h2>Elige un candidato</h2><div id="listaCand"></div></div>
   <div id="app" class="ev-grid" hidden>
-    <section class="card"><h2>Fechas del proceso</h2>
+    <!-- v54 (Fernando, 11-oct: «es mucha información»): los pasos en el orden en que se hacen,
+         numerados; lo opcional, plegado al final. -->
+    <section class="card"><h2><span class="paso-n">1</span> Fechas del proceso</h2>
       <p style="color:var(--muted);font-size:.84rem;margin:0 0 6px">Las tres fechas que pide el portafolio. Cada una se pone sola en sus documentos; sin capturarla, cada documento usa la fecha que ya traía.</p>
       <div id="fechasProc"></div></section>
-    <section class="card"><h2>Etapas del Centro Evaluador</h2><div id="etapas"></div></section>
 
-    <details class="card" id="cardIec"><summary>Instrumento de Evaluación (IEC)</summary><div id="iec"></div></details>
+    <details class="card" id="cardIec"><summary><span class="paso-n">2</span> Instrumento de Evaluación (IEC)</summary><div id="iec"></div></details>
 
-    <section class="card"><h2>Cédula de Evaluación</h2><div id="cedula"></div></section>
+    <section class="card"><h2><span class="paso-n">3</span> Cédula de Evaluación</h2><div id="cedula"></div></section>
 
-    <details class="card"><summary>Verificación Interna</summary><div id="verif"></div></details>
-
-    <section class="card"><h2>Firmas del evaluador</h2>
-      <p style="color:var(--muted);font-size:.84rem">Cada documento lleva su propia firma: el Plan de Evaluación, la rúbrica del IEC y la Verificación Interna.</p>
+    <section class="card"><h2><span class="paso-n">4</span> Tu firma de evaluador(a)</h2>
+      <p style="color:var(--muted);font-size:.84rem">Firmas una vez y se pone en todas las hojas que la piden: Autodiagnóstico, Plan de Evaluación, rúbrica del IEC y Verificación Interna. Se queda guardada en esta computadora para tus siguientes candidatos.</p>
       <div id="firmas"></div></section>
 
-    <section class="card"><h2>Documentos del SII</h2>
-      <p style="color:var(--muted);font-size:.84rem;margin:0 0 6px">Si subes el PDF que descargas del SII, entra al portafolio en lugar del que arma la plataforma. A la Ficha de Registro se le pone encima la firma del candidato. Se guardan en esta computadora.</p>
-      <div id="sii"></div></section>
-    <section class="card"><h2>Grabación de la sesión</h2><div id="video"></div></section>
+    <details class="card"><summary><span class="paso-n">5</span> Verificación Interna</summary><div id="verif"></div></details>
 
-    <section class="card"><h2>Portafolio de Evidencias</h2><div id="portafolio"></div></section>
+    <section class="card"><h2><span class="paso-n">6</span> Etapas del Centro Evaluador</h2><div id="etapas"></div></section>
+
+    <section class="card"><h2><span class="paso-n">7</span> Portafolio de Evidencias</h2><div id="portafolio"></div></section>
+
+    <details class="card"><summary>Opcional · Documentos del SII</summary>
+      <p style="color:var(--muted);font-size:.84rem;margin:8px 0 6px">Si subes el PDF que descargas del SII, entra al portafolio en lugar del que arma la plataforma. A la Ficha de Registro se le pone encima la firma del candidato. Se guardan en esta computadora.</p>
+      <div id="sii"></div></details>
+    <details class="card"><summary>Opcional · Grabación de la sesión</summary><div id="video"></div></details>
   </div>
 </main>
 
@@ -332,7 +337,7 @@ function pintarIec() {
       <button class="btn-a btn-a--sec" id="iecImprimir">Imprimir IEC (formato oficial)</button></div>`;
   aplicarCuestionario(true);
   const d2 = ev().iec;
-  $('cardIec').querySelector('summary').innerHTML = `Instrumento de Evaluación (IEC) ${d2 ? `<span class="chip ${d2.completo ? (d2.juicio === 'COMPETENTE' ? 'chip-ok' : 'chip-no') : 'chip-gris'}">${d2.completo ? juicioOficial(d2.juicio) : 'en proceso'} · ${Number(d2.total || 0).toFixed(2)}</span>` : ''}`;
+  $('cardIec').querySelector('summary').innerHTML = `<span class="paso-n">2</span> Instrumento de Evaluación (IEC) ${d2 ? `<span class="chip ${d2.completo ? (d2.juicio === 'COMPETENTE' ? 'chip-ok' : 'chip-no') : 'chip-gris'}">${d2.completo ? juicioOficial(d2.juicio) : 'en proceso'} · ${Number(d2.total || 0).toFixed(2)}</span>` : ''}`;
 }
 function marcadorIec() {
   const c = calificarIec(iecEdit.respuestas);
@@ -354,7 +359,7 @@ $('iec').addEventListener('click', e => {
     const f = validarIec(nuevo);
     $('iecFalta').innerHTML = f.length ? 'Guardado. Para cerrarlo falta: ' + f.map(esc).join(' · ') : '<span style="color:#047857">IEC completo y guardado.</span>';
     pintarCabecera(); pintarPortafolio(); pintarCedula();
-    const d2 = ev().iec; $('cardIec').querySelector('summary').innerHTML = `Instrumento de Evaluación (IEC) <span class="chip ${d2.completo ? (d2.juicio === 'COMPETENTE' ? 'chip-ok' : 'chip-no') : 'chip-gris'}">${d2.completo ? juicioOficial(d2.juicio) : 'en proceso'} · ${Number(d2.total || 0).toFixed(2)}</span>`;
+    const d2 = ev().iec; $('cardIec').querySelector('summary').innerHTML = `<span class="paso-n">2</span> Instrumento de Evaluación (IEC) <span class="chip ${d2.completo ? (d2.juicio === 'COMPETENTE' ? 'chip-ok' : 'chip-no') : 'chip-gris'}">${d2.completo ? juicioOficial(d2.juicio) : 'en proceso'} · ${Number(d2.total || 0).toFixed(2)}</span>`;
     return;
   }
   if (e.target.id === 'iecImprimir') { const c = candidato(); const d = { ...ev(), iec: { ...(ev().iec || {}), ...iecEdit, fecha: $('iecFecha').value } }; abrirDocumento(envolverOficial('IEC · ' + (c.nombre || ''), hojaIec(d, { candidato: c.nombre, evaluador: ev().cedula?.evaluadora || CONFIG.centroEvaluacion?.evaluadora || '' }))); }
@@ -370,7 +375,7 @@ function pintarCedula() {
   const e = ev(), c = candidato();
   const pub = cedulaPublicada(e), ced = e.cedula || {};
   const iecJ = e.iec?.completo ? e.iec.juicio : '';
-  firmaEval = ced.firmaEvaluador || null;
+  firmaEval = ced.firmaEvaluador || firmaEvalGuardada() || null;   // v54: la firma guardada del evaluador
   $('cedula').innerHTML = `
     ${pub ? `<p>Publicada el ${fechaCorta(pub.publicada_at)} · juicio <span class="chip ${pub.juicio === 'COMPETENTE' ? 'chip-ok' : 'chip-no'}">${esc(juicioOficial(pub.juicio))}</span>
       · firma del candidato: ${e.firma_candidato ? '<b style="color:#047857">firmada</b>' : '<b style="color:#B45309">pendiente</b>'}</p>` : ced.borrador ? '<p style="color:var(--muted)">Borrador guardado, sin publicar.</p>' : ''}
@@ -435,14 +440,37 @@ $('verif').addEventListener('click', e => {
   if (e.target.id === 'vImprimir') abrirDocumento(envolverOficial('Verificación Interna', hojaVerif({ ...ev(), verificacion: leer() }, { candidato: candidato().nombre })));
 });
 
-/* ── Firmas del evaluador ── */
+/* ── Firma del evaluador (v54): una sola vez para todas las hojas ──────
+   Fernando, 11-oct: «¿por qué firmas del autodiagnóstico y plan si eso ya
+   pasó?». Esas hojas del formato llevan la firma del evaluador; ahora se
+   firma una vez, se guarda en esta computadora y con un clic se pone en
+   todas. «Firmar por separado» queda plegado para quien lo necesite. */
+const K_FIRMA_EVAL = () => 'posturalia.firmaEvaluador.' + String(sesion()?.correo || 'equipo').toLowerCase();
+const firmaEvalGuardada = () => { try { return JSON.parse(localStorage.getItem(K_FIRMA_EVAL())) || null; } catch { return null; } };
+const DOCS_FIRMA = [['diagnostico', 'Autodiagnóstico'], ['plan', 'Plan de Evaluación'], ['iec', 'IEC (rúbrica)'], ['cierre', 'Verificación Interna']];
+let firmaUnica = null;
 function pintarFirmas() {
   const f = ev().firmas || {};
-  const docs = [['diagnostico', 'Autodiagnóstico', 'Firma Evaluadora en el Resultado del autodiagnóstico.'], ['plan', 'Plan de Evaluación', 'Va en "Nombre del Evaluador" del Plan y en el Formato de Atención a Usuarios.'], ['iec', 'Instrumento de Evaluación (IEC)', 'Rúbrica al pie del instrumento.'], ['cierre', 'Verificación Interna', 'Al pie de la hoja de verificación.']];
-  $('firmas').innerHTML = docs.map(([k, t, d]) => `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
-    <b>${t}</b> ${firmaValida(f[k]) ? '<span class="chip chip-ok">firmado</span>' : '<span class="chip chip-gris">sin firma</span>'}<br><small style="color:var(--muted)">${d}</small>
-    <div id="fir_${k}" style="margin-top:6px"></div></div>`).join('');
-  docs.forEach(([k]) => montarFirmaSimple($('fir_' + k), { valor: f[k] || null, nombreSugerido: ev().cedula?.evaluadora || CONFIG.centroEvaluacion?.evaluadora || '',
+  firmaUnica = firmaEvalGuardada();
+  const todas = DOCS_FIRMA.every(([k]) => firmaValida(f[k]));
+  $('firmas').innerHTML = `
+    <div id="firUnica"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
+      <button class="btn-a btn-a--pri" id="firTodas">${todas ? 'Volver a firmar todo con esta firma' : 'Firmar todo el portafolio con esta firma'}</button>
+      <span>${DOCS_FIRMA.map(([k, t]) => `<span class="chip ${firmaValida(f[k]) ? 'chip-ok' : 'chip-gris'}" style="margin:2px">${t}${firmaValida(f[k]) ? ' ✓' : ''}</span>`).join('')}</span></div>
+    <p id="firMsg" style="font-size:.84rem;color:var(--muted);margin:0"></p>
+    <details style="margin-top:10px"><summary style="cursor:pointer;font-size:.88rem">Firmar por separado</summary>
+      ${DOCS_FIRMA.map(([k, t]) => `<div style="padding:8px 0;border-bottom:1px solid var(--border)"><b>${t}</b><div id="fir_${k}" style="margin-top:6px"></div></div>`).join('')}</details>`;
+  montarFirmaSimple($('firUnica'), { valor: firmaUnica, nombreSugerido: ev().cedula?.evaluadora || CONFIG.centroEvaluacion?.evaluadora || sesion()?.nombre || '',
+    onCambio: v => { firmaUnica = v; try { v ? localStorage.setItem(K_FIRMA_EVAL(), JSON.stringify(v)) : localStorage.removeItem(K_FIRMA_EVAL()); } catch {} } });
+  $('firTodas').onclick = () => {
+    if (!firmaValida(firmaUnica)) { $('firMsg').textContent = 'Primero dibuja tu firma o escribe tu nombre arriba.'; return; }
+    const firmas = { ...(ev().firmas || {}) };
+    DOCS_FIRMA.forEach(([k]) => { firmas[k] = firmaUnica; });
+    guardar({ firmas }); pintarFirmas(); pintarPortafolio();
+    $('firMsg').textContent = 'Listo: tu firma ya va en las cuatro hojas. La Cédula lleva la suya al publicarla.';
+  };
+  DOCS_FIRMA.forEach(([k]) => montarFirmaSimple($('fir_' + k), { valor: f[k] || null, nombreSugerido: ev().cedula?.evaluadora || CONFIG.centroEvaluacion?.evaluadora || '',
     onCambio: v => { const firmas = { ...(ev().firmas || {}) }; if (v) firmas[k] = v; else delete firmas[k]; guardar({ firmas }); pintarPortafolio(); } }));
 }
 
