@@ -58,8 +58,11 @@ export const CONFIG = {
        va junto con su clave, nombre y dirección (los cuatro cambian juntos).
        11-oct: el FORMATO 2026 lo trae al centro de cada hoja; hoy el CE es
        el Colegio Ilustre (CE1399), así que sale. Si cambian de CE, se
-       cambian aquí clave, nombre, dirección, teléfono y este logo. */
-    logos: { izq: 'formatos/logos/conocer.jpg', centro: 'formatos/logos/centro.jpg', der: 'formatos/logos/ece.png' },
+       cambian aquí clave, nombre, dirección, teléfono y este logo.
+       v56 (Fernando, 11-oct): se quita el logo del centro mientras definen
+       con qué CE trabajarán; las hojas quedan con CONOCER e ICEMÉXICO. Para
+       volver a ponerlo: centro: 'formatos/logos/centro.jpg' (sigue en el repo). */
+    logos: { izq: 'formatos/logos/conocer.jpg', centro: '', der: 'formatos/logos/ece.png' },
   },
 
   /* ── Backend ────────────────────────────────────────────────────────────
