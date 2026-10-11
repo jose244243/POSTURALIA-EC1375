@@ -180,7 +180,7 @@ import './js/shell.js';
 import { icono } from './js/iconos.js';
 import { GUION } from './js/data-guion.js';
 import { pintarBarraFlujo } from './js/flow.js';
-import { rejillaVideos, montarVideos, tarjetaPropia } from './js/videos.js';
+import { montarVideos, tarjetaPropia } from './js/videos.js';
 import { GUION_PROPIOS } from './js/data-medios.js';
 montarVideos();
 
@@ -258,9 +258,9 @@ function pintar() {
       ${tarjetaPropia(GUION_PROPIOS[sec.clave]) ? `<div class="gm-videos">
         <div class="gm-videos-t">Ejemplo de esta sección</div>
         ${tarjetaPropia(GUION_PROPIOS[sec.clave], { titulo: sec.nombre })}</div>` : ''}
-      ${sec.videos?.length ? `<div class="gm-videos">
-        <div class="gm-videos-t">Video${sec.videos.length === 1 ? '' : 's'} de técnica de este bloque</div>
-        ${rejillaVideos(sec.videos)}</div>` : ''}
+      ${/* v58 (Fernando, 11-oct): fuera los «videos de técnica de este bloque»
+          (OMS, cubrebocas, tapete…): Paideia no los trae en su Guion Maestro y
+          confundían. Siguen en Recursos → Tutoriales. */ ''}
     </section>`;
   }).join('');
 }
