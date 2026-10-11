@@ -317,6 +317,7 @@ export function seccionesIec() {
    assemble_expediente.py de Paideia ─────────────────────────────────── */
 export const SECCIONES_PORTAFOLIO = [
   { id: 'portada',   titulo: 'Portada', generado: true },
+  { id: 'atencion',  titulo: 'Formato de Atención a Usuarios', generado: true },,
   { id: 'indice',    titulo: 'Índice', generado: true },
   { id: 'sep1',      titulo: '1. Datos del Candidato/a', separador: true },
   { id: 'ficha_registro', titulo: 'Ficha de Registro (SII / RENAP)', generado: true },
@@ -333,7 +334,6 @@ export const SECCIONES_PORTAFOLIO = [
   { id: 'encuesta',  titulo: 'Encuesta de Satisfacción del Proceso de Evaluación', modulo: 'encuesta', doc: 'encuesta' },
   { id: 'cedula_servicio', titulo: 'Cédula de Evaluación del Servicio a usuarios', generado: true },
   { id: 'verificacion', titulo: 'Verificación Interna del Proceso de Evaluación', generado: true },
-  { id: 'atencion',  titulo: 'Formato de Atención a Usuarios', generado: true },
   { id: 'sep4',      titulo: '4. Anexos', separador: true },
   { id: 'acuses',    titulo: 'Acuses de recibido: tríptico, cédula y plan', generado: true },
   { id: 'acuse_plan',titulo: 'Acuse de recibido — Plan de Evaluación', modulo: 'plan', doc: 'acusePlanEvaluacion' },
@@ -381,6 +381,7 @@ export function avisosPortafolio(expediente, ev = {}) {
       avisos.push('INE: llegó un solo archivo de una página. Revisa que traiga frente y reverso');
   }
   if (!ev.video?.liga) avisos.push('Falta ligar la grabación de la sesión');
+  if (!String(ev.folioSii || '').trim()) avisos.push('Falta el Folio del SII (en «Fechas del proceso»): va en la pág. 2, Formato de Atención a Usuarios');
   if (!cedulaPublicada(ev)) avisos.push('Falta publicar la Cédula de Evaluación');
   if (!ev.iec?.completo) avisos.push('Falta terminar de calificar el IEC');
   const choques = contradiccionesIec(ev.iec?.respuestas || {}, ev.iec?.observaciones || {});

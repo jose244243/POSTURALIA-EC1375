@@ -259,6 +259,10 @@ export function htmlPortafolio({ expediente: x, evaluacion: ev = {}, lote = '', 
   const hojas = [
     `<style>${estilosPortafolioOficial()}</style>`,
     portada({ candidato: nombre, evaluador, fecha: fechaCed || hoyIso(), lote }),
+    /* v55 (Humberto, 11-oct): el Formato de Atención a Usuarios va en la
+       pág. 2, justo después de la portada, como en los portafolios de
+       Diego y de Humberto; lleva el Folio que da el SII al iniciar. */
+    formatoAtencion(F.agenda ? { ...enc, fecha: F.agenda } : enc, c, { folio: F.folio, lugar: lugarEval || CONFIG.marca?.ciudad || '', evaluador, firmaCandidato: firmaDeSello(enc.sello) || firmaCand, firmaEvaluador: ev.firmas?.plan || null }),
     indice(),
     separador('1. Datos del Candidato/a', nombre),
     imagenes['sii.ficha']?.length ? fichaSiiSubida(imagenes['sii.ficha'], firmaCand) : htmlFichaSii(c, { foto: lista(imagenes['candidato.fotoRegistro'])[0] || '', firma: firmaCand }),
@@ -291,10 +295,9 @@ export function htmlPortafolio({ expediente: x, evaluacion: ev = {}, lote = '', 
     cedula(ev, { candidato: nombre, fecha: F.evaluacion }),
     encuesta(F.evaluacion ? { ...enc, fecha: F.evaluacion } : enc, { candidato: nombre, firma: firmaDeSello(enc.sello) || firmaCand }),
     /* Orden del FORMATO 2026 (págs. 38–42): Cédula · Encuesta · Cédula del
-       Servicio · Verificación Interna · Formato de Atención. */
+       Servicio · Verificación Interna (el Formato de Atención va en la pág. 2). */
     cedulaServicio(enc, c, { evaluador: `${evaluador}${ce().nombre ? ' · ' + ce().nombre : ''}`, firmaCandidato: firmaDeSello(enc.sello) || firmaCand }),
     vistaCandidato ? reservada('Verificación Interna del Proceso de Evaluación') : verificacion(ev, { candidato: nombre }),
-    formatoAtencion(F.agenda ? { ...enc, fecha: F.agenda } : enc, c, { folio: F.folio, lugar: lugarEval || CONFIG.marca?.ciudad || '', evaluador, firmaCandidato: firmaDeSello(enc.sello) || firmaCand, firmaEvaluador: ev.firmas?.plan || null }),
     separador('4. ANEXOS'),
     acuse('triptico', { evaluador, candidato: nombre, fecha: F.agenda || auto.triptico?.fecha, firma: firmaTrip }),
     acuse('cedula', { evaluador, candidato: nombre, fecha: fechaCed, firma: ev.firma_candidato || null }),

@@ -241,29 +241,49 @@ export function triptico(c = {}, { firma = null, fecha = '' } = {}) {
 /* ── Formato de Atención a Usuarios ──────────────────────────────────── */
 const marca = v => v ? 'X' : '';
 export function formatoAtencion(enc = {}, c = {}, { folio = '', lugar = '', evaluador = '', firmaCandidato = null, firmaEvaluador = null } = {}) {
+  /* v55 (Humberto, 11-oct): igual al formato oficial y a la pág. 2 de los
+     portafolios de Paideia: «Folio:» del SII bajo el título, Medio de
+     Contacto en rejilla 2×2, Lugar y Fecha, y las cinco preguntas con
+     Bueno / Regular / Malo y la X debajo. */
   const a = enc.atencion || {}, r = a.r || {};
   const fecha = fechaFormato(String(enc.fecha || '').slice(0, 10));
   const cp = c.cp || (String(c.domicilio || '').match(/\b\d{5}\b/) || [''])[0];
+  const m = a.medio || '';
+  const val = {
+    Presencial: m === 'Presencial' ? 'X' : '',
+    'Telefónico': m === 'Telefónico' ? 'X' : m === 'Watsapp empresarial' ? 'Watsapp empresarial' : '',
+    'E-Mail': m === 'E-Mail' ? (c.email ? esc(c.email) : 'X') : '',
+    Otro: m === 'Otro' ? esc(a.otro || 'X') : '',
+  };
+  const g = (w = '') => `class="lb" style="font-weight:normal;text-align:center;${w}"`;
+  const dato = (w = '') => `style="font-weight:bold;text-align:center;font-family:Arial,sans-serif;${w}"`;
   return hoja('Formato de Atención a Usuarios', `
-    <p style="text-align:center;margin:0 0 1mm">Sistema Nacional de Competencia en la operación de la Evaluación y Certificación</p>
-    <p style="text-align:center;font-weight:bold;font-size:12pt;margin:0 0 3mm">${FA.titulo}</p>
-    <table class="fmt-t"><tr><td class="lb" style="width:20mm">Folio:</td><td>${esc(folio)}</td><td class="lb" style="width:20mm">Fecha:</td><td style="width:40mm">${esc(fecha)}</td></tr></table>
-    <table class="fmt-t"><tr><td class="lb">Medio de Contacto:</td>${FA.medios.map(m => `<td>${m === 'Otro' ? 'Otro (Escriba el medio)' : m} <b>[${marca(a.medio === m)}]</b>${m === 'Otro' && a.medio === 'Otro' ? ' ' + esc(a.otro) : ''}</td>`).join('')}</tr></table>
-    <table class="fmt-t"><tr><td class="lb" style="width:20mm">Lugar</td><td>${esc(lugar)}</td><td class="lb" style="width:20mm">Fecha</td><td style="width:40mm">${esc(fecha)}</td></tr></table>
-    <p style="font-size:9.5pt">Estimado usuario, le agradeceremos que conteste el siguiente cuestionario para mejorar nuestro servicio.</p>
+    <div style="text-align:center;line-height:1.35;margin:0 0 2mm">
+      <b style="font-size:11pt">Sistema Nacional de Competencia en la operación de la Evaluación y Certificación</b><br>
+      ${FA.titulo}<br>Folio: <b>${esc(folio)}</b></div>
+    <table class="fmt-t" style="border:0"><tr>
+      <td rowspan="2" ${g('width:28mm;font-weight:normal;text-align:center')}>Medio de<br>Contacto</td>
+      <td style="border:0;width:3mm"></td>
+      <td ${g('width:30mm;font-weight:normal;text-align:center')}>Presencial</td><td style="width:42mm">${val.Presencial}</td>
+      <td ${g('width:30mm;font-weight:normal;text-align:center')}>Telefónico</td><td>${val['Telefónico']}</td></tr>
+      <tr><td style="border:0"></td><td ${g()}>E-Mail</td><td>${val['E-Mail']}</td><td ${g()}>Otro (Escriba el medio)</td><td>${val.Otro}</td></tr></table>
+    <table class="fmt-t"><tr><td ${g('width:28mm;font-weight:normal;text-align:center')}>Lugar</td><td ${dato()}>${esc(String(lugar).toUpperCase())}</td>
+      <td ${g('width:30mm;font-weight:normal;text-align:center')}>Fecha</td><td ${dato('width:45mm;font-weight:bold;text-align:center')}>${esc(fecha)}</td></tr></table>
+    <p style="font-size:10pt;margin:0 0 1mm"><b>Estimado usuario</b>, le agradeceremos que conteste el siguiente cuestionario para mejorar nuestro servicio.</p>
     <table class="fmt-t"><tr><td colspan="4" class="lb" style="text-align:center">DATOS GENERALES DEL USUARIO</td></tr>
-      <tr><td class="lb">NOMBRE</td><td colspan="3">${esc(c.nombre || '')}<br><span class="cap">Apellidos Paterno, Materno y Nombre (s)</span></td></tr>
-      <tr><td class="lb">Domicilio</td><td colspan="3">${esc(c.domicilio || '')}<br><span class="cap">(Calle; numero exterior y en su caso número interior)</span></td></tr>
-      <tr><td class="lb">Colonia</td><td>${esc(c.colonia || '')}</td><td class="lb">Código Postal</td><td>${esc(cp)}</td></tr>
-      <tr><td class="lb">Delegación o Municipio</td><td>${esc(c.municipio || '')}</td><td class="lb">Estado</td><td>${esc(c.estado || '')}</td></tr>
-      <tr><td class="lb">Ciudad</td><td>${esc(c.ciudad || '')}</td><td class="lb">Fax</td><td></td></tr>
-      <tr><td class="lb">Teléfonos (s) Incluyendo Clave Lada</td><td>${esc([c.telefonoCelular, c.telefonoCasa].filter(Boolean).join(' / '))}</td><td class="lb">E-Mail</td><td>${esc(c.email || '')}</td></tr>
-      <tr><td class="lb">EC o área de interés</td><td colspan="3">${esc(CONFIG.marca?.estandar || 'EC1375')}</td></tr></table>
-    <table class="fmt-t"><tr><td style="height:24mm;text-align:center;vertical-align:bottom;width:50%">${firmaCaja(firmaCandidato, 36)}<span class="cap">${esc(c.nombre || '')}<br>Nombre y firma del usuario (Solo para atención presencial)</span></td>
-      <td style="text-align:center;vertical-align:bottom">${firmaCaja(firmaEvaluador, 36)}<span class="cap">${esc(evaluador)}<br>Nombre y firma de la persona que atendió al usuario.</span></td></tr></table>
-    <p style="font-size:9.5pt;margin:0 0 1mm">Tache la opción que defina la forma en que recibió la atención.</p>
-    <table class="fmt-t"><tr><td class="lb" style="width:8mm"></td><td class="lb"></td>${FA.escala.map(e => `<td class="lb x">${e}</td>`).join('')}</tr>
-      ${FA.preguntas.map((p, i) => `<tr><td style="text-align:center">${i + 1}</td><td>${esc(p)}</td>${FA.escala.map((_, k) => `<td class="x">${marca(r[i] === k)}</td>`).join('')}</tr>`).join('')}</table>`);
+      <tr><td ${g()} rowspan="2" style="width:28mm;font-weight:normal;text-align:center">NOMBRE</td><td colspan="3" ${dato()}>${esc(String(c.nombre || '').toUpperCase())}</td></tr>
+      <tr><td colspan="3" ${g()}>Apellidos Paterno, Materno y Nombre (s)</td></tr>
+      <tr><td ${g()} rowspan="2">Domicilio</td><td colspan="3" ${dato()}>${esc(String(c.domicilio || '').toUpperCase())}</td></tr>
+      <tr><td colspan="3" ${g()}>(Calle; numero exterior y en su caso número interior)</td></tr>
+      <tr><td ${g()}>Colonia</td><td ${dato()}>${esc(String(c.colonia || '').toUpperCase())}</td><td ${g('width:30mm;font-weight:normal;text-align:center')}>Código Postal</td><td ${dato()}>${esc(cp)}</td></tr>
+      <tr><td ${g()}>Delegación o Municipio</td><td ${dato()}>${esc(String(c.municipio || '').toUpperCase())}</td><td ${g()}>Estado</td><td ${dato()}>${esc(String(c.estado || '').toUpperCase())}</td></tr>
+      <tr><td ${g()}>Ciudad</td><td ${dato()}>${esc(String(c.ciudad || c.municipio || '').toUpperCase())}</td><td ${g()}>Fax</td><td></td></tr>
+      <tr><td ${g()}>Teléfonos (s) Incluyendo Clave Lada</td><td ${dato()}>${esc([c.telefonoCelular, c.telefonoCasa].filter(Boolean).join(' / '))}</td><td ${g()}>E-Mail</td><td ${dato()}>${esc(c.email || '')}</td></tr>
+      <tr><td colspan="4" class="lb" style="text-align:center">EC o área de interés ${esc(String(CONFIG.marca?.estandar || 'EC1375').replace(/^EC\s*/i, ''))}</td></tr>
+      <tr><td colspan="2" style="height:24mm;text-align:center;vertical-align:bottom">${firmaCaja(firmaCandidato, 36)}<b>${esc(String(c.nombre || '').toUpperCase())}</b><br><span class="cap">Nombre y firma del usuario (Solo para atención presencial)</span></td>
+        <td colspan="2" style="text-align:center;vertical-align:bottom">${firmaCaja(firmaEvaluador, 36)}<b>${esc(String(evaluador).toUpperCase())}</b><br><span class="cap">Nombre y firma de la persona que atendió al usuario.</span></td></tr></table>
+    <p style="font-size:10pt;margin:0 0 1mm">Tache la opción que defina la forma en que recibió la atención.</p>
+    <table class="fmt-t">${FA.preguntas.map((p, i) => `<tr style="background:#e5e5e5"><td>${esc(p)}</td>${FA.escala.map((e, k) => `<td class="x" style="vertical-align:top;font-weight:normal">${e}<br><b style="font-size:11pt">${marca(r[i] === k)}</b></td>`).join('')}</tr>`).join('')}</table>`, { sinTitulo: true });
 }
 
 /* ── Cédula de Evaluación del Servicio a usuarios ────────────────────── */
