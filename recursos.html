@@ -130,7 +130,7 @@ pintarBarraFlujo($('pasos'), null);
    Se desbloquea al terminar el proceso (el último paso del candidato son
    las Evidencias), como en Paideia. El equipo lo ve siempre. */
 (async () => {
-  const [{ FORMATOS, htmlImprimible, blobWord, nombreArchivo }, { estaCompleto }, { Store }, { sesion }, { domicilioCompleto }] = await Promise.all([
+  const [{ FORMATOS, pdfBlob, docxBlob, nombreArchivo }, { estaCompleto }, { Store }, { sesion }, { domicilioCompleto }] = await Promise.all([
     import('./js/toolkit.js'), import('./js/flow.js'), import('./js/store.js'), import('./js/cuenta.js'), import('./js/registro.js')]);
   const s = sesion?.() || null;
   const libre = estaCompleto('evidencias') || s?.rol === 'admin' || s?.rol === 'evaluador' || Store.soloLectura;
@@ -152,17 +152,21 @@ pintarBarraFlujo($('pasos'), null);
   $('tkFormatos').innerHTML = FORMATOS.map(f => `<div class="tk-f" data-f="${f.id}"><h3>${f.titulo}</h3><p>${f.desc}</p>
     <div class="acc"><button class="btn-plat btn-plat--primario" data-pdf="${f.id}" ${libre ? '' : 'disabled'}>PDF</button>
       <button class="btn-plat btn-plat--secundario" data-word="${f.id}" ${libre ? '' : 'disabled'}>Word editable</button></div></div>`).join('');
-  $('tkFormatos').addEventListener('click', e => {
-    const pdf = e.target.closest('[data-pdf]'), word = e.target.closest('[data-word]');
-    if (pdf && !pdf.disabled) {
-      const url = URL.createObjectURL(new Blob([htmlImprimible(pdf.dataset.pdf, datos())], { type: 'text/html' }));
-      const w = window.open(url, '_blank'); if (!w) location.href = url; setTimeout(() => URL.revokeObjectURL(url), 60000);
-    }
-    if (word && !word.disabled) {
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blobWord(word.dataset.word, datos()));
-      a.download = nombreArchivo(word.dataset.word, datos(), 'doc'); document.body.appendChild(a); a.click(); a.remove();
+  /* v60: como Paideia — «PDF» descarga el PDF y «Word editable» un .docx de verdad */
+  $('tkFormatos').addEventListener('click', async e => {
+    const b = e.target.closest('[data-pdf],[data-word]');
+    if (!b || b.disabled) return;
+    const id = b.dataset.pdf || b.dataset.word, ext = b.dataset.pdf ? 'pdf' : 'docx', txt = b.textContent;
+    b.disabled = true; b.textContent = 'Preparando…';
+    try {
+      const blob = ext === 'pdf' ? await pdfBlob(id, datos()) : await docxBlob(id, datos());
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = nombreArchivo(id, datos(), ext); document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-    }
+    } catch (err) {
+      console.error('No se pudo generar el formato:', err);
+      alert('No se pudo generar el archivo. Revisa tu conexión e intenta de nuevo.');
+    } finally { b.disabled = false; b.textContent = txt; }
   });
 })();
 $('wa').href = `https://wa.me/${CONFIG.marca.whatsapp}`;

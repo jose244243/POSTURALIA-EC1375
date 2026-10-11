@@ -271,6 +271,18 @@ $('btnEnsayo').onclick = () => {
   pintar();
 };
 
+/* v60: lo impreso sale igual que el Guion Maestro de Paideia (mismo
+   contenido, compacto en 2 y 3 columnas) con tu nombre como marca de agua */
+import('./js/data-guion-impreso.js').then(async ({ guionImpresoHtml, ESTILO_IMPRESO, marcaAgua }) => {
+  const st = document.createElement('style'); st.textContent = ESTILO_IMPRESO; document.head.appendChild(st);
+  const hoja = document.createElement('div'); hoja.className = 'guion-impreso'; hoja.innerHTML = guionImpresoHtml(); document.body.appendChild(hoja);
+  const marca = document.createElement('div'); marca.className = 'gi-marca'; marca.setAttribute('aria-hidden', 'true'); document.body.appendChild(marca);
+  let nombre = '', correo = '';
+  try { const [{ Store }, { sesion }] = await Promise.all([import('./js/store.js'), import('./js/cuenta.js')]);
+    const c = Store.get('candidato', {}) || {}, s = sesion?.() || {};
+    correo = s.email || c.email || ''; nombre = c.nombre || correo; } catch {}
+  if (nombre) marca.style.backgroundImage = marcaAgua(nombre, correo);
+}).catch(() => {});
 $('btnImprimir').onclick = () => window.print();
 
 $('buscar').addEventListener('input', e => {
