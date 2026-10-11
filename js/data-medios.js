@@ -165,26 +165,26 @@ export const duracionTexto = seg => { seg = Math.max(0, Math.round(Number(seg) |
      · youtubeId: el ID de un video NO LISTADO de un canal de POSTURALIA.
    Si ambos están vacíos, la sección muestra solo los videos de técnica. */
 export const GUION_PROPIOS = {
-  preparacion:       { archivo: '', youtubeId: '' },   // Preparación del espacio y protocolo sanitario
+  preparacion:       { archivo: '', youtubeId: 'LqoN4LF4IDY' },   // Preparación del espacio y protocolo sanitario
   recepcion:         { archivo: '', youtubeId: '' },   // Recepción y bienvenida
   explicacion:       { archivo: '', youtubeId: '' },   // Explicación del proceso
-  privacidad:        { archivo: '', youtubeId: '' },   // Aviso de privacidad e identificación
+  privacidad:        { archivo: '', youtubeId: '-6AWugKSB94' },   // Aviso de privacidad e identificación
   ficha:             { archivo: '', youtubeId: '' },   // Ficha de registro y antecedentes
   peso_estatura:     { archivo: '', youtubeId: '' },   // Peso y estatura
   spo2_pulso:        { archivo: '', youtubeId: '' },   // Saturación de oxígeno y pulso
   postura:           { archivo: '', youtubeId: '' },   // Observación de postura
   frec_resp:         { archivo: '', youtubeId: '' },   // Frecuencia respiratoria
-  presion:           { archivo: '', youtubeId: '' },   // Presión arterial
-  verificar:         { archivo: '', youtubeId: '' },   // Verificación de no impedimento
-  terapia_explicacion: { archivo: '', youtubeId: '' },   // Explicación de la atención
-  consentimiento:    { archivo: '', youtubeId: '' },   // Consentimiento informado
+  presion:           { archivo: '', youtubeId: 'xHuCUldYa3w' },   // Presión arterial
+  verificar:         { archivo: '', youtubeId: 'wo7OM9oTT9o' },   // Verificación de no impedimento
+  terapia_explicacion: { archivo: '', youtubeId: 'lf-AsmaGKGM' },   // Explicación de la atención
+  consentimiento:    { archivo: '', youtubeId: '4BpsbqRHeAE' },   // Consentimiento informado
   atencion:          { archivo: '', youtubeId: '' },   // Ejecución de la atención
   finalizacion:      { archivo: '', youtubeId: '' },   // Finalización de la sesión
   encuesta_usuario:  { archivo: '', youtubeId: '' },   // Encuesta de satisfacción del usuario
   plan_sesion:       { archivo: '', youtubeId: '' },   // Plan de sesiones
-  plan_seguimiento:  { archivo: '', youtubeId: '' },   // Programación de seguimiento
-  medio_contacto:    { archivo: '', youtubeId: '' },   // Medio de contacto
-  cierre:            { archivo: '', youtubeId: '' },   // Cierre
+  plan_seguimiento:  { archivo: '', youtubeId: 'XgFTr9zOLRo' },   // Programación de seguimiento
+  medio_contacto:    { archivo: '', youtubeId: 'e4WMmYAoxo0' },   // Medio de contacto
+  cierre:            { archivo: '', youtubeId: 'Cxlrb3ZkNPg' },   // Cierre
 };
 
 /* TUTORIALES_EQUIPO: los del Centro Evaluador (como los `equipo: true` de
