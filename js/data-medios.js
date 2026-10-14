@@ -166,14 +166,14 @@ export const duracionTexto = seg => { seg = Math.max(0, Math.round(Number(seg) |
    Si ambos están vacíos, la sección muestra solo los videos de técnica. */
 export const GUION_PROPIOS = {
   preparacion:       { archivo: '', youtubeId: 'LqoN4LF4IDY' },   // Preparación del espacio y protocolo sanitario
-  recepcion:         { archivo: '', youtubeId: '' },   // Recepción y bienvenida
-  explicacion:       { archivo: '', youtubeId: '' },   // Explicación del proceso
+  recepcion:         { archivo: '', youtubeId: 'qReP9hN2w4I' },   // Recepción y bienvenida
+  explicacion:       { archivo: '', youtubeId: 'DQfnoy2M2z4' },   // Explicación del proceso
   privacidad:        { archivo: '', youtubeId: '-6AWugKSB94' },   // Aviso de privacidad e identificación
-  ficha:             { archivo: '', youtubeId: '' },   // Ficha de registro y antecedentes
-  peso_estatura:     { archivo: '', youtubeId: '' },   // Peso y estatura
-  spo2_pulso:        { archivo: '', youtubeId: '' },   // Saturación de oxígeno y pulso
-  postura:           { archivo: '', youtubeId: '' },   // Observación de postura
-  frec_resp:         { archivo: '', youtubeId: '' },   // Frecuencia respiratoria
+  ficha:             { archivo: '', youtubeId: 'bHS2IX_dcqc' },   // Ficha de registro y antecedentes
+  peso_estatura:     { archivo: '', youtubeId: 'jAIIasaibs4' },   // Peso y estatura
+  spo2_pulso:        { archivo: '', youtubeId: 'eJzPrU1wrdU' },   // Saturación de oxígeno y pulso
+  postura:           { archivo: '', youtubeId: 'Dv_xk4R8l0Y' },   // Observación de postura
+  frec_resp:         { archivo: '', youtubeId: 'fu7d_5qvyfQ' },   // Frecuencia respiratoria
   presion:           { archivo: '', youtubeId: 'xHuCUldYa3w' },   // Presión arterial
   verificar:         { archivo: '', youtubeId: 'wo7OM9oTT9o' },   // Verificación de no impedimento
   terapia_explicacion: { archivo: '', youtubeId: 'lf-AsmaGKGM' },   // Explicación de la atención
