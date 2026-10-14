@@ -120,6 +120,7 @@ export async function montarAdminSala(el, { nombres = {} } = {}) {
     let h = st.error ? `<div class="aviso aviso--warn">${e(st.error)}</div>` : '';
     h += st.msg ? `<p role="status" style="font-weight:600">${e(st.msg)}</p>` : '';
     h += `<h3>Configuración de la sala</h3>
+      <p class="pn-nota" style="border-left:3px solid #D97706;padding-left:8px"><b>Antes de usar la sala:</b> en la cuenta de Zoom (zoom.us → Configuración → Reunión) apaga el temporizador de inactividad y que los participantes entren con el micrófono encendido. En Paideia la reunión se cerraba sola a los 60 min con el aviso a los 55, cortaba la grabación y al volver a entrar se perdía el audio.</p>
       <p class="pn-nota">El enlace y la clave nunca se le muestran al candidato fuera de su horario. Si cambias la sala en Zoom, actualízala aquí.${D.enNube() ? '' : ' <b>Modo local:</b> los horarios viven en este navegador; el candidato agenda desde el equipo del Centro.'}</p>
       <div class="sala-form">
         <label>Enlace de invitación de Zoom <input type="url" id="saUrl" value="${e(c.zoom_url || '')}" placeholder="https://us06web.zoom.us/j/…"></label>
