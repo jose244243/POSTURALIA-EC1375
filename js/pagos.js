@@ -23,6 +23,9 @@ export const FASES_PAGO = CONFIG.fases.filter(f => f.id !== 'registro').map(f =>
 /* v60: el apartado (fase «registro») también se cobra: link y monto propios */
 export const FASES_COBRO = CONFIG.fases.map(f => f.id);
 export const MONTO_APARTADO = 2000;
+/* v62: la liga de registro es siempre la dirección oficial, sin importar desde
+   qué dirección se abra el panel (workers.dev, sepconocer., vista previa). */
+export const LIGA_REGISTRO = 'https://sepconocer.posturalia.com.mx/registro.html';
 const etiquetaFase = f => f === 'registro' ? 'Apartado' : (CONFIG.fases.find(x => x.id === f) || {}).label || f;
 export const QUE_INCLUYE = {
   registro: 'Con tu apartado aseguras tu lugar en el grupo y el equipo abre tu proceso de certificación.',
