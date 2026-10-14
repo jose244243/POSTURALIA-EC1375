@@ -152,13 +152,14 @@ export function cedula(ev = {}, { candidato = '', fecha = '' } = {}) {
       <tr><td>Candidato/a:</td><td><b>${esc(String(candidato).toUpperCase())}</b></td></tr>
       <tr><td>Estándar de Competencia:</td><td class="just">${std()}</td></tr><tr><td>Fecha:</td><td>${esc(fechaFormato(c.fecha))}</td></tr></table>
     <table class="t"><tr class="gris"><td colspan="2" class="cen">RESULTADO DE LA EVALUACIÓN</td></tr>
-      ${CAMPOS_CEDULA.map(k => fila(k.label + ':', c[k.id])).join('')}${fila('Incidencias:', c.incidencias)}</table>
-    <table class="t"><tr class="gris"><td class="cen">JUICIO DE EVALUACIÓN</td></tr><tr><td class="cen" style="font-size:14pt;height:34px"><b>${esc(juicioOficial(c.juicio))}</b></td></tr></table>
+      ${CAMPOS_CEDULA.map(k => (k.id === 'recomendaciones' ? fila('Incidencias:', c.incidencias) : '') + fila(k.label + ':', c[k.id])).join('')}${CAMPOS_CEDULA.some(k => k.id === 'recomendaciones') ? '' : fila('Incidencias:', c.incidencias)}</table>
+    <table class="t"><tr class="gris"><td class="cen">JUICIO DE EVALUACIÓN</td></tr><tr><td class="cen" style="font-size:12pt;height:34px">${c.juicio ? `<b style="text-decoration:underline">${esc(juicioOficial(c.juicio))}</b>` : '_______________________'} &nbsp;( COMPETENTE / TODAVÍA NO COMPETENTE )</td></tr></table>
     <table class="t"><tr class="gris"><td class="cen" style="width:50%">Evaluadora</td><td class="cen">Candidata/o</td></tr>
       <tr style="height:90px"><td class="cen">${firmaHtml(c.firmaEvaluador)}</td><td class="cen" style="font-size:9.5pt">${firmaHtml(ev.firma_candidato)}${esc(TEXTO_ACUERDO)}</td></tr>
-      <tr class="gris"><td class="cen">Nombre y Firma</td><td class="cen">Nombre y Firma</td></tr></table>
+      <tr><td class="cen"><b>${esc(c.firmaEvaluador?.nombre || c.evaluadora || '')}</b></td><td class="cen"><b>${esc(String(candidato).toUpperCase())}</b></td></tr>
+      <tr class="gris"><td class="cen">Nombre y Firma</td><td class="cen">Nombre y Firma${ev.firma_candidato?.fecha ? ' · ' + esc(fechaFormato(ev.firma_candidato.fecha)) : ''}</td></tr></table>
     <div style="font-size:9pt;border:1px solid #000;padding:4px 8px"><b>Notas:</b><ul style="margin:2px 0 0 18px;padding:0">
-      <li>El Juicio de Competencia emitido, está sujeto a la ratificación o rectificación del dictamen emitido por la ECE u OC.</li>
+      <li>El Juicio de Competencia emitido, está sujeto a la ratificación o rectificación del dictamen emitido por (Razón social o denominación de la ECE u OC).</li>
       <li>El Candidato pagará el importe establecido para el certificado, sí y solo si su Juicio de Competencia resultara ser competente.</li></ul></div>
     <table class="t" style="margin-top:10px"><tr><td class="gris" style="width:170px">RECIBÍ COPIA DE LA CÉDULA DE EVALUACIÓN (ACUSE)<br>${ev.firma_candidato ? '<s style="text-decoration-thickness:2px">SÍ</s>' : 'SÍ'} &nbsp;&nbsp;&nbsp; NO</td>
       <td class="cen" style="vertical-align:bottom">${firmaHtml(ev.firma_candidato, 40)}<small>NOMBRE Y FIRMA DEL USUARIO</small></td></tr></table>
