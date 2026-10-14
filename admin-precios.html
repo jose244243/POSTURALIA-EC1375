@@ -315,6 +315,7 @@ function pintar() {
   LBL.registro = 'Apartado (liga de registro)';
   $('dpFases').innerHTML = pg.FASES_COBRO.map(f => `<label>Monto base · ${LBL[f]}<input data-dp-monto="${f}" inputmode="numeric" placeholder="Si no hay precio acordado"></label>
     <label>Link de Mercado Pago · ${LBL[f]}<input data-dp-link="${f}" placeholder="https://mpago.la/…"></label>`).join('');
+  $('dpFases').insertAdjacentHTML('afterend', `<p style="font-size:.86rem;margin:10px 0 0">Liga de registro (el apartado se cobra ahí): <a href="${pg.LIGA_REGISTRO}" target="_blank" rel="noopener" style="word-break:break-all">${pg.LIGA_REGISTRO}</a></p>`);
   const leer = () => ({ banco: $('dpBanco').value, titular: $('dpTitular').value, cuenta: $('dpCuenta').value, clabe: $('dpClabe').value, nota: $('dpNota').value,
     links: Object.fromEntries([...document.querySelectorAll('[data-dp-link]')].map(i => [i.dataset.dpLink, i.value])),
     montos: Object.fromEntries([...document.querySelectorAll('[data-dp-monto]')].map(i => [i.dataset.dpMonto, i.value])) });
