@@ -298,8 +298,9 @@ if (soloLectura) ['btnImportar', 'btnLimpiar', 'barraSel'].forEach(id => { const
 
 /* Liga pública de registro (como la de Paideia): se comparte por WhatsApp
    o correo. Quien se registra sale aquí como «Sin dar de alta». */
+const LIGA_REGISTRO = 'https://sepconocer.posturalia.com.mx/registro.html';
 $('btnLiga').onclick = async () => {
-  const liga = new URL('registro.html', location.href).href;
+  const liga = LIGA_REGISTRO;
   const b = $('btnLiga');
   try { await navigator.clipboard.writeText(liga); b.textContent = 'Liga copiada ✓'; }
   catch { prompt('Copia esta liga:', liga); }
@@ -730,6 +731,9 @@ function fichaComercial(c) {
   const pr = d.precio[c.email] || {};
   const fases = fasesPagadas(d, c.email);
   return `
+    <h3 style="margin:18px 0 6px;font-size:.95rem">Liga de registro y apartado</h3>
+    <p style="font-size:.86rem;margin:0 0 6px">Liga pública (la misma que se copia arriba): <a href="${LIGA_REGISTRO}" target="_blank" rel="noopener" style="word-break:break-all">${LIGA_REGISTRO}</a></p>
+    <p style="font-size:.84rem;color:var(--muted);margin:0 0 6px">Apartado: ${d.pagos.some(x => x.email === c.email && x.fase === 'registro') ? 'pagado' : 'pendiente'}${fases.registro ? ' · liberado' : ''}</p>
     <h3 style="margin:18px 0 6px;font-size:.95rem">Nota interna</h3>
     <textarea id="fiNota" rows="2" style="width:100%;font:inherit;font-size:.86rem;padding:9px 11px;border:1px solid var(--border);border-radius:8px"
       placeholder="Solo la ve el equipo (ej. acordó pagar en 3 partes, llamar el lunes…)">${esc(pr.nota_interna || '')}</textarea>
