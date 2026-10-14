@@ -23,9 +23,16 @@ export const FASES_PAGO = CONFIG.fases.filter(f => f.id !== 'registro').map(f =>
 /* v60: el apartado (fase «registro») también se cobra: link y monto propios */
 export const FASES_COBRO = CONFIG.fases.map(f => f.id);
 export const MONTO_APARTADO = 2000;
+/* v64: precio base de cada fase (lo que recibe el Centro). Por transferencia
+   se paga tal cual; por Mercado Pago se suma la comisión (Link de pago de
+   contado: 3.49% + IVA + $4.64), redondeado a la decena: así el Centro
+   recibe completo el precio base. Los links de Mercado Pago se crearon con
+   estos totales: 2,090 · 4,440 · 6,260 · 2,620. */
+export const MONTOS_BASE = { registro: 2000, alineacion: 4250, evaluacion: 6000, entrega: 2500 };
+export const totalMercadoPago = base => Math.ceil(((Number(base) + 4.64) / (1 - 0.0349 * 1.16)) / 10) * 10;
 /* v62: la liga de registro es siempre la dirección oficial, sin importar desde
-   qué dirección se abra el panel (workers.dev, sepconocer., vista previa). */
-export const LIGA_REGISTRO = 'https://sepconocer.posturalia.com.mx/registro.html';
+   qué dirección se abra el panel (workers.dev, sepconocer., redconocer-ec1375., vista previa). */
+export const LIGA_REGISTRO = 'https://redconocer-ec1375.posturalia.com.mx/registro.html';
 const etiquetaFase = f => f === 'registro' ? 'Apartado' : (CONFIG.fases.find(x => x.id === f) || {}).label || f;
 export const QUE_INCLUYE = {
   registro: 'Con tu apartado aseguras tu lugar en el grupo y el equipo abre tu proceso de certificación.',
@@ -96,7 +103,7 @@ export async function guardarDatosPago(entrada) {
 export function montoPara(correo, fase, cfg) {
   const pr = (leerEquipo().precio || {})[String(correo || '').toLowerCase()];
   const n = Number(pr?.['monto_' + fase]);
-  return n > 0 ? n : (Number(cfg?.montos?.[fase]) > 0 ? Number(cfg.montos[fase]) : fase === 'registro' ? MONTO_APARTADO : null);
+  return n > 0 ? n : (Number(cfg?.montos?.[fase]) > 0 ? Number(cfg.montos[fase]) : (MONTOS_BASE[fase] || null));
 }
 
 /* ── Caja de pago ────────────────────────────────────────────────────── */
@@ -104,13 +111,22 @@ export const pesos = n => '$' + Number(n).toLocaleString('es-MX') + ' MXN';
 export function htmlPago(fase, cfg, { monto = null, nombre = '' } = {}) {
   const f = etiquetaFase(fase), link = cfg?.links?.[fase], hayTrans = !!(cfg?.clabe || cfg?.cuenta);
   const wa = CONFIG.marca?.whatsapp || '';
-  const msj = encodeURIComponent(`Hola, ya hice mi pago${monto ? ' de ' + pesos(monto) : ''} de ${f} EC1375.${nombre ? '\nNombre: ' + nombre : ''}\nAquí está mi comprobante:`);
+  /* El link de Mercado Pago tiene un monto fijo (precio base + comisión):
+     solo se ofrece si a esta persona le toca el precio base de la fase. */
+  const base = Number(cfg?.montos?.[fase]) > 0 ? Number(cfg.montos[fase]) : MONTOS_BASE[fase];
+  const totMP = monto ? totalMercadoPago(monto) : null;
+  const mpOk = !!link && (!monto || Number(monto) === Number(base));
+  const msj = encodeURIComponent(`Hola, ya hice mi pago de ${f} EC1375 (transferencia o Mercado Pago).${nombre ? '\nNombre: ' + nombre : ''}\nAquí está mi comprobante:`);
   return `<div class="pg-caja" data-pago="${esc(fase)}">
     <div class="pg-t"><b>Pagar ${esc(f)}</b>${monto ? `<span class="pg-monto">${pesos(monto)}</span>` : ''}</div>
     <p class="pg-p">${esc(QUE_INCLUYE[fase] || '')}</p>
-    <ol class="pg-pasos"><li><b>Elige cómo pagar:</b> ${link ? 'Mercado Pago o ' : ''}transferencia bancaria.</li><li><b>Paga el monto completo</b>${monto ? ' (' + pesos(monto) + ')' : ''}.</li>
+    ${monto ? `<div class="pg-opc">
+      <div><span>Transferencia bancaria</span><b>${pesos(monto)}</b><small>No se cobra comisión.</small></div>
+      ${mpOk ? `<div><span>Mercado Pago</span><b>${pesos(totMP)}</b><small>${pesos(monto)} + ${pesos(totMP - monto)} de comisión de Mercado Pago. Tarjeta de crédito o débito; a meses, con los intereses a cargo de quien paga.</small></div>` : ''}
+    </div>` : ''}
+    <ol class="pg-pasos"><li><b>Elige cómo pagar:</b> ${mpOk ? 'transferencia (sin comisión) o Mercado Pago (con comisión)' : 'transferencia bancaria'}.</li><li><b>Paga el monto completo</b> de la opción que elijas.</li>
       <li><b>Manda tu comprobante</b> por WhatsApp: el Centro confirma tu pago y habilita tu fase.</li></ol>
-    ${link ? `<a class="btn-plat btn-plat--primario pg-mp" href="${esc(link)}" target="_blank" rel="noopener">Pagar con Mercado Pago</a>` : ''}
+    ${mpOk ? `<a class="btn-plat btn-plat--primario pg-mp" href="${esc(link)}" target="_blank" rel="noopener">Pagar con Mercado Pago · ${pesos(totMP)}</a>` : ''}
     ${hayTrans ? `<div class="pg-trans"><div class="pg-st">Transferencia bancaria</div>
       ${cfg.banco ? `<div><span>Banco</span><b>${esc(cfg.banco)}</b></div>` : ''}${cfg.titular ? `<div><span>Titular</span><b>${esc(cfg.titular)}</b></div>` : ''}
       ${cfg.cuenta ? `<div><span>Cuenta</span><b>${esc(cfg.cuenta)}</b></div>` : ''}${cfg.clabe ? `<div><span>CLABE</span><b class="pg-clabe">${esc(cfg.clabe)}</b></div>` : ''}
@@ -127,6 +143,9 @@ export const ESTILOS_PAGO = `
   .pg-p { color:var(--mid); font-size:.9rem; line-height:1.6; margin:6px 0 }
   .pg-pasos { margin:8px 0 12px; padding-left:20px; font-size:.88rem; line-height:1.7; color:var(--dark) }
   .pg-mp { display:inline-block; margin:0 0 10px }
+  .pg-opc { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px; margin:8px 0 10px }
+  .pg-opc > div { background:var(--bg); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:2px }
+  .pg-opc span { font-size:.8rem; color:var(--muted); font-weight:600 } .pg-opc b { font-size:1.1rem } .pg-opc small { font-size:.78rem; color:var(--mid); line-height:1.45 }
   .pg-trans { background:var(--bg); border-radius:10px; padding:12px 14px; margin:4px 0 10px; font-size:.9rem }
   .pg-trans > div { display:flex; justify-content:space-between; gap:10px; padding:3px 0 } .pg-trans span { color:var(--muted) } .pg-trans b { text-align:right; word-break:break-all }
   .pg-st { font-weight:700; margin-bottom:4px } .pg-copiar { margin-top:8px }
