@@ -171,7 +171,13 @@ export const REGLAS = [
   'No compartas el enlace ni la clave.',
   '<strong>La grabación empieza en cuanto entras</strong>: llega con tu usuario, tu equipo listo y esta página abierta.',
   'Pon tu nombre completo en Zoom (así se identifica tu grabación).',
-  'Cámara y micrófono encendidos todo el tiempo.',
+  'Cámara y micrófono encendidos todo el tiempo. Antes de entrar, en tu app de Zoom (Configuración → Audio) desmarca «Silenciar mi micrófono al unirme a una reunión».',
+  /* Lección de Paideia (13-oct): la sesión de un candidato se cortó al
+     minuto 60 exacto: el temporizador de inactividad de Zoom avisa a los
+     55 min y cierra la reunión 5 min después si nadie responde. Al volver
+     a entrar el audio se silenciaba. Diego lo apagó en la cuenta de Zoom;
+     el equipo debe apagarlo también en la de Posturalia (ver Sala). */
+  '<strong>Si Zoom pregunta si sigues ahí, oprime «Continuar»</strong>, o la reunión se cierra. Si te saca, vuelve a entrar de inmediato y revisa que tu micrófono esté encendido.',
   'Al terminar, sal completamente de Zoom ("Salir de la reunión" y cierra la app).',
 ];
 export const reglasHtml = abiertas => `<details class="sala-reglas" ${abiertas ? 'open' : ''}><summary>Reglas de la sala</summary><ol>${REGLAS.map(r => `<li>${r}</li>`).join('')}</ol></details>`;
