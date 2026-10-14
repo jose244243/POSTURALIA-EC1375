@@ -314,7 +314,13 @@ function pintar() {
   const LBL = Object.fromEntries(CONFIG.fases.map(f => [f.id, f.label]));
   LBL.registro = 'Apartado (liga de registro)';
   $('dpFases').innerHTML = pg.FASES_COBRO.map(f => `<label>Monto base · ${LBL[f]}<input data-dp-monto="${f}" inputmode="numeric" placeholder="Si no hay precio acordado"></label>
-    <label>Link de Mercado Pago · ${LBL[f]}<input data-dp-link="${f}" placeholder="https://mpago.la/…"></label>`).join('');
+    <label>Link de Mercado Pago · ${LBL[f]}<input data-dp-link="${f}" placeholder="https://mpago.la/…"><small data-dp-tot="${f}" style="display:block;font-weight:400;margin-top:3px"></small></label>`).join('');
+  /* El link de Mercado Pago debe cobrar el precio base + la comisión */
+  const pintaTot = () => document.querySelectorAll('[data-dp-tot]').forEach(s => {
+    const f = s.dataset.dpTot, b = Number(document.querySelector(`[data-dp-monto="${f}"]`).value) || pg.MONTOS_BASE[f];
+    s.textContent = b ? `El link debe cobrar ${pg.pesos(pg.totalMercadoPago(b))} (${pg.pesos(b)} + comisión). Transferencia: ${pg.pesos(b)} sin comisión.` : '';
+  });
+  document.querySelectorAll('[data-dp-monto]').forEach(i => i.addEventListener('input', pintaTot));
   $('dpFases').insertAdjacentHTML('afterend', `<p style="font-size:.86rem;margin:10px 0 0">Liga de registro (el apartado se cobra ahí): <a href="${pg.LIGA_REGISTRO}" target="_blank" rel="noopener" style="word-break:break-all">${pg.LIGA_REGISTRO}</a></p>`);
   const leer = () => ({ banco: $('dpBanco').value, titular: $('dpTitular').value, cuenta: $('dpCuenta').value, clabe: $('dpClabe').value, nota: $('dpNota').value,
     links: Object.fromEntries([...document.querySelectorAll('[data-dp-link]')].map(i => [i.dataset.dpLink, i.value])),
@@ -327,7 +333,7 @@ function pintar() {
     document.querySelectorAll('[data-dp-monto]').forEach(i => { i.value = cfg.montos?.[i.dataset.dpMonto] || ''; });
   }
   $('dpEstado').textContent = cfg && (cfg.clabe || Object.keys(cfg.links || {}).length) ? '· configurados' : '· sin capturar';
-  vista(cfg);
+  vista(cfg); pintaTot();
   $('dpGuardar').onclick = async () => {
     try { const v = await pg.guardarDatosPago(leer()); $('dpMsg').style.color = 'var(--spoke-deep)'; $('dpMsg').textContent = 'Guardados. Ya los ven los candidatos en las fases por pagar.';
       $('dpEstado').textContent = '· configurados'; vista(v); }
