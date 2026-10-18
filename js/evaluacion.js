@@ -415,7 +415,7 @@ export function mensajeWhatsApp(clave, { nombre = '', dictamen = null, liga = ''
   };
   if (clave === 'dictamen') return dictamen === 'competente'
     ? `¡Felicidades ${nombre}! Tu resultado de evaluación EC1375 es COMPETENTE. Entra a tu panel para leer tu Cédula de Evaluación y firmarla: ${liga}`
-    : hola + `ya está tu Cédula de Evaluación EC1375. Entra a tu panel para leer los comentarios de tu evaluador(a): ${liga}`;
+    : hola + `ya está tu Cédula de Evaluación EC1375. Entra a tu panel para leer los comentarios de tu evaluador(a); ahí mismo podrás subir una nueva evidencia: ${liga}`;
   return (m[clave] || hola + 'hay novedades en tu proceso EC1375. Revisa tu panel: ') + liga;
 }
 export function telefonoWhatsApp(t) {
