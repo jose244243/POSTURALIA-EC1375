@@ -458,11 +458,22 @@ $('archivoRespaldo').onchange = async (e) => {
   e.target.value = '';
 };
 
-$('btnReiniciar').onclick = () => {
-  if (confirm('Esto borrará TODO tu avance en esta plataforma. ¿Continuar?')) {
-    Store.clearAll();
-    pintar();
-  }
+/* v67: también vacía la nube (antes la nube lo devolvía todo al recargar).
+   Recarga en seguida para que nada de lo que esta página tiene en memoria
+   se vuelva a subir. Los pagos y lo que hizo el Centro no se tocan. */
+$('btnReiniciar').onclick = async () => {
+  if (!confirm('Esto borrará TODO tu avance, en este navegador y en la nube (tus pagos se conservan). No se puede deshacer. ¿Continuar?')) return;
+  $('btnReiniciar').disabled = true;
+  try {
+    const { Nube } = await import('./js/nube.js');
+    if (Nube.disponible()) {
+      const r = await Nube.reiniciar();
+      if (!r.ok) { alert('No se pudo reiniciar tu expediente en la nube (' + (r.motivo || 'sin conexión') + '). No se borró nada.'); $('btnReiniciar').disabled = false; return; }
+    }
+  } catch { alert('No se pudo reiniciar tu expediente en la nube. No se borró nada.'); $('btnReiniciar').disabled = false; return; }
+  Store.clearAll();
+  try { localStorage.removeItem('posturalia.sesion.v1'); } catch {}
+  location.reload();
 };
 
 /* ── Centro Evaluador (como el panel de Paideia): etapas de la

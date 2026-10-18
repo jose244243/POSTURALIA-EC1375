@@ -213,14 +213,23 @@ const escala = (pref, i, ops, valor) => `<div class="enc-ops" role="group" aria-
 const medios = (pref, lista, obj) => `<div class="enc-preg" data-falta="${pref}-medio"><div class="enc-txt" id="${pref}M">${pref === 'fa' ? 'Medio de contacto' : 'Medio por el cual contactó a la organización o persona que le realizó la evaluación'}</div>
   <div class="enc-ops" role="radiogroup" aria-labelledby="${pref}M">${lista.map(m => `<button type="button" class="enc-op ${obj.medio === m ? 'sel' : ''}" data-medio="${pref}" data-v="${m}" aria-pressed="${obj.medio === m}" ${Store.soloLectura ? 'disabled' : ''}><span class="enc-op-r" aria-hidden="true"></span><span>${m}</span></button>`).join('')}</div>
   <input class="enc-otro" data-otro="${pref}" placeholder="Escriba el medio" aria-label="Otro medio" value="${String(obj.otro).replace(/"/g, '&quot;')}" ${obj.medio === 'Otro' ? '' : 'hidden'} ${Store.soloLectura ? 'disabled' : ''}></div>`;
+/* v67 · como Paideia («Marcar todas»): llena de una vez SOLO lo que falta,
+   sin pisar lo ya elegido. En la Encuesta del CONOCER deja fuera la 4, que
+   va al revés (por esa se les quedaba pendiente a los candidatos). */
+const marcarTodas = pref => {
+  const k = (pref === 'fa' ? FA : CS).escala.indexOf('Bueno');
+  return k < 0 || Store.soloLectura ? '' : `<button type="button" class="btn-plat btn-plat--secundario" data-todas="${pref}" style="margin:6px 0 10px;font-size:.85rem">Marcar las que falten «Bueno»</button>`;
+};
 function pintarFormatos() {
   $('formatos').innerHTML = `
     <h3 style="margin:6px 0 4px">${FA.titulo}</h3>
     ${medios('fa', FA.medios, atencion)}
+    ${marcarTodas('fa')}
     <p class="pn-nota">Tache la opción que defina la forma en que recibió la atención.</p>
     ${FA.preguntas.map((p, i) => `<div class="enc-preg" data-falta="fa-${i}"><div class="enc-txt" id="fa${i}"><span class="enc-n" aria-hidden="true">${i + 1}</span>${p}</div>${escala('fa', i, FA.escala, atencion.r[i])}</div>`).join('')}
     <h3 style="margin:22px 0 4px">${CS.titulo}</h3>
     ${medios('cs', CS.medios, servicio)}
+    ${marcarTodas('cs')}
     <p class="pn-nota">Marque la opción que usted considere adecuada de acuerdo a su opinión. Si alguno de los aspectos a evaluar no aplica marque NA.</p>
     ${CS.aspectos.map((p, i) => `<div class="enc-preg" data-falta="cs-${i}"><div class="enc-txt" id="cs${i}"><span class="enc-n" aria-hidden="true">${i + 1}</span>${p}</div>${escala('cs', i, CS.escala, servicio.r[i])}</div>`).join('')}
     <label class="enc-txt" for="csCom" style="display:block;margin-top:14px">Comentarios y/o sugerencias (opcional)</label>
@@ -228,6 +237,12 @@ function pintarFormatos() {
 }
 $('formatos').addEventListener('click', e => {
   if (Store.soloLectura) return;
+  const t = e.target.closest('[data-todas]');
+  if (t) {
+    const fa = t.dataset.todas === 'fa', obj = fa ? atencion : servicio, F = fa ? FA : CS, k = F.escala.indexOf('Bueno');
+    (fa ? F.preguntas : F.aspectos).forEach((_, i) => { if (F.escala[obj.r[i]] === undefined) obj.r[i] = k; });
+    tocar({ atencion, servicio }); pintarFormatos(); return;
+  }
   const m = e.target.closest('[data-medio]');
   if (m) {
     const obj = m.dataset.medio === 'fa' ? atencion : servicio;
@@ -250,7 +265,7 @@ $('formatos').addEventListener('input', e => {
 });
 
 function pintar() {
-  $('preguntas').innerHTML = ENCUESTA.preguntas.map((p, i) => `
+  $('preguntas').innerHTML = (Store.soloLectura || ENCUESTA.escala.indexOf('Muy de acuerdo') < 0 ? '' : `<button type="button" class="btn-plat btn-plat--secundario" id="btnTodasMA" style="margin:0 0 12px;font-size:.85rem">Marcar las que falten «Muy de acuerdo» (menos la 4, que va al revés)</button>`) + ENCUESTA.preguntas.map((p, i) => `
     <div class="enc-preg" data-i="${i}">
       <div class="enc-txt" id="encP${i}"><span class="enc-n" aria-hidden="true">${i + 1}</span>${p}${i === 3 ? '<small style="display:block;color:var(--muted);font-weight:500;margin-top:4px">Ojo: esta pregunta va al revés. Si <b>no</b> te condicionaron a tomar un curso antes de evaluarte, la respuesta es «Totalmente en desacuerdo».</small>' : ''}</div>
       <div class="enc-ops" role="group" aria-labelledby="encP${i}">
@@ -284,6 +299,13 @@ function pintarFirma() {
 }
 
 $('preguntas').addEventListener('click', e => {
+  if (e.target.closest('#btnTodasMA') && !Store.soloLectura) {
+    const k = ENCUESTA.escala.indexOf('Muy de acuerdo');
+    ENCUESTA.preguntas.forEach((_, i) => { if (i !== 3 && !contestada(i)) respuestas[i] = k; });
+    if (Store.get(MODULO).completado) { Store.merge(MODULO, { respuestas, completado:false, sello:null }); registrarDocumento(MODULO, 'encuesta', false); }
+    else Store.merge(MODULO, { respuestas });
+    pintar(); return;
+  }
   const btn = e.target.closest('.enc-op');
   if (!btn || Store.soloLectura) return;
   const i = Number(btn.dataset.i), k = Number(btn.dataset.k);
