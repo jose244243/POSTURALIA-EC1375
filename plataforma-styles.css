@@ -1383,3 +1383,15 @@ select:focus-visible {
 .sh-top-u { display: inline-flex; align-items: center; gap: 7px; font-size: .84rem; font-weight: 600; color: var(--dark) }
 .sh-top-u .sh-avatar { width: 32px; height: 32px; font-size: .75rem }
 @media (max-width: 640px) { .sh-tuto span, .sh-top-n { display: none } .sh-tuto { padding: 8px 10px } }
+/* ── v65 · Barra superior en celular (mobile first) ─────────────────────
+   En 360–420 px la marca, el tutorial, el tema y el avatar no cabían: la
+   barra medía 421 px y la página se movía de lado. */
+@media (max-width: 480px) {
+  .plat-top-inner { padding: 8px 12px; gap: 8px }
+  .plat-marca { font-size: .9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis }
+  .plat-marca span { display: none }
+  .shell-toggle { margin-right: 0 }
+  .sh-top-der { gap: 6px }
+  .sh-tuto { padding: 7px 8px }
+  .sh-top-tema { width: 34px; height: 34px }
+}

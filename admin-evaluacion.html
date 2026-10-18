@@ -88,6 +88,9 @@ details.card>summary{cursor:pointer;font-weight:700;font-size:1.05rem}
   <div id="app" class="ev-grid" hidden>
     <!-- v54 (Fernando, 11-oct: «es mucha información»): los pasos en el orden en que se hacen,
          numerados; lo opcional, plegado al final. -->
+    <!-- v65 (como Paideia 8-oct): qué falta para entregar el portafolio y quién lo hace -->
+    <section class="card" id="cardQueSigue"><h2>Qué sigue</h2><div id="queSigue"></div></section>
+
     <section class="card"><h2><span class="paso-n">1</span> Fechas del proceso</h2>
       <p style="color:var(--muted);font-size:.84rem;margin:0 0 6px">Las tres fechas que pide el portafolio. Cada una se pone sola en sus documentos; sin capturarla, cada documento usa la fecha que ya traía.</p>
       <div id="fechasProc"></div></section>
@@ -97,7 +100,7 @@ details.card>summary{cursor:pointer;font-weight:700;font-size:1.05rem}
     <section class="card"><h2><span class="paso-n">3</span> Cédula de Evaluación</h2><div id="cedula"></div></section>
 
     <section class="card"><h2><span class="paso-n">4</span> Tu firma de evaluador(a)</h2>
-      <p style="color:var(--muted);font-size:.84rem">Firmas una vez y se pone en todas las hojas que la piden: Autodiagnóstico, Plan de Evaluación, rúbrica del IEC y Verificación Interna. Se queda guardada en esta computadora para tus siguientes candidatos.</p>
+      <p style="color:var(--muted);font-size:.84rem">Firmas una vez y la pones con un clic en todas las hojas que la piden: Autodiagnóstico, Plan de Evaluación, rúbrica del IEC y Verificación Interna. Se guarda con tu cuenta (sirve en cualquier computadora) y nunca se pone sola: cada vez queda quién firmó y cuándo.</p>
       <div id="firmas"></div></section>
 
     <details class="card"><summary><span class="paso-n">5</span> Verificación Interna</summary><div id="verif"></div></details>
@@ -131,6 +134,7 @@ import { lineaDeTiempo, ETAPAS, JUICIOS, juicioOficial, CAMPOS_CEDULA, TEXTO_ACU
          cedulaPublicada, calificarIec, validarIec, sugerenciasIec, guardarIec, seccionesIec, CUESTIONARIO_IEC,
          GRUPOS_CUESTIONARIO, letraDe, normalizarRespuesta, esCorrecta, correctaTexto, calificarCuestionario,
          SECCIONES_PORTAFOLIO, avisosPortafolio, mensajeWhatsApp, telefonoWhatsApp, firmaValida, CAMPOS_PROCESO } from './js/evaluacion.js';
+import { siguientesPasos, htmlQueSigue, CSS_QUE_SIGUE, TARJETA } from './js/que-sigue.js';
 import { htmlPortafolio, cedula as hojaCedula, iec as hojaIec, verificacion as hojaVerif, PUNTOS_VERIFICACION } from './js/doc-portafolio.js';
 import { envolverOficial, abrirDocumento } from './js/doc-plan-oficial.js';
 
@@ -143,7 +147,7 @@ const por = () => sesion()?.correo || '';
 
 function candidato() { return candidatos(cargar()).find(c => c.email === clave); }
 const ev = () => evaluacionDe(cargar(), clave);
-const guardar = cambios => { guardarEvaluacion(clave, cambios); };
+const guardar = cambios => { guardarEvaluacion(clave, cambios); setTimeout(pintarQueSigue, 0); };
 
 if (!clave || !candidato()) {
   $('sinCandidato').hidden = false;
@@ -156,7 +160,26 @@ if (!clave || !candidato()) {
   $('app').hidden = false;
 }
 
-function pintarTodo() { pintarCabecera(); pintarSii(); pintarFechasProceso(); pintarEtapas(); pintarIec(); pintarCedula(); pintarVerif(); pintarFirmas(); pintarVideo(); pintarPortafolio(); }
+function pintarTodo() { pintarCabecera(); pintarSii(); pintarFechasProceso(); pintarEtapas(); pintarIec(); pintarCedula(); pintarVerif(); pintarFirmas(); pintarVideo(); pintarPortafolio(); pintarQueSigue(); }
+
+/* ── Qué sigue (v65, como Paideia 8-oct) ──────────────────────────────────
+   Los pasos que faltan para entregar el portafolio, con quién los hace. El
+   primero pendiente va resaltado; «Ir» baja a su tarjeta. Las Tareas del
+   equipo del Panel abren aquí con ?ir=<paso> (como Paideia 11-oct). */
+function pintarQueSigue() {
+  const c = candidato(); if (!c || !$('queSigue')) return;
+  if (!document.getElementById('cssQueSigue')) { const st = document.createElement('style'); st.id = 'cssQueSigue'; st.textContent = CSS_QUE_SIGUE + '.qs-foco{box-shadow:0 0 0 3px #f59e0b !important;transition:box-shadow .3s}'; document.head.appendChild(st); }
+  $('queSigue').innerHTML = htmlQueSigue(siguientesPasos(c, ev()), { email: clave, telefono: telefonoWhatsApp(c.candidato?.telefonoCelular),
+    nombre: c.nombre || '', liga: location.origin + location.pathname.replace(/[^/]*$/, 'index.html') });
+}
+function irA(paso) {
+  const el = $(TARJETA[paso] || ''); if (!el) return;
+  const card = el.closest('.card') || el;
+  if (card.tagName === 'DETAILS') card.open = true;
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  card.classList.add('qs-foco'); setTimeout(() => card.classList.remove('qs-foco'), 2400);
+}
+$('queSigue').addEventListener('click', e => { const b = e.target.closest('[data-qs-ir]'); if (b) irA(b.dataset.qsIr); });
 
 function pintarCabecera() {
   const c = candidato(), e = ev();
@@ -375,7 +398,10 @@ function pintarCedula() {
   const e = ev(), c = candidato();
   const pub = cedulaPublicada(e), ced = e.cedula || {};
   const iecJ = e.iec?.completo ? e.iec.juicio : '';
-  firmaEval = ced.firmaEvaluador || firmaEvalGuardada() || null;   // v54: la firma guardada del evaluador
+  /* v65 (como Paideia 12-oct): la firma guardada nunca se estampa sola; se
+     pone con el botón «Firmar con mi firma guardada» y queda quién y cuándo. */
+  firmaEval = ced.firmaEvaluador || null;
+  const guardadaEval = firmaEvalGuardada();
   $('cedula').innerHTML = `
     ${pub ? `<p>Publicada el ${fechaCorta(pub.publicada_at)} · juicio <span class="chip ${pub.juicio === 'COMPETENTE' ? 'chip-ok' : 'chip-no'}">${esc(juicioOficial(pub.juicio))}</span>
       · firma del candidato: ${e.firma_candidato ? '<b style="color:#047857">firmada</b>' : '<b style="color:#B45309">pendiente</b>'}</p>` : ced.borrador ? '<p style="color:var(--muted)">Borrador guardado, sin publicar.</p>' : ''}
@@ -386,7 +412,8 @@ function pintarCedula() {
     ${CAMPOS_CEDULA.map(k => `<div class="campo-e"><label for="c_${k.id}">${k.label}</label><textarea id="c_${k.id}" rows="2">${esc(ced[k.id] || '')}</textarea></div>`).join('')}
     <div class="campo-e"><label for="c_incidencias">Incidencias</label><textarea id="c_incidencias" rows="1">${esc(ced.incidencias || '')}</textarea></div>
     <div class="campo-e"><label for="c_obsCandidato">Observaciones para el candidato <small style="color:var(--muted);font-weight:400">(solo las lee él en su Cédula; no van al portafolio)</small></label><textarea id="c_obsCandidato" rows="2">${esc(ced.observacionesCandidato || '')}</textarea></div>
-    <div class="campo-e"><label>Firma del evaluador(a)</label><div id="cFirma"></div></div>
+    <div class="campo-e"><label>Firma del evaluador(a)</label><div id="cFirma"></div>
+      ${!firmaEval && firmaValida(guardadaEval) ? '<button type="button" class="btn-a btn-a--sec" id="cFirmaGuardada" style="margin-top:6px">Firmar con mi firma guardada</button>' : ''}</div>
     <div id="cFalta" class="falta"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
       <button class="btn-a btn-a--sec" id="cBorrador">Guardar borrador</button>
@@ -414,6 +441,12 @@ $('cedula').addEventListener('click', e => {
     if (falta.length) { $('cFalta').textContent = 'Falta: ' + falta.join(' · '); return; }
     if (cedulaPublicada(ev()) && !confirm('Ya hay una Cédula publicada. La anterior pasa al historial y el candidato tendrá que volver a firmar. ¿Continuar?')) return;
     guardar(publicarCedula(ev(), d, { por: por() })); pintarTodo(); return;
+  }
+  if (id === 'cFirmaGuardada') {
+    const f = firmaEvalGuardada(); if (!firmaValida(f)) return;
+    firmaEval = { ...f, fecha: new Date().toISOString(), por: por() };
+    montarFirmaSimple($('cFirma'), { valor: firmaEval, nombreSugerido: () => $('cEval').value, onCambio: x => { firmaEval = x; } });
+    e.target.remove(); return;
   }
   if (id === 'cImprimir') { abrirDocumento(envolverOficial('Cédula de Evaluación', hojaCedula({ ...ev(), cedula: { ...(ev().cedula || {}), ...datosCedula() } }, { candidato: candidato().nombre }))); return; }
   if (id === 'cFirmarCand') { if (!firmaValida(firmaCand)) { alert('Falta la firma del candidato.'); return; } guardar({ firma_candidato: { ...firmaCand, fecha: new Date().toISOString(), acepto: TEXTO_ACUERDO } }); pintarCedula(); pintarPortafolio(); return; }
@@ -447,6 +480,23 @@ $('verif').addEventListener('click', e => {
    todas. «Firmar por separado» queda plegado para quien lo necesite. */
 const K_FIRMA_EVAL = () => 'posturalia.firmaEvaluador.' + String(sesion()?.correo || 'equipo').toLowerCase();
 const firmaEvalGuardada = () => { try { return JSON.parse(localStorage.getItem(K_FIRMA_EVAL())) || null; } catch { return null; } };
+/* v65 (como Paideia 12-oct): la firma guardada viaja con la cuenta del
+   evaluador (nube del Centro: centro_datos · firmaEvaluador/<correo>), así
+   sirve en cualquier computadora. Solo se lee la del correo de la sesión. */
+async function firmaEnNube(valor) {
+  if (!(CONFIG.supabase?.url && CONFIG.supabase?.anonKey)) return null;
+  const correo = String(sesion()?.correo || '').toLowerCase(); if (!correo) return null;
+  try {
+    const { clienteNube } = await import('./js/nube.js'); const c = await clienteNube(); if (!c) return null;
+    if (valor === undefined) {
+      const { data } = await c.from('centro_datos').select('datos').eq('coleccion', 'firmaEvaluador').eq('clave', correo).maybeSingle();
+      return data?.datos || null;
+    }
+    if (valor) await c.from('centro_datos').upsert({ coleccion: 'firmaEvaluador', clave: correo, datos: valor, actualizado_en: new Date().toISOString() }, { onConflict: 'coleccion,clave' });
+    else await c.from('centro_datos').delete().eq('coleccion', 'firmaEvaluador').eq('clave', correo);
+  } catch {}
+  return null;
+}
 const DOCS_FIRMA = [['diagnostico', 'Autodiagnóstico'], ['plan', 'Plan de Evaluación'], ['iec', 'IEC (rúbrica)'], ['cierre', 'Verificación Interna']];
 let firmaUnica = null;
 function pintarFirmas() {
@@ -462,11 +512,12 @@ function pintarFirmas() {
     <details style="margin-top:10px"><summary style="cursor:pointer;font-size:.88rem">Firmar por separado</summary>
       ${DOCS_FIRMA.map(([k, t]) => `<div style="padding:8px 0;border-bottom:1px solid var(--border)"><b>${t}</b><div id="fir_${k}" style="margin-top:6px"></div></div>`).join('')}</details>`;
   montarFirmaSimple($('firUnica'), { valor: firmaUnica, nombreSugerido: ev().cedula?.evaluadora || CONFIG.centroEvaluacion?.evaluadora || sesion()?.nombre || '',
-    onCambio: v => { firmaUnica = v; try { v ? localStorage.setItem(K_FIRMA_EVAL(), JSON.stringify(v)) : localStorage.removeItem(K_FIRMA_EVAL()); } catch {} } });
+    onCambio: v => { firmaUnica = v; try { v ? localStorage.setItem(K_FIRMA_EVAL(), JSON.stringify(v)) : localStorage.removeItem(K_FIRMA_EVAL()); } catch {} firmaEnNube(v || null); } });
   $('firTodas').onclick = () => {
     if (!firmaValida(firmaUnica)) { $('firMsg').textContent = 'Primero dibuja tu firma o escribe tu nombre arriba.'; return; }
     const firmas = { ...(ev().firmas || {}) };
-    DOCS_FIRMA.forEach(([k]) => { firmas[k] = firmaUnica; });
+    const sello = { fecha: new Date().toISOString(), por: por() };   // v65: quién y cuándo
+    DOCS_FIRMA.forEach(([k]) => { firmas[k] = { ...firmaUnica, ...sello }; });
     guardar({ firmas }); pintarFirmas(); pintarPortafolio();
     $('firMsg').textContent = 'Listo: tu firma ya va en las cuatro hojas. La Cédula lleva la suya al publicarla.';
   };
@@ -531,6 +582,8 @@ function pintarPortafolio() {
 $('btnPortafolio').onclick = async e => {
   e.preventDefault();
   const c = candidato(); if (!c) return;
+  /* v65: queda anotado cuándo se generó y con cuántos avisos (Qué sigue) */
+  guardar({ portafolio: { generado_at: new Date().toISOString(), avisos: avisosPortafolio(c, ev()).length, por: por() } });
   const w = window.open('', '_blank');
   const btn = $('btnPortafolio'), antes = btn.textContent;
   if (w) w.document.write('<p style="font:16px system-ui;padding:24px">Armando el portafolio integrado… (los PDF entregados se convierten en hojas)</p>');
@@ -541,7 +594,18 @@ $('btnPortafolio').onclick = async e => {
   if (w) w.location.href = url; else location.href = url;
 };
 window.addEventListener('admin:cambio', () => { if (candidato()) pintarCabecera(); });
-if (clave && candidato()) pintarTodo();
+if (clave && candidato()) {
+  pintarTodo();
+  const ir = params.get('ir'); if (ir) setTimeout(() => irA(ir), 300);
+}
+/* v65: la firma guardada en la nube, si en esta computadora no está */
+if (clave && candidato() && !firmaEvalGuardada()) firmaEnNube().then(f => {
+  if (!firmaValida(f)) return;
+  try { localStorage.setItem(K_FIRMA_EVAL(), JSON.stringify(f)); } catch {}
+  pintarFirmas();
+  /* En la Cédula solo se ofrece el botón (no se vuelve a pintar: se perdería lo que lleve escrito) */
+  if (!firmaEval && $('cFirma') && !$('cFirmaGuardada')) $('cFirma').insertAdjacentHTML('afterend', '<button type="button" class="btn-a btn-a--sec" id="cFirmaGuardada" style="margin-top:6px">Firmar con mi firma guardada</button>');
+});
 /* Con Supabase: trae lo que cambió en la nube (p. ej. la firma que el
    candidato puso en su Cédula desde su celular) y vuelve a pintar. */
 sincronizarEvaluaciones().then(r => { if (r.ok && r.cambios && clave && candidato()) pintarTodo(); }).catch(() => {});

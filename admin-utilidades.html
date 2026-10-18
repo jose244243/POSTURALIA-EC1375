@@ -95,8 +95,16 @@ addEventListener('load', function () {
     <div class="lote-tabs" id="lotes"></div>
   </div>
 
+  <!-- v65 (como Paideia 11-oct): arriba solo el reparto del lote —cobrado, costos,
+       lo que le toca a cada socio, lo pagado y el botón para pagar—; lo demás,
+       plegado abajo. La fórmula no cambia. -->
   <div class="card">
-    <h2 id="tSocios">Socios y reparto</h2>
+    <h2 id="tDetalle">Detalle del reparto</h2>
+    <div id="detalleLote"></div>
+  </div>
+
+  <details class="card">
+    <summary><span id="tSocios">Socios y reparto</span> <small style="color:var(--muted);font-weight:500">· porcentajes</small></summary>
     <p style="color:var(--muted);font-size:.84rem;margin-bottom:16px">
       El reparto se aplica sobre <strong>lo efectivamente cobrado</strong>, no sobre lo
       proyectado. Los porcentajes no tienen que sumar 100: si repartes menos, lo que
@@ -118,10 +126,10 @@ addEventListener('load', function () {
       Notas de este lote
       <textarea class="notas" id="notas" placeholder="Por ejemplo: por qué cambió el reparto respecto al lote anterior."></textarea>
     </label>
-  </div>
+  </details>
 
-  <div class="card">
-    <h2 id="tCostos">Costos</h2>
+  <details class="card">
+    <summary><span id="tCostos">Costos</span></summary>
     <p style="color:var(--muted);font-size:.84rem;margin-bottom:12px">
       Se descuentan <strong>antes</strong> de repartir. "Por candidato" se multiplica por quienes
       pagaron la fase elegida (o por los activos del lote si no eliges fase); "Fijo" se cobra una
@@ -137,17 +145,12 @@ addEventListener('load', function () {
       <input type="number" id="gMonto" placeholder="Monto" min="0" step="1" aria-label="Monto" style="max-width:120px">
       <button class="btn-a btn-a--pri" id="btnGasto">+ Agregar costo</button>
     </div>
-  </div>
+  </details>
 
-  <div class="card">
-    <h2 id="tDetalle">Detalle del reparto</h2>
-    <div id="detalleLote"></div>
-  </div>
-
-  <div class="card">
-    <h2>Pagos registrados</h2>
+  <details class="card">
+    <summary>Pagos registrados <small style="color:var(--muted);font-weight:500">· historial</small></summary>
     <div id="pagos"></div>
-  </div>
+  </details>
 
 </main>
 

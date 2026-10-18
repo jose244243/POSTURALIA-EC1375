@@ -42,6 +42,9 @@ addEventListener('load', function () {
 
 <main class="plat-wrap">
 
+  <!-- v65 (como Paideia): lo que le toca corregir y la sala con horario, arriba de todo -->
+  <div id="pendientesPortafolio"></div>
+  <div id="salaTarjeta"></div>
   <div id="avisoLimite"></div>
   <div id="avisoAlmacen"></div>
 
@@ -394,6 +397,13 @@ function pintarLimite() {
     </div>`;
 }
 
+/* ── Pendientes del portafolio (v65, como Paideia 12-13 oct) ───────────
+   Lo que el portafolio marcaría como faltante y solo el candidato puede
+   resolver, en el orden de su ruta (js/pendientes.js). */
+function pintarPendientes() {
+  import('./js/pendientes.js').then(m => m.montarPendientes($('pendientesPortafolio'))).catch(() => {});
+}
+
 /* ── Consulta ──────────────────────────────────────────────────────────── */
 function pintarConsulta() {
   $('consulta').innerHTML = (CONFIG.consulta || []).map(m => `
@@ -417,6 +427,7 @@ function pintar() {
   pintarSesion();
   pintarAvisos();
   pintarConsulta();
+  pintarPendientes();
   $('notaGuardado').textContent = estadoDeGuardado().enNube
     ? 'Tu avance se guarda en la nube y en este navegador. El respaldo sirve para llevarte todo a otro sistema.'
     : 'Tu avance se guarda en este navegador y en este dispositivo. Descarga un respaldo si vas a cambiar de equipo o limpiar el navegador.';
@@ -481,6 +492,8 @@ async function pintarCentro() {
 pintar();
 pintarCentro();
 window.addEventListener('store:cambio', pintar);
+/* v65: «Tu sala de evidencia» arriba, solo mientras hay horario reservado */
+import('./js/sala-ui.js').then(m => m.montarPanel($('salaTarjeta'))).catch(() => {});
 /* La sesión en vivo a la que se inscribió (en la nube o en este navegador):
    si cambió desde la última visita, se actualiza la tarjeta «Tu sesión». */
 (async () => {

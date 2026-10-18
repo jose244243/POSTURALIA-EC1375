@@ -105,6 +105,16 @@ addEventListener('load', function () {
     <div id="atencion"></div>
   </div>
 
+  <!-- v65 (como Paideia 11-oct): por candidato con Evidencias entregadas, lo que nos toca hacer -->
+  <div class="card" id="cardTareas" hidden>
+    <h2>Tareas del equipo <span class="sala-cuenta" id="tareasCuenta"></span></h2>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">
+      Con quienes ya entregaron sus evidencias: lo que nos toca hacer con cada uno, en orden y con un solo botón.
+      Lo que le falta al candidato va como una tarea: recordárselo por WhatsApp.
+    </p>
+    <div id="tareas"></div>
+  </div>
+
   <div class="card">
     <h2>Embudo por fase</h2>
     <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">
@@ -218,6 +228,9 @@ import { esc, ligaSegura } from './js/seguro.js';
 import { cargar, candidatos, contables, activos, kpis, pesos, atencion, salaAgenda,
          utilidadesGlobal, lotes, FASES, FASE_LABEL } from './js/admin-data.js';
 import { fechaCorta, horarioTexto } from './js/sala.js';
+import { evaluacionDe, guardarEvaluacion } from './js/admin-data.js';
+import { sesion } from './js/cuenta.js';
+import { tareasEquipo, htmlTareas, CSS_QUE_SIGUE } from './js/que-sigue.js';
 
 const $ = id => document.getElementById(id);
 
@@ -266,6 +279,7 @@ function pintar() {
 
   /* Requieren atención */
   pintarAtencion(datos);
+  pintarTareas(datos);
 
   const max = Math.max(1, ...FASES.map(f => k.porFase[f]));
   $('embudo').innerHTML = FASES.map((f, i) => `
@@ -456,6 +470,22 @@ import('./js/demo-paideia.js').then(({ cargarDemoPaideia, cargarEscenarioComplet
   window.addEventListener('admin:cambio', est); est();
 });
 /* Requieren atención: cada alerta lleva a donde se resuelve (como Paideia) */
+/* Tareas del equipo (v65, como Paideia 11-oct): js/que-sigue.js */
+function pintarTareas(datos) {
+  if (!document.getElementById('cssQueSigue')) { const st = document.createElement('style'); st.id = 'cssQueSigue'; st.textContent = CSS_QUE_SIGUE; document.head.appendChild(st); }
+  const t = tareasEquipo(candidatos(datos), e => evaluacionDe(datos, e), { liga: location.origin + location.pathname.replace(/[^/]*$/, 'index.html') });
+  $('cardTareas').hidden = !t.total;
+  $('tareasCuenta').textContent = t.total ? String(t.total) : '';
+  $('tareas').innerHTML = htmlTareas(t);
+}
+$('tareas').addEventListener('click', e => {
+  const b = e.target.closest('[data-tq-marcar]'); if (!b) return;
+  const email = b.dataset.tqEmail, etapa = b.dataset.tqMarcar;
+  const ev = evaluacionDe(cargar(), email) || {};
+  guardarEvaluacion(email, { etapas: { ...(ev.etapas || {}), [etapa]: { fecha: new Date().toISOString(), por: sesion()?.correo || '' } } });
+  pintar();
+});
+
 function pintarAtencion(datos) {
   const alertas = atencion(datos);
   $('cardAtencion').hidden = !alertas.length;
