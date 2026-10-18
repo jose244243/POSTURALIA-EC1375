@@ -3,6 +3,7 @@
 
      montarAviso(el)       fecha límite de la evidencia (panel, Evidencias)
      montarTarjeta(el)     «Tu sala de evidencia» (Documentos de Sesión, Guion)
+     montarPanel(el)       la misma tarjeta, arriba del panel, solo con reserva (v65)
      montarAgenda(el)      calendario para reservar horario (Plan de Evaluación)
      montarAdminSala(el)   pestaña del equipo (admin-sesiones.html)
    ========================================================================== */
@@ -26,7 +27,7 @@ export async function montarAviso(el, d) {
 }
 
 /* ── Tarjeta de la sala: se repinta cada 30 s (la ventana se abre sola) ── */
-export async function montarTarjeta(el, d) {
+export async function montarTarjeta(el, d, opts = {}) {
   if (!el) return; estilos();
   if (d === undefined) d = await D.miSala();
   if (!d) { el.innerHTML = ''; return; }
@@ -41,6 +42,8 @@ export async function montarTarjeta(el, d) {
   const pintar = () => {
     if (!document.body.contains(el)) { clearInterval(timer); return; }
     const ahora = Date.now(), est = S.estado(d, ahora);
+    /* En el panel la tarjeta se quita sola al terminar el horario. */
+    if (opts.panel && !S.visibleEnPanel(d, ahora)) { el.innerHTML = ''; clearInterval(timer); return; }
     if (est.esperandoServidor && ahora - ultima > 25000) { ultima = ahora; D.miSala().then(n => { if (n) { d = n; pintar(); } }); }
     const det = el.querySelector('details.sala-reglas');
     el.innerHTML = S.tarjetaHtml(d, est, { whatsapp: D.whatsapp(), reglasAbiertas: det ? det.open : !vistas });
@@ -52,6 +55,17 @@ export async function montarTarjeta(el, d) {
   };
   const timer = setInterval(pintar, 30000);
   pintar();
+}
+
+/* ── Panel del candidato (v65, como Paideia 16-oct) ────────────────────
+   Con horario reservado, «Tu sala de evidencia» va arriba de todo; el botón
+   para entrar sale desde minutos_antes antes del inicio hasta el fin. Sin
+   reserva o ya terminada, no se muestra (el plazo sigue en su aviso). */
+export async function montarPanel(el) {
+  if (!el) return;
+  let d = null; try { d = await D.miSala(); } catch {}
+  if (!d || !S.visibleEnPanel(d, Date.now())) { el.innerHTML = ''; return; }
+  return montarTarjeta(el, d, { panel: true });
 }
 
 /* ── Agenda del Plan de Evaluación ───────────────────────────────────────

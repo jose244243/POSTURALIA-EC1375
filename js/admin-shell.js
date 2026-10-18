@@ -18,14 +18,21 @@ import { sesion, exigirSesion, cerrarSesion, iniciales } from './cuenta.js';
    y la evaluación; nada de dinero). */
 export const PAGINAS_EVALUADOR = ['admin-candidatos.html', 'admin-evaluacion.html', 'admin-iec.html'];
 
+/* v65 (como Paideia 11-oct): Precios y pagos, KPIs y Utilidades viven bajo
+   una sola entrada «Finanzas», con pestañas arriba. Y «Calificar el IEC» ya
+   no va en el menú: se abre desde la tarjeta 2 de cada evaluación (la página
+   sigue igual, por su dirección). */
+export const FINANZAS = [
+  { archivo: 'admin-precios.html',    label: 'Precios y pagos' },
+  { archivo: 'admin-kpis.html',       label: 'KPIs' },
+  { archivo: 'admin-utilidades.html', label: 'Utilidades' },
+];
+
 export const SECCIONES = [
   { id: 'panel',      label: 'Panel del equipo',      archivo: 'admin.html',           ico: 'tablero'    },
   { id: 'candidatos', label: 'Candidatos',            archivo: 'admin-candidatos.html',ico: 'usuarios', evaluador: true },
-  { id: 'iec',        label: 'Calificar el IEC',      archivo: 'admin-iec.html',       ico: 'chequeCaja', evaluador: true },
-  { id: 'precios',    label: 'Precios y pagos',       archivo: 'admin-precios.html',   ico: 'dinero'     },
   { id: 'sesiones',   label: 'Sesiones de Alineación',archivo: 'admin-sesiones.html',  ico: 'video'      },
-  { id: 'kpis',       label: 'KPIs',                  archivo: 'admin-kpis.html',      ico: 'grafica'    },
-  { id: 'utilidades', label: 'Utilidades',            archivo: 'admin-utilidades.html',ico: 'archivo'    },
+  { id: 'finanzas',   label: 'Finanzas',              archivo: 'admin-precios.html',   ico: 'dinero', grupo: FINANZAS.map(f => f.archivo) },
 ];
 
 /* v59: Cloudflare sirve sin «.html» (/admin-candidatos). */
@@ -44,7 +51,7 @@ function construir() {
   const ses = sesion();
   const esEvaluador = ses?.rol === 'evaluador';
   const items = SECCIONES.filter(s => !esEvaluador || s.evaluador).map(s => {
-    const activo = s.archivo === actual;
+    const activo = s.archivo === actual || !!s.grupo?.includes(actual);
     const insignia = s.id === 'candidatos' && n ? `<span class="ash-badge">${n}</span>` : '';
     return `<a class="ash-item ${activo ? 'ash-item--activo' : ''}" href="${s.archivo}"
                ${activo ? 'aria-current="page"' : ''}>
@@ -190,6 +197,7 @@ export function montarAdminShell() {
   document.body.prepend(aside);
   conectarConmutador(aside);
   montarInstalador(document.getElementById('ashInstalar'));
+  pestanasFinanzas();
 
   const velo = document.createElement('div');
   velo.className = 'ashell-velo';
@@ -224,6 +232,20 @@ export function montarAdminShell() {
       if (e.key === 'Escape' && aside.classList.contains('abierto')) cerrar();
     });
   }
+}
+
+/* Pestañas de Finanzas, arriba de la página (v65) */
+function pestanasFinanzas() {
+  const actual = archivoActual();
+  if (!FINANZAS.some(f => f.archivo === actual) || document.getElementById('ashTabs')) return;
+  const main = document.querySelector('.ad-wrap'); if (!main) return;
+  if (!document.getElementById('ashTabsCss')) {
+    const st = document.createElement('style'); st.id = 'ashTabsCss';
+    st.textContent = '.ash-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}.ash-tab{padding:8px 14px;border-radius:999px;border:1px solid var(--border,#e2e8f0);background:var(--white,#fff);color:var(--dark,#0f172a);font-weight:700;font-size:.86rem;text-decoration:none}.ash-tab--on{background:var(--dark,#0f172a);color:#fff;border-color:var(--dark,#0f172a)}:root[data-tema="oscuro"] .ash-tab{background:#0f172a;border-color:#334155;color:#e2e8f0}:root[data-tema="oscuro"] .ash-tab--on{background:#e2e8f0;color:#0f172a}';
+    document.head.appendChild(st);
+  }
+  main.insertAdjacentHTML('afterbegin', `<nav class="ash-tabs" id="ashTabs" aria-label="Finanzas">${FINANZAS.map(f =>
+    `<a class="ash-tab ${f.archivo === actual ? 'ash-tab--on' : ''}" href="${f.archivo}"${f.archivo === actual ? ' aria-current="page"' : ''}>${f.label}</a>`).join('')}</nav>`);
 }
 
 export function refrescarAdminShell() {

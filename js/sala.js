@@ -84,6 +84,14 @@ export function puedeCambiar(r, horasCambio, ahoraMs) {
   if (!r?.inicio) return false;
   return Date.parse(r.inicio) - ahoraMs >= (Number(horasCambio) || 0) * 60 * MIN_MS;
 }
+/* Panel del candidato (v65, como Paideia 16-oct): la tarjeta sale arriba
+   solo mientras hay algo que hacer con la reserva, desde que se agenda hasta
+   la hora de fin. Antes de agendar o ya terminada, el panel no la muestra. */
+export function visibleEnPanel(d, ahoraMs) {
+  const r = d?.reserva;
+  if (!r || (r.estado !== 'reservada' && r.estado !== 'asistio')) return false;
+  return ahoraMs <= Date.parse(r.fin);
+}
 /* ¿La ventana está abierta? (lo decide quien entrega el enlace) */
 export function ventanaAbierta(r, minutosAntes, ahoraMs) {
   if (!r || r.estado !== 'reservada') return false;
