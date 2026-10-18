@@ -26,7 +26,7 @@
    computadoras se comparten.
    ========================================================================== */
 
-const VERSION = 'posturalia-v65';
+const VERSION = 'posturalia-v66';
 const CACHE_APP    = `${VERSION}-app`;
 const CACHE_PESADO = `${VERSION}-material`;
 

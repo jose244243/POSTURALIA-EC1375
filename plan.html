@@ -212,6 +212,10 @@ addEventListener('load', function () {
         placeholder="Cualquier ajuste acordado con tu evaluador: horarios, materiales, apoyos requeridos…"></textarea>
     </div>
 
+    <!-- v66 · Declaraciones del candidato, como Paideia (17 sep): cada una
+         guarda la fecha en que se aceptó. No van al formato oficial. -->
+    <div id="declaraciones"></div>
+
     <label class="acuerdo">
       <input type="checkbox" id="fAcuerdo">
       <span>
@@ -349,15 +353,32 @@ $('fAcuerdo').checked = !!datos.acuerdo;
                           imprimirlo, firmarlo, escanearlo y subirlo — cuatro
                           pasos fuera de la plataforma para capturar una firma
                           que la plataforma ya sabe capturar.               */
+/* Declaraciones del candidato (como Paideia, 17 sep): marcarla guarda la
+   fecha (evidencia), desmarcarla la borra. Un plan que ya se había firmado
+   antes de que existieran no se reabre por ellas. */
+const VERSION_DECL = '2026-09-17';
+const DECLARACIONES = [
+  { id: 'requisitos', texto: 'Confirmo que cumplo con todos los requisitos del Estándar de Competencia EC1375 y del proceso de evaluación, y que la información y documentos que proporciono son verídicos.' },
+  { id: 'material', texto: 'Confirmo que dispongo del material, equipo y espacio descritos en «Requerimientos para la Evaluación» para realizar mi evaluación práctica.' },
+  { id: 'sinReembolsos', texto: 'Entiendo que, una vez realizado cualquier pago o anticipo, no aplican reembolsos, salvo que la causa sea responsabilidad del Centro Evaluador.' },
+];
+const declOk = pl => DECLARACIONES.every(x => typeof pl.declaraciones?.[x.id] === 'string' && pl.declaraciones[x.id])
+  || (!pl.declaraciones && !!(pl.documentos || {}).acusePlanEvaluacion);
+function pintarDeclaraciones() {
+  const d = Store.get(MODULO, {}).declaraciones || {};
+  $('declaraciones').innerHTML = DECLARACIONES.map(x => `<label class="acuerdo">
+      <input type="checkbox" data-decl="${x.id}" ${d[x.id] ? 'checked' : ''}><span>${esc(x.texto)}</span></label>`).join('');
+}
+
 const datosCompletos = pl =>
-  !!(pl.acuerdo && pl.fCandidato?.trim() && pl.fFecha);
+  !!(pl.acuerdo && pl.fCandidato?.trim() && pl.fFecha && declOk(pl));
 
 function guardar(avisar = false) {
   const payload = Object.fromEntries(CAMPOS.map(id => [id, $(id).value]));
   payload.acuerdo = $('fAcuerdo').checked;
   Store.merge(MODULO, payload);
 
-  const listo = datosCompletos(payload);
+  const listo = datosCompletos(Store.get(MODULO, {}));
   revisarAcuse(Store.get(MODULO));
 
   /* El plan existe como documento en cuanto tiene sus datos */
@@ -372,6 +393,7 @@ function guardar(avisar = false) {
     const falta = [];
     if (!payload.fCandidato?.trim()) falta.push('tu nombre');
     if (!payload.fFecha)             falta.push('la fecha');
+    if (!declOk(Store.get(MODULO, {}))) falta.push('las tres declaraciones');
     if (!payload.acuerdo)            falta.push('la casilla de confirmación');
 
     $('estadoGuardado').textContent = !listo
@@ -432,8 +454,8 @@ function pintarAcuse() {
     $('cardAcuse').innerHTML = `
       <h2>Acuse de recibido</h2>
       <p class="pn-nota" style="margin-bottom:0">
-        Se firma cuando el plan de arriba esté completo: nombre, fecha y la
-        casilla de que lo acordaste con tu evaluador.
+        Se firma cuando el plan de arriba esté completo: nombre, fecha, las tres
+        declaraciones y la casilla de que lo acordaste con tu evaluador.
       </p>`;
     return;
   }
@@ -503,6 +525,15 @@ import('./js/sala-ui.js').then(async ({ montarAgenda }) => {
   if (location.hash === '#agenda' && res.activa) $('agenda').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }).catch(() => {});
 $('fAcuerdo').addEventListener('change', () => guardar());
+$('declaraciones').addEventListener('change', e => {
+  const id = e.target.dataset?.decl; if (!id) return;
+  const d = { ...(Store.get(MODULO, {}).declaraciones || {}) };
+  if (e.target.checked) d[id] = new Date().toISOString(); else delete d[id];
+  d.version = VERSION_DECL;
+  Store.merge(MODULO, { declaraciones: d });
+  guardar();
+});
+pintarDeclaraciones();
 $('btnGuardar').onclick  = () => guardar(true);
 $('btnImprimir').onclick = () => window.print();
 

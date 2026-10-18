@@ -283,7 +283,8 @@ function pintarPaso() {
   ['usuarioFicha', 'usuarioConsentimiento', 'usuarioSeguimiento', 'usuarioEncuesta'].forEach(k => {
     const el = $('fir_' + k); if (!el) return;
     if (soloLectura) { el.innerHTML = s.firmas[k] ? '<p>✓ Firmado</p>' : '<p>Sin firma</p>'; return; }
-    montarFirmaSimple(el, { valor: s.firmas[k], nombreSugerido: () => s.campos.usuarioNombre, onCambio: f => { s.firmas[k] = f; guardar(); revisar(); } });
+    montarFirmaSimple(el, { valor: s.firmas[k], nombreSugerido: () => s.campos.usuarioNombre, onCambio: f => { s.firmas[k] = f; guardar(); revisar(); },
+    ayudaSubir: 'Útil si la sesión es a distancia: pide al usuario que firme en su propio dispositivo (o en papel) y sube la foto o imagen de su firma.' });
   });
   revisar();
 }
