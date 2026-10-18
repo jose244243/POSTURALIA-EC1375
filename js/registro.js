@@ -140,6 +140,17 @@ export function montarDatosCandidato(cont, onCambio = () => {}) {
         blanco, sin texturas, formal y nítida (JPG, BMP o PNG). Mujeres: frente y orejas descubiertas, sin maquillaje
         ni aretes, blusa clara y lisa. Hombres: orejas descubiertas, pelo corto, sin barba/bigote, camisa clara y lisa.
         Sin retoques. No mayor a 2 meses de antigüedad.</small>
+      <!-- v67 · como Paideia: la medida oficial y qué hace correcta una foto -->
+      <small class="rg-ayuda" style="display:block;margin-top:6px"><b>Medida oficial: 25 mm de ancho × 30 mm de alto.</b>
+        Es el tamaño infantil que pide el formato CONOCER. A color, fondo blanco.</small>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;font-size:.8rem;margin-top:6px">
+        <div><b style="color:#15803d">✓ Fotografías correctas</b><ul style="margin:4px 0 0 16px;padding:0">
+          <li>Rostro de frente y centrado</li><li>Fondo blanco y liso</li><li>Iluminación pareja, sin sombras</li>
+          <li>Cabeza completa y hombros visibles</li><li>Nítida y a color</li></ul></div>
+        <div><b style="color:#b42318">✕ Fotografías incorrectas</b><ul style="margin:4px 0 0 16px;padding:0">
+          <li>Sobreexpuesta (se ve lavada)</li><li>Subexpuesta (muy oscura)</li><li>Demasiado cerca (se corta la cabeza)</li>
+          <li>Demasiado lejos (te ves muy pequeña/o)</li><li>Gorras, sombreros o adornos en la cabeza</li></ul></div>
+      </div>
       ${CONFIG.laminaFotoConocer ? `<!-- La lámina oficial del CONOCER con ejemplos, como Paideia: se compara
            más rápido que leer la lista. Se activa en config.js (laminaFotoConocer). -->
       <figure class="rg-lamina" style="margin:8px 0 0;max-width:420px">

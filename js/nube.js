@@ -75,9 +75,19 @@ export const Auth = {
     return error ? { ok: false, motivo: error.message } : { ok: true };
   },
 
+  /* v67: «Cerrar sesión» se quedaba trabado (18-oct, Fernando): signOut()
+     espera a la red para revocar el token y, si no contesta, nunca regresa.
+     Ahora espera máx. 3 s y, si no, cierra la sesión solo en este navegador. */
   async salir() {
-    const c = await obtenerCliente();
-    if (c) await c.auth.signOut();
+    const c = await obtenerCliente().catch(() => null);
+    if (c) {
+      const ok = await Promise.race([
+        c.auth.signOut().then(() => true, () => false),
+        new Promise(res => setTimeout(() => res(false), 3000)),
+      ]);
+      if (!ok) { try { await Promise.race([c.auth.signOut({ scope: 'local' }), new Promise(res => setTimeout(res, 1500))]); } catch {} }
+      try { Object.keys(localStorage).filter(k => /^sb-.*-auth-token$/.test(k)).forEach(k => localStorage.removeItem(k)); } catch {}
+    }
     sesion = null;
   },
 
@@ -230,6 +240,24 @@ export const Nube = {
 
     const { error } = await c.from(TABLA).upsert(fila, { onConflict: 'user_id' });
 
+    return error ? { ok: false, motivo: error.message } : { ok: true };
+  },
+
+  /* v67 · «Reiniciar proceso» de verdad: vacía las columnas del expediente
+     en su fila, como el «empezar de nuevo» de Paideia (que sube el avance en
+     blanco). Antes solo se borraba este navegador y la nube lo devolvía todo
+     al recargar. Las autorizaciones (pagos) y lo del Centro no se tocan. */
+  async reiniciar() {
+    const c = await obtenerCliente();
+    const s = await Auth.actual();
+    if (!c || !s) return { ok: false, motivo: 'Sin sesión' };
+    const { data: actual, error: errLeer } = await c
+      .from(TABLA).select('*').eq('user_id', s.user.id).maybeSingle();
+    if (errLeer) return { ok: false, motivo: errLeer.message };
+    if (!actual) return { ok: true };
+    const fila = { user_id: s.user.id, updated_at: new Date().toISOString() };
+    Object.keys(actual).forEach(k => { if (/_data$/.test(k)) fila[k] = null; });
+    const { error } = await c.from(TABLA).upsert(fila, { onConflict: 'user_id' });
     return error ? { ok: false, motivo: error.message } : { ok: true };
   },
 
