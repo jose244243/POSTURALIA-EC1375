@@ -22,6 +22,7 @@
    ========================================================================== */
 import { hoja, envolverOficial, fechaFormato, escOficial as esc } from './doc-plan-oficial.js';
 import { firmaHtml } from './firma-simple.js';
+import { hoyLocal } from './fechas.js';
 import { htmlFichaSii } from './doc-sii.js';
 import { estilosPortafolioOficial, autodiagnosticoOficial, triptico, acuse, cedulaServicio, formatoAtencion } from './doc-portafolio-oficial.js';
 import { encuesta as hojaEncuesta } from './doc-portafolio.js';
@@ -36,7 +37,7 @@ export const DOCS_REGISTRO = [
 
 const firmaDe = f => (f?.dato ? { mode: 'draw', dataUrl: f.dato } : null);
 const firmaDeSello = s => (s?.firma ? { mode: 'draw', dataUrl: s.firma } : null);
-const hoyIso = () => new Date().toISOString().slice(0, 10);
+const hoyIso = () => hoyLocal();   // v68: fecha de México, no UTC
 
 /* Qué falta para que un documento salga completo (no para abrirlo: se
    puede ver aunque falte algo, y lo que falta se le dice). */

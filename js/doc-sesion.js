@@ -13,6 +13,7 @@
    ========================================================================== */
 import { hoja, fechaFormato, envolverOficial } from './doc-plan-oficial.js';
 import { firmaHtml } from './firma-simple.js';
+import { hoyLocal } from './fechas.js';
 import { NOTA_MEDICO, ENTERADO_AVISO, textoConsentimiento, avisoPrivacidadBloques, datosAviso, tecnicaEfectiva,
   PREP_ITEMS, PREP_PROTOCOLO, PREP_MATERIALES, DOCS_SESION, ENCUESTA_USUARIO } from './data-sesion.js';
 
@@ -52,7 +53,7 @@ const datos = filas => `<table class="ds-d">${filas.map(([k, x]) => `<tr><td>${e
 const tabla = (cab, filas) => `<table class="ds-t"><thead><tr>${cab.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${filas.map(f => `<tr>${f.map((x, i) => `<td>${i ? multi(x) : esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
 const bloqueFirma = (etiqueta, nombre, firma) => `<div><div class="caja">${firmaHtml(firma, 60)}</div><div class="l">${esc(etiqueta)}</div>${nombre ? `<div class="n">${esc(nombre)}</div>` : ''}</div>`;
 const firmas = (...b) => `<div class="ds-firmas">${b.join('')}</div>`;
-const hoyIso = () => new Date().toISOString().slice(0, 10);
+const hoyIso = () => hoyLocal();   // v68: fecha de México, no UTC
 const SIN_LOGOS = { sinLogos: true };   // v53: los DOC del usuario no llevan logos
 
 export function avisoHtml(d, opts) {

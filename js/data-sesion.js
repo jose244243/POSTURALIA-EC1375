@@ -15,6 +15,8 @@
    documentos impresos salen de doc-sesion.js.
    ========================================================================== */
 
+import { hoyLocal } from './fechas.js';
+
 /* Los pasos, en orden. `seccion` es la del Guion Maestro (data-guion.js). */
 export const PASOS = [
   { id: 'prep',                titulo: 'Preparación del Espacio',    seccion: 1 },
@@ -92,7 +94,8 @@ export const FICHA_PREGUNTAS = [
   ['medicamento o alguna otra sustancia', ['consumoSustancias', 'informacionToxicologica']],
 ];
 
-export const sesionVacia = (hoy = new Date().toISOString().slice(0, 10)) => ({
+/* v68: «hoy» en la hora de México (antes UTC: después de las 18:00 ya era mañana) */
+export const sesionVacia = (hoy = hoyLocal()) => ({
   campos: {
     usuarioNombre: '', usuarioEdad: '', usuarioFechaNacimiento: '', usuarioDomicilio: '', usuarioTelefono: '', usuarioCorreo: '', contactoEmergencia: '',
     fisiologicos: '', socioemocionales: '', heredofamiliares: '', deportivos: '', consumoSustancias: '', enfermedadesCronicas: '', alergias: '', habitosAlimentacionSueno: '',
