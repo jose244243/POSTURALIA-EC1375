@@ -164,7 +164,9 @@ function vistaCuenta() {
     <div id="gate"></div>
     <div class="rg-acc"><button class="btn-plat btn-plat--secundario" id="btnAtras">Regresar al acuerdo</button></div>
   </div>`;
-  montarGate($('gate'), { correoInicial: datos.correo, onListo: () => ir('guardar') });
+  /* v68: antes de escribir, baja su expediente (si ya tenía cuenta, su
+     Acuerdo y sus datos están en la nube, no en este navegador). */
+  montarGate($('gate'), { correoInicial: datos.correo, onListo: async () => { try { await Store.sincronizar(); } catch {} ir('guardar'); } });
   $('btnAtras').onclick = () => ir('nda');
 }
 
