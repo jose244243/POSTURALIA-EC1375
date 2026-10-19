@@ -266,7 +266,7 @@ export const Nube = {
      fusionamos campo por campo a propósito: mezclar dos versiones de un
      autodiagnóstico a medias produciría un resultado que el candidato
      nunca contestó.                                                      */
-  async sincronizar(locales) {
+  async sincronizar(locales, { preferirNube = false } = {}) {
     const remotos = await Nube.leerTodo();
     if (!remotos || remotos.error) return { ok: false, motivo: remotos?.error || 'Sin sesión' };
 
@@ -286,6 +286,7 @@ export const Nube = {
 
       if (l && !r)        { subidos.push(m); }
       else if (!l && r)   { bajados.push(m); }
+      else if (preferirNube && r) { bajados.push(m); }   // v68: navegador nuevo → manda la nube
       else if (tl > tr)   { subidos.push(m); }
       else if (tr > tl)   { bajados.push(m); }
     }

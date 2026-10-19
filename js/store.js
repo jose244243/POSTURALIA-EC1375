@@ -239,8 +239,12 @@ export const Store = {
       if (d) locales[id] = d;
     });
 
-    const r = await Nube.sincronizar(locales);
+    /* v68: en un navegador nuevo para esta persona, la nube manda en todo lo
+       que ya tiene (ver cambiarDueno en cuenta.js). */
+    const primera = enPrimeraSync();
+    const r = await Nube.sincronizar(locales, { preferirNube: primera });
     if (!r.ok) return { ok: false, modo: 'nube', motivo: r.motivo };
+    if (primera) { try { localStorage.removeItem(K_PRIMERA); } catch {} }
 
     // Lo que ganó en la nube baja a local
     r.bajados.forEach(m => {
@@ -258,6 +262,11 @@ export const Store = {
    Cada Store.set encola el módulo y dispara un envío con retardo, para no
    mandar una petición por cada clic en un reactivo. */
 let temporizador = null;
+/* v68: mientras no haya bajado su expediente en este navegador, no se sube
+   nada suelto (lo que la página escribió al abrir son valores en blanco):
+   primero se baja lo de la nube y después se sube lo que falte. */
+const K_PRIMERA = `${NS}.__primeraSync`;
+function enPrimeraSync() { try { return !!localStorage.getItem(K_PRIMERA); } catch { return false; } }
 
 if (!modoLocal()) {
   /* Cada módulo que cambia se anota al momento; lo que se retrasa es el
@@ -272,6 +281,7 @@ if (!modoLocal()) {
     } catch {}
     clearTimeout(temporizador);
     temporizador = setTimeout(async () => {
+      if (enPrimeraSync()) { await Store.sincronizar().catch(() => null); return; }
       const { Nube } = await import('./nube.js');
       if (!Nube.disponible()) return;
       await Nube.drenarCola(leerLocal);
@@ -280,6 +290,7 @@ if (!modoLocal()) {
 
   // Al recuperar conexión, sube lo que quedó pendiente
   window.addEventListener('online', async () => {
+    if (enPrimeraSync()) { await Store.sincronizar().catch(() => null); return; }
     const { Nube } = await import('./nube.js');
     if (Nube.disponible()) await Nube.drenarCola(leerLocal);
   });

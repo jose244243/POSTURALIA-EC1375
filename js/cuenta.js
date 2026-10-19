@@ -165,6 +165,13 @@ export function cambiarDueno(correo) {
   if (previo && previo !== nuevo) {
     try { Object.keys(localStorage).filter(k => k.startsWith(NS + '.')).forEach(k => localStorage.removeItem(k)); } catch {}
   }
+  /* v68 · Navegador nuevo para esta persona (o recién limpiado): hasta la
+     primera sincronización manda la nube. Antes, al entrar en otro equipo,
+     la página escribía sus valores en blanco (correo, fecha, autodiagnóstico
+     vacío) con hora de «ahora», y la sincronización los subía ENCIMA del
+     expediente real: se perdían nombre, CURP, archivos y firmas (19-oct,
+     prueba con Pedro). Ver Store.sincronizar() y la cola en store.js. */
+  if (previo !== nuevo) { try { localStorage.setItem(`${NS}.__primeraSync`, '1'); } catch {} }
   try { localStorage.setItem(K_DUENO, nuevo); } catch {}
   return !!(previo && previo !== nuevo);
 }
