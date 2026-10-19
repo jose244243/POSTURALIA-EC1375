@@ -212,7 +212,7 @@ function hub(resaltar) {
 
   const puede = completo && !pendObl.length;
   $('cardVobo').innerHTML = `<div class="rz-k">Paso 2 de 3</div><h2 style="margin:4px 0 6px">Visto bueno de tu Autodiagnóstico</h2>` + (vobo
-    ? `<div class="rz-aviso ok"><b>Visto bueno registrado</b> el ${new Date(d.voboFecha).toLocaleString('es-MX')}. Ya puedes seguir con tu proceso.</div>
+    ? `<div class="rz-aviso ok"><b>Visto bueno registrado</b> el ${new Date(d.voboFecha).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' })} — ya puedes seguir con tu proceso.</div>
        ${sigMod ? `<a class="btn-plat btn-plat--primario" href="${sigMod.archivo}">Siguiente paso: ${esc(sigMod.nombre)} →</a>` : ''}`
     : `<p style="color:var(--mid);font-size:.9rem">Al dar el visto bueno cierras esta etapa. Tus respuestas del Autodiagnóstico no cambian: lo que se pide es haber reforzado los temas obligatorios.</p>
        ${puede ? '' : `<div class="rz-aviso warn">${!completo ? 'Primero termina de contestar el Autodiagnóstico.' : `Primero refuerza tus temas obligatorios. Te faltan <b>${pendObl.length}</b>.`}</div>`}

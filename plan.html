@@ -100,6 +100,9 @@ addEventListener('load', function () {
     </p>
   </div>
 
+  <!-- v68 · «Tu resumen», como Paideia -->
+  <div class="card" id="cardResumen" hidden></div>
+
   <div class="card">
     <h2>Qué se evalúa en el EC1375</h2>
     <p style="color:var(--mid);font-size:.9rem;line-height:1.7">
@@ -541,6 +544,28 @@ $('btnImprimir').onclick = () => window.print();
    Valores por omisión que el candidato no tiene por qué saber: el Centro,
    la fecha de hoy, el resultado del autodiagnóstico y si se sugiere
    capacitación (puntaje bajo la referencia o algún eliminatorio en NO). */
+const pctDiag = a => Number.isFinite(Number(a?.porcentaje)) ? Number(a.porcentaje)
+  : (() => { const v = Object.values(a?.answers || {}); return v.length ? Math.round(v.filter(x => x === 'SI').length / v.length * 100) : 0; })();
+const procedeDiag = a => pctDiag(a) >= 90;
+
+/* v68 · «Tu resumen» (como Paideia): quién, resultado del Autodiagnóstico
+   y si procede a evaluación o se sugirió capacitación. */
+(function pintarResumen() {
+  const a = Store.get('autodiagnostico', {}) || {};
+  if (!a.completado) return;
+  const v = Object.values(a.answers || {}), si = v.filter(x => x === 'SI').length, tot = v.length || 142;
+  const ok = procedeDiag(a);
+  $('cardResumen').innerHTML = `<h2>Tu resumen</h2>
+    <div class="pl-res" style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem">
+      <span style="color:var(--muted)">Candidato/a</span><b>${esc($('fCandidato').value || Store.get('candidato', {}).nombre || '—')}</b>
+      <span style="color:var(--muted)">Especialidad</span><b>EC1375</b>
+      <span style="color:var(--muted)">Resultado Autodiagnóstico</span><b>${si}/${tot} (${pctDiag(a)}%)</b></div>
+    <p class="${ok ? 'ev-sellada' : 'ev-pendiente'}" style="margin:12px 0 0">${ok
+      ? 'Procede a evaluación — tu resultado indica que estás listo/a.'
+      : 'Se sugirió capacitación previa — tu evaluador te asesorará antes de la evaluación.'}</p>`;
+  $('cardResumen').hidden = false;
+})();
+
 (function defaultsOficiales() {
   const ce = CONFIG.centroEvaluacion || {};
   const auto = Store.get('autodiagnostico', {});
@@ -549,10 +574,19 @@ $('btnImprimir').onclick = () => window.print();
     fCentro: ce.clave || '', fEvaluadora: ce.evaluadora || $('fEvaluador').value || '',
     fFechaPlan: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }),
     fResultadoDiag: auto.completado ? `${pts.toFixed(2)} de ${PUNTAJE_MAXIMO.toFixed(2)} puntos (referencia ${ce.umbral ?? 97.64})` : '',
-    fSugirio: auto.completado ? ((pts < (ce.umbral ?? 97.64) || (auto.criticosEnNo || 0) > 0) ? 'si' : 'no') : 'no',
-    fProcede: 'si', fLugarRes: $('fLugar').value || '',
+    /* v68 · como Paideia: procede a evaluación con 90 % o más en el
+       Autodiagnóstico; si no, se sugirió capacitación. Antes los selectores
+       nunca tomaban el valor propuesto (un <select> siempre tiene valor) y
+       salía «No se sugirió» aun con el resultado bajo. */
+    fSugirio: auto.completado ? (procedeDiag(auto) ? 'no' : 'si') : '',
+    fProcede: auto.completado ? (procedeDiag(auto) ? 'si' : 'no') : '',
+    fLugarRes: $('fLugar').value || '',
   };
-  Object.entries(def).forEach(([k, v]) => { if (!$(k).value && v) $(k).value = v; });
+  const guardado = Store.get(MODULO, {}) || {};
+  Object.entries(def).forEach(([k, v]) => {
+    if (!v) return;
+    if ($(k).tagName === 'SELECT' ? (guardado[k] == null || guardado[k] === '') : !$(k).value) $(k).value = v;
+  });
 })();
 
 $('btnOficial').onclick = () => {
