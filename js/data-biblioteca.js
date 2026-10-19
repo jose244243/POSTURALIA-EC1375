@@ -1,6 +1,7 @@
 /* POSTURALIA · data-biblioteca.js — Índice de la Alineación Curricular.
 
-   Temario completo: 126 pantallas, todas con material en biblioteca-deck.html.
+   Temario completo: 133 pantallas, todas con material en biblioteca-deck.html
+   (v70: + 7 de «Tu video práctico», como Paideia).
    `core: true` marca las 50 que forman la ruta de alineacion
    (alineacion-deck.html), igual que la plataforma Paideia V4.5.
    Fuente: Ruta Posturalia 4.5. Orden: el del documento fuente.
@@ -1668,7 +1669,84 @@ export const BIBLIOTECA = [
   "hay": true,
   "enDeck": true,
   "core": true
- }
+ },
+{
+ "sid": "vp-1",
+ "t": "Tu video práctico: la evidencia que más pesa",
+ "mod": 7,
+ "m": "Tu video práctico",
+ "crit": [],
+ "risk": "n/a",
+ "hay": true,
+ "enDeck": true,
+ "core": false
+},
+{
+ "sid": "vp-2",
+ "t": "Antes de grabar: espacio, cámara y sonido",
+ "mod": 7,
+ "m": "Tu video práctico",
+ "crit": [],
+ "risk": "n/a",
+ "hay": true,
+ "enDeck": true,
+ "core": false
+},
+{
+ "sid": "vp-3",
+ "t": "Privacidad y consentimiento frente a la cámara",
+ "mod": 7,
+ "m": "Tu video práctico",
+ "crit": [],
+ "risk": "n/a",
+ "hay": true,
+ "enDeck": true,
+ "core": false
+},
+{
+ "sid": "vp-4",
+ "t": "El orden de tu sesión grabada",
+ "mod": 7,
+ "m": "Tu video práctico",
+ "crit": [],
+ "risk": "n/a",
+ "hay": true,
+ "enDeck": true,
+ "core": false
+},
+{
+ "sid": "vp-5",
+ "t": "Lo que el evaluador tiene que poder ver y oír",
+ "mod": 7,
+ "m": "Tu video práctico",
+ "crit": [],
+ "risk": "n/a",
+ "hay": true,
+ "enDeck": true,
+ "core": false
+},
+{
+ "sid": "vp-6",
+ "t": "Errores que obligan a grabar otra vez",
+ "mod": 7,
+ "m": "Tu video práctico",
+ "crit": [],
+ "risk": "n/a",
+ "hay": true,
+ "enDeck": true,
+ "core": false
+},
+{
+ "sid": "vp-7",
+ "t": "Subir tu video y entregar la liga",
+ "mod": 7,
+ "m": "Tu video práctico",
+ "crit": [],
+ "risk": "n/a",
+ "hay": true,
+ "enDeck": true,
+ "core": false
+}
 ];
 
 export const MODULOS = [
@@ -1678,7 +1756,8 @@ export const MODULOS = [
  "Elemento 3 · Introducir a la técnica",
  "Elemento 4 · Dar seguimiento",
  "Evaluación",
- "Cierre"
+ "Cierre",
+ "Tu video práctico"
 ];
 
 /* Solo las que se pueden abrir */
