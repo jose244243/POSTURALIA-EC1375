@@ -26,7 +26,7 @@
    computadoras se comparten.
    ========================================================================== */
 
-const VERSION = 'posturalia-v70';
+const VERSION = 'posturalia-v71';
 const CACHE_APP    = `${VERSION}-app`;
 const CACHE_PESADO = `${VERSION}-material`;
 
@@ -152,8 +152,7 @@ const ARMAZON = [
 
 /* Lo pesado, que se guarda cuando se pide y ya no se vuelve a bajar */
 const ES_PESADO = url =>
-  url.pathname.endsWith('alineacion-deck.html') ||
-  url.pathname.endsWith('biblioteca-deck.html') ||
+  /\/(alineacion|biblioteca)-deck(\.html)?$/.test(url.pathname) ||   // v71: también sin «.html»
   /\.(pdf|mp4|webm|woff2?)$/i.test(url.pathname);
 
 /* ── Archivos que NUNCA se sirven de caché primero ────────────────────────
@@ -230,12 +229,12 @@ self.addEventListener('fetch', e => {
 async function redPrimero(req) {
   const cache = await caches.open(CACHE_APP);
   try {
-    const res = await fetch(req);
+    const res = await limpia(await fetch(req));
     if (res && res.ok) cache.put(req, res.clone());
     return res;
   } catch {
-    return (await cache.match(req))
-        || (await cache.match('./portada.html'))
+    return (await limpia(await cache.match(req)))
+        || (await limpia(await cache.match('./portada.html')))
         || new Response(
              '<!doctype html><meta charset="utf-8">' +
              '<title>Sin conexión</title>' +
@@ -259,13 +258,24 @@ async function revalidando(req) {
   return guardado || (await red) || new Response('', { status: 504 });
 }
 
+/* v71 · Una respuesta que llegó por redirección (Cloudflare manda
+   «biblioteca-deck.html» a «biblioteca-deck») no puede servirse a una
+   navegación: Chrome la rechaza y el visor (iframe) quedaba en blanco. Pasaba
+   en cuanto algo pedía el deck con fetch —la búsqueda de la Biblioteca lo
+   hace— y esa copia quedaba en el caché. Se guarda y se sirve sin la marca. */
+async function limpia(res) {
+  if (!res || !res.redirected) return res;
+  const cuerpo = await res.blob();
+  return new Response(cuerpo, { status: res.status, statusText: res.statusText, headers: res.headers });
+}
+
 /* Caché primero, sin revalidar: material que no cambia */
 async function cachePrimero(req, nombreCache) {
   const cache = await caches.open(nombreCache);
   const guardado = await cache.match(req);
-  if (guardado) return guardado;
+  if (guardado) return limpia(guardado);
   try {
-    const res = await fetch(req);
+    const res = await limpia(await fetch(req));
     if (res && res.ok) cache.put(req, res.clone());
     return res;
   } catch {
