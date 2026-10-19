@@ -39,10 +39,14 @@ addEventListener('load', function () {
   .tab-btn.active { color:var(--spoke); border-bottom-color:var(--spoke) }
 
   .visor-wrap {
-    height:min(72vh,640px); margin:0 0 12px; border:1px solid var(--border);
+    height:max(520px,calc(100dvh - 150px)); margin:0 0 12px; border:1px solid var(--border);
     border-radius:8px; overflow:hidden; background:#0F172A
   }
   .visor-wrap iframe { width:100%; height:100%; border:none; display:block }
+  /* v70: el visor trae su propio índice, barra superior y barra inferior (como Paideia):
+     la barra de aquí arriba sobraba y la página se ensancha para darle espacio. */
+  .visor-bar { display:none !important }
+  body.bib-visor .plat-wrap { max-width:1500px }
 
   .visor-bar {
     display:flex; gap:10px; align-items:center; flex-wrap:wrap;
@@ -129,9 +133,8 @@ addEventListener('load', function () {
       </div>
       <div class="visor-wrap"><iframe id="visor" title="Visor de la Biblioteca"></iframe></div>
       <p style="color:var(--muted);font-size:.83rem;margin:0">
-        El selector solo lista los recursos que el material entregado incluye. En el
-        <strong>Índice completo</strong> ves el temario entero y cuáles aún no traen pantalla.
-        También puedes abrir el material
+        Usa el <strong>índice</strong> del visor (a la izquierda, o el botón de tres rayas en el celular) para buscar por
+        palabra, tema o #reactivo. También puedes abrir la Biblioteca
         <a href="biblioteca-deck.html" target="_blank" rel="noopener">en una pestaña aparte</a>.
       </p>
     </div>
@@ -254,6 +257,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('[id^="tab-"]').forEach(el => el.hidden = true);
     btn.classList.add('active');
     $('tab-' + btn.dataset.tab).hidden = false;
+    document.body.classList.toggle('bib-visor', btn.dataset.tab === 'visor');
   };
 });
 
@@ -423,6 +427,29 @@ $('criticosLista').innerHTML = MODULOS.map(m => {
 }).join('');
 
 /* ── Arranque ─────────────────────────────────────────────────────────── */
+/* v70 · El visor (biblioteca-deck.html) lee de aquí lo recomendado y lo ya
+   visto, y avisa por postMessage cada pantalla que se abre o se termina. */
+try {
+  localStorage.setItem('ec1375-biblioteca-parati', JSON.stringify([...PARA_TI.keys()]));
+  const enDeck = JSON.parse(localStorage.getItem('ec1375-biblioteca-vistas') || '[]');
+  localStorage.setItem('ec1375-biblioteca-vistas', JSON.stringify([...new Set([...enDeck, ...vistos])]));
+} catch {}
+addEventListener('message', e => {
+  if (e.origin !== location.origin || e.source !== $('visor').contentWindow) return;
+  const d = e.data || {};
+  if (d.tipo !== 'ec1375-bib' && d.tipo !== 'ec1375-bib-vista') return;
+  const pos = NAVEGABLES.findIndex(s => s.sid === d.sid);
+  if (pos < 0) return;
+  if (d.tipo === 'ec1375-bib') {
+    idx = NAVEGABLES[pos].i;
+    $('slidePos').textContent = `${pos + 1} / ${NAVEGABLES.length}`;
+    $('selSlide').value = String(idx);
+  }
+  vistos.add(d.sid);
+  const critVistos = CRIT_CON_MATERIAL.filter(c => vistos.has(c.sid)).length;
+  Store.merge(MODULO, { idx, vistos: [...vistos], criticos: critVistos, criticosTotal: CRIT_CON_MATERIAL.length });
+});
+document.body.classList.add('bib-visor');
 pintarBarraFlujo($('pasos'), null);
 pintarParaTi();
 pintarIndice();
