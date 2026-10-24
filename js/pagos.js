@@ -30,9 +30,9 @@ export const MONTO_APARTADO = 2000;
    estos totales: 2,090 · 4,440 · 6,260 · 2,620. */
 export const MONTOS_BASE = { registro: 2000, alineacion: 4250, evaluacion: 6000, entrega: 2500 };
 export const totalMercadoPago = base => Math.ceil(((Number(base) + 4.64) / (1 - 0.0349 * 1.16)) / 10) * 10;
-/* v62: la liga de registro es siempre la dirección oficial, sin importar desde
-   qué dirección se abra el panel (workers.dev, sepconocer., redconocer-ec1375., vista previa). */
-export const LIGA_REGISTRO = 'https://redconocer-ec1375.posturalia.com.mx/registro.html';
+/* La liga de registro es siempre la dirección de la plataforma, sin importar
+   desde qué dirección se abra el panel. */
+export const LIGA_REGISTRO = 'https://posturalia-ec1375.josevillarreal-flores.workers.dev/registro.html';
 const etiquetaFase = f => f === 'registro' ? 'Apartado' : (CONFIG.fases.find(x => x.id === f) || {}).label || f;
 export const QUE_INCLUYE = {
   registro: 'Con tu apartado aseguras tu lugar en el grupo y el equipo abre tu proceso de certificación.',

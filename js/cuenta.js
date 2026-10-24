@@ -214,7 +214,7 @@ export const iniciales = s => (s?.nombre || s?.correo || '?').split(/[\s@.]+/).f
    arranca en crear contraseña o en entrar, sin volver a preguntarlo.       */
 export function montarGate(cont, { equipo = false, permitirEvaluador = false, titulo = '', correoInicial = '', pasoInicial = '', onListo = () => {} } = {}) {
   let correo = correoValido(correoInicial) ? norm(correoInicial) : '';
-  /* En modo local cada navegador y cada dirección (posturalia.com.mx, la de
+  /* En modo local cada navegador y cada dirección (la de
      .netlify.app, una vista previa de Netlify…) guardan sus propias cuentas.
      Quien ya se dio de alta en otro lado volvía a ver «Es mi primera vez» y
      creía que la plataforma no le guardaba la contraseña (5 oct). */
